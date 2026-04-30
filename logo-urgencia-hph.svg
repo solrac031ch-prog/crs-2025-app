@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 190" role="img" aria-label="Urgencia Hospital Padre Hurtado">
+  <rect width="760" height="190" rx="10" fill="#ffffff"/>
+  <rect x="18" y="18" width="724" height="154" rx="4" fill="#050505"/>
+  <rect x="31" y="31" width="698" height="128" rx="2" fill="none" stroke="#ffffff" stroke-width="6"/>
+  <text x="380" y="78" text-anchor="middle" fill="#ffffff"
+    font-family="Arial Black, Impact, Arial, sans-serif" font-size="48" font-weight="900">
+    URGENCIA HOSPITAL
+  </text>
+  <text x="380" y="134" text-anchor="middle" fill="#ffffff"
+    font-family="Arial Black, Impact, Arial, sans-serif" font-size="48" font-weight="900">
+    PADRE HURTADO
+  </text>
+</svg>
