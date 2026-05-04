@@ -15,7 +15,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-180.png" />
-    <link rel="stylesheet" href="./styles.css?v=19" />
+    <link rel="stylesheet" href="./styles.css?v=21" />
   </head>
   <body>
     <header class="topbar">
@@ -31,6 +31,7 @@
         <a href="#/especialidades" data-route-link="especialidades">Especialidades</a>
         <a href="#/llamados" data-route-link="llamados">Llamados</a>
         <a href="#/visita" data-route-link="visita">Visita</a>
+        <a href="#/formularios" data-route-link="formularios">Formularios</a>
       </nav>
     </header>
 
@@ -58,15 +59,10 @@
             <strong>Visita diaria</strong>
             <span>Planilla compartida de jefatura</span>
           </a>
-          <a
-            class="action-card"
-            href="https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span class="action-kicker">Formulario</span>
-            <strong>Activar formulario</strong>
-            <span>Acceso directo a formulario operativo</span>
+          <a class="action-card" href="#/formularios">
+            <span class="action-kicker">Turno</span>
+            <strong>Formularios de turno</strong>
+            <span>Antimicrobianos, ley de urgencias y notificaciones</span>
           </a>
         </div>
 
@@ -164,6 +160,18 @@
           <div id="visitDocumentAction"></div>
         </div>
       </section>
+
+      <section id="formsPage" class="page" aria-labelledby="formsTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/inicio">Inicio</a>
+          <div>
+            <p class="eyebrow">Turno</p>
+            <h1 id="formsTitle">Formularios de turno</h1>
+          </div>
+        </div>
+
+        <div id="turnFormsList" class="document-list" aria-live="polite"></div>
+      </section>
     </main>
 
     <template id="specialtyButtonTemplate">
@@ -173,6 +181,6 @@
       </a>
     </template>
 
-    <script src="./app.js?v=19"></script>
+    <script src="./app.js?v=21"></script>
   </body>
 </html>

@@ -9,10 +9,11 @@ Web app estatica para consulta rapida de flujos de derivacion CRS 2025 de Urgenc
 - `#/especialidad/urologia`: ejemplo de pagina individual por especialidad.
 - `#/llamados`: acceso al documento mensual de especialistas de llamado y disponibilidad UHD.
 - `#/visita`: acceso a la planilla de visita diaria.
+- `#/formularios`: formularios de turno, con antimicrobianos activo y otros espacios preparados.
 
 Cada pagina de especialidad termina con una pregunta de gestion prioritaria. Si se requiere, la app abre un correo prellenado para enviar a `gestionaltaseahph@gmail.com`; el envio final queda a cargo del usuario.
 
-La portada incluye un boton externo `Activar formulario`. El flujo `ECO TVP Hospital Sotero del Rio` incluye un boton propio para abrir su cuestionario de Google Forms.
+La portada incluye un boton `Formularios de turno`. El primer formulario activo es `Antimicrobianos H. Padre Hurtado`; los formularios de Ley de urgencias, medicamentos de uso ocasional, solicitud de VIH y notificacion obligatoria quedan preparados como pendientes. El flujo `ECO TVP Hospital Sotero del Rio` incluye un boton propio para abrir su cuestionario de Google Forms.
 
 La app tambien incluye una carpeta `protocol-docs/` con documentos fuente para abrir el PDF o imagen original desde cada flujo. Al subir esta carpeta a GitHub Pages, esos documentos quedan disponibles para toda persona que tenga el enlace de la app, por lo que deben ser documentos autorizados para publicacion o uso institucional compartido.
 

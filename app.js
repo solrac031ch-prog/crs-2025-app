@@ -511,8 +511,45 @@ const externalDocs = {
 
 const externalForms = {
   ecoTvpSoteroUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdkgwTx1dr00gxIMOdjIZVqibjhqYgwZqlmgmdSi_CfzbwQbg/viewform",
-  homeActivationUrl: "https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform"
+  antimicrobianosHphUrl: "https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform",
+  leyUrgenciasUrl: "",
+  medicamentosUsoOcasionalUrl: "",
+  solicitudVihUrl: "",
+  notificacionObligatoriaUrl: ""
 };
+
+const turnForms = [
+  {
+    title: "Antimicrobianos H. Padre Hurtado",
+    description: "Formulario activo para solicitudes relacionadas con antimicrobianos del Hospital Padre Hurtado.",
+    url: externalForms.antimicrobianosHphUrl,
+    actionLabel: "Abrir formulario antimicrobianos"
+  },
+  {
+    title: "Ley de urgencias",
+    description: "Espacio preparado para anexar el formulario de notificación y el consentimiento cuando estén disponibles.",
+    url: externalForms.leyUrgenciasUrl,
+    actionLabel: "Abrir formulario Ley de urgencias"
+  },
+  {
+    title: "Medicamentos de uso ocasional",
+    description: "Espacio preparado para anexar el formulario cuando se defina el enlace institucional.",
+    url: externalForms.medicamentosUsoOcasionalUrl,
+    actionLabel: "Abrir formulario medicamentos"
+  },
+  {
+    title: "Solicitud de VIH",
+    description: "Espacio preparado para anexar el formulario de solicitud de VIH cuando esté disponible.",
+    url: externalForms.solicitudVihUrl,
+    actionLabel: "Abrir solicitud de VIH"
+  },
+  {
+    title: "Formularios de notificación obligatoria",
+    description: "Espacio preparado para centralizar formularios de notificación obligatoria cuando se agreguen los enlaces.",
+    url: externalForms.notificacionObligatoriaUrl,
+    actionLabel: "Abrir notificación obligatoria"
+  }
+];
 
 const priorityEmail = "gestionaltaseahph@gmail.com";
 const publishedBaseUrl = "https://solrac031ch-prog.github.io/crs-2025-app/";
@@ -529,7 +566,8 @@ const pages = {
   especialidades: document.querySelector("#specialtiesPage"),
   especialidad: document.querySelector("#protocolPage"),
   llamados: document.querySelector("#callsPage"),
-  visita: document.querySelector("#visitPage")
+  visita: document.querySelector("#visitPage"),
+  formularios: document.querySelector("#formsPage")
 };
 
 const todayLabel = document.querySelector("#todayLabel");
@@ -544,6 +582,7 @@ const protocolDetail = document.querySelector("#protocolDetail");
 const callsDocumentAction = document.querySelector("#callsDocumentAction");
 const uhdDocumentAction = document.querySelector("#uhdDocumentAction");
 const visitDocumentAction = document.querySelector("#visitDocumentAction");
+const turnFormsList = document.querySelector("#turnFormsList");
 
 const textRepairPatterns = [
   [/\u00c3\u00a1/g, "á"], [/\u00c3\u00a9/g, "é"], [/\u00c3\u00ad/g, "í"],
@@ -1104,6 +1143,46 @@ function renderDocuments() {
   renderDocumentAction(visitDocumentAction, externalDocs.visitaDiariaUrl, "Abrir planilla de visita diaria");
 }
 
+function renderTurnForms() {
+  turnFormsList.innerHTML = "";
+
+  turnForms.forEach((form) => {
+    const panel = document.createElement("section");
+    panel.className = "document-panel";
+
+    const title = document.createElement("h2");
+    title.textContent = form.title;
+
+    const description = document.createElement("p");
+    description.textContent = form.description;
+
+    const action = document.createElement("div");
+    action.className = "document-action";
+
+    if (form.url) {
+      const link = document.createElement("a");
+      link.className = "document-button";
+      link.href = form.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = form.actionLabel;
+      action.append(link);
+    } else {
+      const pending = document.createElement("span");
+      pending.className = "document-button-disabled";
+      pending.textContent = "Pendiente de configurar";
+
+      const note = document.createElement("p");
+      note.textContent = "Cuando tengas el enlace, se agrega una sola vez en la configuración de formularios.";
+
+      action.append(pending, note);
+    }
+
+    panel.append(title, description, action);
+    turnFormsList.append(panel);
+  });
+}
+
 function renderRoute() {
   const [name, slug] = routeParts();
   const pageName = pages[name] ? name : "inicio";
@@ -1114,6 +1193,7 @@ function renderRoute() {
   if (pageName === "especialidades") renderSpecialties();
   if (pageName === "especialidad") renderProtocol(slug || "");
   if (pageName === "llamados" || pageName === "visita") renderDocuments();
+  if (pageName === "formularios") renderTurnForms();
 
   window.scrollTo(0, 0);
 }

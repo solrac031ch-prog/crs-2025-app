@@ -1,9 +1,9 @@
-const CACHE_NAME = "crs-hph-2025-v19";
+const CACHE_NAME = "crs-hph-2025-v21";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./styles.css?v=19",
-  "./app.js?v=19",
+  "./styles.css?v=21",
+  "./app.js?v=21",
   "./logo-urgencia-hph.svg",
   "./manifest.webmanifest",
   "./icon.svg",
@@ -29,9 +29,25 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const isNavigation = request.mode === "navigate";
+  const isGet = request.method === "GET";
+  const requestUrl = new URL(request.url);
+  const isSameOrigin = requestUrl.origin === self.location.origin;
 
   if (isNavigation) {
     event.respondWith(fetch(request).catch(() => caches.match("./index.html")));
+    return;
+  }
+
+  if (isGet && isSameOrigin) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
     return;
   }
 
