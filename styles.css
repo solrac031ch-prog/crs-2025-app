@@ -597,6 +597,7 @@ button {
 }
 
 .external-form-panel,
+.source-docs-panel,
 .priority-panel {
   display: grid;
   gap: 11px;
@@ -612,17 +613,29 @@ button {
   border-left-color: var(--accent);
 }
 
+.source-docs-panel {
+  border-left-color: var(--amber);
+}
+
 .external-form-panel h2,
+.source-docs-panel h2,
 .priority-panel h2 {
   margin: 0;
   font-size: 1.15rem;
 }
 
 .external-form-panel p,
+.source-docs-panel p,
 .priority-panel p {
   margin: 0;
   color: var(--muted);
   line-height: 1.42;
+}
+
+.source-doc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .priority-actions {

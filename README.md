@@ -14,6 +14,8 @@ Cada pagina de especialidad termina con una pregunta de gestion prioritaria. Si 
 
 La portada incluye un boton externo `Activar formulario`. El flujo `ECO TVP Hospital Sotero del Rio` incluye un boton propio para abrir su cuestionario de Google Forms.
 
+La app tambien incluye una carpeta `protocol-docs/` con documentos fuente para abrir el PDF o imagen original desde cada flujo. Al subir esta carpeta a GitHub Pages, esos documentos quedan disponibles para toda persona que tenga el enlace de la app, por lo que deben ser documentos autorizados para publicacion o uso institucional compartido.
+
 ## Instalacion en dispositivos
 
 ### Windows con Chrome
@@ -46,7 +48,7 @@ Los enlaces de Google Drive se configuran en `app.js`, dentro de:
 const externalDocs = {
   llamadosUrl: "",
   uhdDisponibilidadUrl: "",
-  visitaDiariaUrl: ""
+  visitaDiariaUrl: "https://docs.google.com/spreadsheets/d/14-90hMv4JciofpxQz8TTEXwLHxvKb4iNmOGrpQACmpQ/edit?usp=drive_link"
 };
 ```
 
@@ -72,3 +74,4 @@ https://TU-USUARIO.github.io/crs-2025-app/
 - `styles.css`: diseno visual responsive.
 - `manifest.webmanifest` y `sw.js`: instalacion y uso offline basico.
 - `pdf-images/`: imagenes de apoyo extraidas del PDF original.
+- `protocol-docs/`: PDFs e imagenes fuente de los flujos actualizados.

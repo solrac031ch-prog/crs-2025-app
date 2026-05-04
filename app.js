@@ -225,6 +225,13 @@ const protocols = [
       ["Destino", "Sala 9 Imagenología, block central CASR, con orden médica."],
       ["Resultado", "Informe sube a sistema de imágenes aproximadamente en 1 hora; paciente vuelve a HPH para resultado."]
     ],
+    sourceDocs: [
+      ["Flujo ECO TVP Sótero del Río", "./protocol-docs/flujo-eco-tvp-sotero-del-rio.pdf"],
+      ["Resumen TVP HPH", "./protocol-docs/resumen-tvp-hph.jpg"]
+    ],
+    formKey: "ecoTvpSoteroUrl",
+    formTitle: "Cuestionario ECO TVP Hospital Sótero del Río",
+    formLabel: "Abrir cuestionario ECO TVP",
     warning: "Derivar a Imagenología CASR, no a la Urgencia."
   },
   {
@@ -249,6 +256,250 @@ const protocols = [
       ["Horario inhábil", "Viernes, fines de semana e inhábil: llamar a Nefro de turno."],
       ["Alcance", "Sólo para programar diálisis; calendario se enviará periódicamente."]
     ]
+  },
+  {
+    title: "ECO Doppler horario inhábil 2025",
+    category: "Flujo",
+    page: "Doc. 2025",
+    summary: "Documento actualizado para activar ECO Doppler en horario inhábil mediante formulario operativo.",
+    tags: ["Eco Doppler", "Horario inhábil", "Formulario", "TVP"],
+    fields: [
+      ["Uso", "Abrir el formulario asociado cuando corresponda solicitar ECO Doppler en horario inhábil."],
+      ["Documento fuente", "El PDF contiene el acceso al formulario y debe revisarse si cambia el flujo local."]
+    ],
+    sourceDocs: [
+      ["ECO Doppler horario inhábil 2025", "./protocol-docs/eco-doppler-horario-inhabil-2025.pdf"]
+    ],
+    formKey: "ecoTvpSoteroUrl",
+    formTitle: "Formulario ECO Doppler horario inhábil",
+    formLabel: "Abrir formulario ECO Doppler",
+    warning: "Confirmar siempre que la indicación clínica y el horario correspondan al flujo vigente."
+  },
+  {
+    title: "Viruela símica",
+    category: "Flujo",
+    page: "Doc. feb 2023",
+    summary: "Flujo actualizado para sospecha de viruela símica en SEA HPH, coordinación con UHD, SEREMI y Epidemiología HPH.",
+    tags: ["Viruela símica", "UHD", "SEREMI", "Epidemiología", "Aislamiento"],
+    fields: [
+      ["Inicio del flujo", "APS pesquisa paciente sospechoso, toma muestra y deriva a UHD; si requiere hospitalización, contacta a jefe de turno SEA HPH."],
+      ["Recepción HPH", "Coordinar caso aceptado para evaluación en box 0. El box 0 es de uso transitorio y debe limpiarse luego de la atención."],
+      ["Criterios de hospitalización", "Hospitalizar si hay requerimiento de oxígeno o neumonía, encefalitis, necesidad de antibiótico endovenoso por infección secundaria o dolor intratable."],
+      ["SEREMI", "Si se confirma sospecha, llamar a SEREMI +56 9 8900 1761 para notificar sospecha y severidad."],
+      ["Epidemiología HPH", "Avisar siempre a Epidemiología HPH. Horario hábil: Jessica Serrano +56 9 9873 9340. Inhábil: emergentes@hurtadohosp.cl."],
+      ["Hospitalización", "Llamar a residente de Medicina para aislamiento urgente en sala y coordinar con Gestión de Camas."]
+    ],
+    flow: [
+      "Confirmar sospecha clínica y epidemiológica.",
+      "Usar box 0 sólo como tránsito para evaluación inicial.",
+      "Buscar diagnóstico alternativo y confirmar si cumple criterios de sospecha.",
+      "Si sospecha se mantiene, avisar a SEREMI y Epidemiología HPH.",
+      "Definir aislamiento domiciliario u hospitalización según severidad.",
+      "Enviar formularios y documentación solicitada después de validación SEREMI."
+    ],
+    sourceDocs: [
+      ["Flujo Viruela símica", "./protocol-docs/flujo-viruela-simica.pdf"]
+    ],
+    warning: "Flujo sensible a cambios sanitarios: confirmar indicaciones vigentes con SEREMI/Epidemiología si hay dudas."
+  },
+  {
+    title: "Flujos Neuro 2025",
+    category: "Flujo",
+    page: "Doc. 2025",
+    summary: "Documento actualizado de flujos neurológicos 2025 para consulta directa del PDF completo.",
+    tags: ["Neurología", "Neuro", "2025", "Documento escaneado"],
+    fields: [
+      ["Consulta rápida", "El documento viene como imagen escaneada; abrir el PDF completo para revisar el algoritmo vigente."],
+      ["Uso sugerido", "Utilizar como respaldo rápido cuando se active un flujo neurológico de turno."]
+    ],
+    sourceDocs: [
+      ["Flujos Neuro 2025", "./protocol-docs/flujos-neuro-2025.pdf"]
+    ],
+    warning: "No se pudo extraer texto confiable del PDF escaneado; revisar siempre el documento completo."
+  },
+  {
+    title: "Hemorragia digestiva alta",
+    category: "Flujo",
+    page: "Doc. sep 2024",
+    summary: "Resumen operativo para sospecha de hemorragia digestiva alta y priorización de EDA según riesgo.",
+    tags: ["HDA", "EDA", "Blatchford", "Shock", "Várices"],
+    fields: [
+      ["Sospecha", "Melena con o sin hematemesis."],
+      ["EDA urgente", "Indicar EDA urgente si hay sospecha clínica de várices o shock hemorrágico."],
+      ["Blatchford 0-1", "Riesgo muy bajo: alta y control por Poli EDA según juicio clínico."],
+      ["Blatchford 2", "Riesgo bajo: controlar hemoglobina/BUN en 4 a 6 horas; si estable, alta y Poli EDA."],
+      ["Blatchford ≥3", "EDA antes de 24 horas."],
+      ["Tratamiento base", "Si DHC: ceftriaxona 2 g. Si várices: terlipresina 1-2 mg EV. Transfusión restrictiva con meta Hb >7. Omeprazol 80 mg EV bolo."]
+    ],
+    flow: [
+      "Confirmar sospecha de HDA.",
+      "Evaluar shock hemorrágico o sospecha de várices.",
+      "Calcular Blatchford y definir conducta.",
+      "Presentar cada caso a jefe de turno o especialista de turno.",
+      "Aplicar tratamiento inicial según contexto clínico."
+    ],
+    sourceDocs: [
+      ["HDA Septiembre 2024", "./protocol-docs/hda-sept2024.pdf"]
+    ],
+    warning: "Todo caso debe presentarse a jefe de turno o especialista de turno; el juicio clínico prevalece."
+  },
+  {
+    title: "Hemodinamia 2025",
+    category: "Flujo",
+    page: "Doc. 2025",
+    summary: "Documento actualizado para activación o derivación a Hemodinamia 2025.",
+    tags: ["Hemodinamia", "Cardiología", "2025", "Documento escaneado"],
+    fields: [
+      ["Consulta rápida", "El PDF no entregó texto extraíble confiable; abrir el documento completo para revisar criterios, contactos y secuencia."],
+      ["Uso sugerido", "Mantener como acceso directo al flujo vigente mientras se transcribe el algoritmo definitivo."]
+    ],
+    sourceDocs: [
+      ["Hemodinamia 2025", "./protocol-docs/hemodinamia-2025.pdf"]
+    ],
+    warning: "Documento escaneado: antes de actuar, revisar el PDF completo."
+  },
+  {
+    title: "Hemorragia intracerebral",
+    category: "Flujo",
+    page: "Doc. 2024",
+    summary: "Flujograma HIC SEA HPH 2024 con metas de presión, manejo inicial y reversión de coagulopatía.",
+    tags: ["HIC", "ACV hemorrágico", "PAS", "Labetalol", "Urapidil", "TACO"],
+    fields: [
+      ["Meta inicial", "PAS <140 mmHg en 1 hora, con línea arterial cuando corresponda."],
+      ["Si PAS >140", "Labetalol 10-20 mg EV bolo; controlar PA en 5 minutos. Luego BIC 0,5-3 mg/min EV, máximo 300 mg/día."],
+      ["Si contraindicación a labetalol", "Si FC <50, BAV o asma descompensada: urapidil 12,5 mg EV bolo; si persiste PAS >140, urapidil 25 mg y luego BIC 5 mg/h, máximo 30 mg/h."],
+      ["Glicemia", "Meta HGT 100-140 sin diabetes y 140-180 en diabetes."],
+      ["Reversión TACO", "Si INR >1,5 usar vitamina K y PFC. PCC 1500-2000 U EV sólo en paciente funcional, con riesgo de congestión y autorización de jefatura."]
+    ],
+    flow: [
+      "Confirmar ACV hemorrágico/HIC.",
+      "Iniciar meta de PAS <140 en la primera hora.",
+      "Elegir labetalol o urapidil según frecuencia cardiaca, BAV y asma.",
+      "Controlar glicemia dentro de metas.",
+      "Evaluar reversión de anticoagulación si corresponde."
+    ],
+    sourceDocs: [
+      ["HIC 2024", "./protocol-docs/hic2024.pdf"]
+    ]
+  },
+  {
+    title: "Patología aguda de columna",
+    category: "Flujo",
+    page: "Doc. 2025",
+    summary: "Flujo de derivación a UEH adultos HDSR para patología aguda de columna con criterios de urgencia.",
+    tags: ["Columna", "HDSR", "Neurocirugía", "RNM", "Gestión de camas"],
+    fields: [
+      ["Destino inicial", "Médico HPH deriva a UEH adultos HDSR e informa traslado."],
+      ["Primer contacto", "Contactar primero a estación de enfermería UEH adultos HDSR."],
+      ["Pertinencia", "Cirujano o urgenciólogo HDSR define pertinencia según criterios de urgencia; si corresponde, contacta a especialista de columna."],
+      ["RNM", "Si se requiere RNM, el paciente espera en HDSR."],
+      ["Retorno", "Si no es pertinente o se descarta urgencia, paciente vuelve a hospital de base; HPH debe asegurar recepción/cama."],
+      ["Coordinación", "Debe existir comunicación por correo y teléfono entre Gestión de Camas para derivación, cama y retorno."]
+    ],
+    flow: [
+      "Definir sospecha de patología aguda de columna.",
+      "Llamar a UEH adultos HDSR y avisar traslado.",
+      "HDSR evalúa pertinencia por criterios de urgencia.",
+      "Especialista decide necesidad quirúrgica o estudio urgente.",
+      "Si no requiere manejo urgente, coordinar retorno a HPH."
+    ],
+    sourceDocs: [
+      ["Patología aguda de columna 2025", "./protocol-docs/patologia-aguda-columna-2025.pdf"]
+    ],
+    warning: "Patología de columna no urgente debe seguir derivación por Gestión de Camas, no traslado urgente."
+  },
+  {
+    title: "Patología urología de urgencia 2025",
+    category: "Flujo",
+    page: "Doc. 2025",
+    summary: "Estrategia de resolución de patología urológica de urgencia en horario no hábil.",
+    tags: ["Urología", "Horario inhábil", "Urgencia", "2025"],
+    fields: [
+      ["Horario cubierto", "Lunes a jueves 17:00-08:00, viernes 16:00 a lunes 08:00, incluyendo festivos."],
+      ["Horario hábil", "En horario hábil contactar a urólogo de llamado HPH."],
+      ["Alcance", "Documento de respaldo para resolver patología urológica urgente según disponibilidad del flujo."]
+    ],
+    sourceDocs: [
+      ["Patología Urología de Urgencia 2025", "./protocol-docs/patologia-urologia-urgencia-2025.pdf"]
+    ],
+    warning: "Confirmar disponibilidad real del urólogo de llamado antes de derivar o activar el flujo."
+  },
+  {
+    title: "Radiología Intervencional 2025",
+    category: "Flujo",
+    page: "Doc. 2025",
+    summary: "Documento actualizado de Radiología Intervencional 2025 para consulta directa del PDF completo.",
+    tags: ["Radiología Intervencional", "Procedimiento", "2025", "Documento escaneado"],
+    fields: [
+      ["Consulta rápida", "El documento viene escaneado; abrir el PDF completo para revisar indicaciones, contactos y requisitos."],
+      ["Uso sugerido", "Utilizar como acceso directo al flujo vigente de Radiología Intervencional."]
+    ],
+    sourceDocs: [
+      ["Radiología Intervencional 2025", "./protocol-docs/radiologia-intervencional-2025.pdf"]
+    ],
+    warning: "Documento escaneado: revisar el PDF completo antes de activar el flujo."
+  },
+  {
+    title: "Violencia sexual",
+    category: "Protocolo",
+    page: "Doc. SSMSO",
+    summary: "Resumen de protocolo de violencia sexual y coordinación con unidad clínica forense hospitalaria.",
+    tags: ["Violencia sexual", "SSMSO", "Forense", "CASR"],
+    fields: [
+      ["Unidad de referencia", "Unidad clínica forense hospitalaria del Complejo Asistencial Sótero del Río."],
+      ["Derivación", "Si no se puede realizar la denuncia o procedimiento en HPH, contactar a la unidad correspondiente y trasladar en ambulancia."],
+      ["Documento fuente", "Revisar el PDF completo para pasos, tiempos y responsabilidades específicas."]
+    ],
+    sourceDocs: [
+      ["Resumen Protocolo Violencia Sexual", "./protocol-docs/resumen-protocolo-violencia-sexual.pdf"]
+    ],
+    warning: "Protocolo sensible: no copiar datos identificables en la app; revisar documento completo y normativa vigente."
+  },
+  {
+    title: "Agresión a funcionarios",
+    category: "Protocolo",
+    page: "Anexo 4",
+    summary: "Flujograma institucional ante agresión a funcionario, con seguridad, constatación de lesiones, denuncia y derivación ACHS.",
+    tags: ["Agresión", "Funcionario", "Seguridad", "ACHS", "Carabineros"],
+    fields: [
+      ["Primer paso", "Funcionario agredido debe retirarse del sitio y avisar a jefe directo; jefatura llama a personal de seguridad."],
+      ["Continuidad de atención", "Jefe directo evalúa continuar o suspender la atención en el área, resguardando usuarios y funcionarios."],
+      ["Seguridad", "Personal de seguridad acude de inmediato; si no logra controlar la situación, llama a Carabineros."],
+      ["Lesiones", "Funcionario debe constatar lesiones en Servicio de Emergencia Adulto."],
+      ["Correo institucional", "Funcionario y/o jefatura envía antecedentes a infoagresionafuncionario@hurtadohosp.cl y realiza denuncia a Carabineros."],
+      ["ACHS", "Jefatura deriva a ACHS mediante UIC llamando al 1404; si rechaza atención, debe firmar excepción correspondiente."]
+    ],
+    flow: [
+      "Retirar al funcionario del lugar y avisar a jefatura directa.",
+      "Activar seguridad y evaluar suspensión del proceso de atención.",
+      "Constatar lesiones en Urgencia Adulto.",
+      "Enviar antecedentes y realizar denuncia a Carabineros.",
+      "Derivar a ACHS/UIC si corresponde.",
+      "Si el agresor es paciente y se evalúa alta disciplinaria, jefatura solicita evaluación a Dirección."
+    ],
+    sourceDocs: [
+      ["Flujograma agresión a funcionarios", "./protocol-docs/agresion-funcionarios.jpg"]
+    ],
+    warning: "Ante riesgo activo, priorizar seguridad del equipo y usuarios."
+  },
+  {
+    title: "NIT",
+    category: "Protocolo",
+    page: "Referencia",
+    summary: "Referencia rápida de niveles de intensidad terapéutica para acordar alcance de medidas diagnósticas y terapéuticas.",
+    tags: ["NIT", "UCI", "VM", "RCP", "IOT", "Confort"],
+    fields: [
+      ["Nivel 1", "Paciente tributario de todas las medidas diagnósticas y terapéuticas, incluyendo RCP e IOT para ventilación mecánica. Tributario de UCI."],
+      ["Nivel 2", "Tributario de todas las medidas terapéuticas, incluida VMNI, DVA, hemodiálisis, transfusiones o nutrición parenteral, exceptuando RCP e IOT para VM. No tributario de UCI."],
+      ["Nivel 3-A", "Ante proceso intercurrente, iniciar una medida de nivel 2 en forma temporal, pactando retiro si hay mala evolución en tiempo acordado."],
+      ["Nivel 3-B", "No incorporación de nuevas medidas."],
+      ["Nivel 3-C", "Retirada gradual de todas las medidas."],
+      ["Nivel 4", "Tratamiento sintomático y de confort, habitualmente paciente en situación de últimos días. Incluye retiro de alimentación, hidratación y oxigenoterapia según el caso."]
+    ],
+    sourceDocs: [
+      ["Tabla NIT", "./protocol-docs/nit.jpg"]
+    ],
+    warning: "Registrar claramente el nivel acordado y reevaluar si cambia la condición clínica."
   }
 ];
 
@@ -265,7 +516,7 @@ const externalForms = {
 
 const priorityEmail = "gestionaltaseahph@gmail.com";
 const publishedBaseUrl = "https://solrac031ch-prog.github.io/crs-2025-app/";
-const categoryOrder = ["Regla general", "CRS", "Poli choque", "Flujo", "Hospitalizados"];
+const categoryOrder = ["Regla general", "Flujo", "CRS", "Poli choque", "Hospitalizados", "Protocolo"];
 
 const state = {
   query: "",
@@ -333,6 +584,17 @@ function displayTitle(title) {
 
 function specialtySticker(protocol) {
   const title = normalize(protocol.title);
+  if (title.includes("eco doppler")) return "ECO";
+  if (title.includes("viruela")) return "VM";
+  if (title.includes("neuro")) return "NEU";
+  if (title.includes("hemorragia digestiva")) return "HDA";
+  if (title.includes("hemodinamia")) return "HEM";
+  if (title.includes("hemorragia intracerebral")) return "HIC";
+  if (title.includes("columna")) return "COL";
+  if (title.includes("radiologia intervencional")) return "RIN";
+  if (title.includes("violencia sexual")) return "VS";
+  if (title.includes("agresion")) return "AGR";
+  if (title === "nit") return "NIT";
   if (title.includes("medicina interna")) return "MI";
   if (title.includes("taco")) return "TACO";
   if (title.includes("sala pulso")) return "SP";
@@ -370,6 +632,7 @@ function protocolHaystack(protocol) {
     ...(protocol.fields || []).flat(),
     ...(protocol.flow || []),
     ...((protocol.pathologies || []).flat(2)),
+    ...((protocol.sourceDocs || []).flat()),
     protocol.warning || ""
   ].join(" "));
 }
@@ -638,7 +901,8 @@ function appendPathologies(parent, pathologies = []) {
 }
 
 function appendExternalForm(parent, protocol) {
-  if (protocol.slug !== "eco-tvp-hospital-sotero-del-rio") return;
+  const url = protocol.formKey ? externalForms[protocol.formKey] : null;
+  if (!url) return;
 
   const panel = document.createElement("section");
   panel.className = "external-form-panel";
@@ -648,19 +912,52 @@ function appendExternalForm(parent, protocol) {
   label.textContent = "Formulario asociado";
 
   const title = document.createElement("h2");
-  title.textContent = "Cuestionario ECO TVP Hospital Sótero del Río";
+  title.textContent = protocol.formTitle || "Formulario asociado";
 
   const text = document.createElement("p");
-  text.textContent = "Abrir el formulario indicado para completar la solicitud asociada a este flujo.";
+  text.textContent = protocol.formText || "Abrir el formulario indicado para completar la solicitud asociada a este flujo.";
 
   const link = document.createElement("a");
   link.className = "document-button";
-  link.href = externalForms.ecoTvpSoteroUrl;
+  link.href = url;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
-  link.textContent = "Abrir cuestionario ECO TVP";
+  link.textContent = protocol.formLabel || "Abrir formulario";
 
   panel.append(label, title, text, link);
+  parent.append(panel);
+}
+
+function appendSourceDocuments(parent, protocol) {
+  if (!protocol.sourceDocs?.length) return;
+
+  const panel = document.createElement("section");
+  panel.className = "source-docs-panel";
+
+  const label = document.createElement("p");
+  label.className = "detail-label";
+  label.textContent = "Documento fuente";
+
+  const title = document.createElement("h2");
+  title.textContent = protocol.sourceDocs.length > 1 ? "Documentos completos" : "Documento completo";
+
+  const text = document.createElement("p");
+  text.textContent = "Abrir el archivo original para revisar el flujograma o respaldo institucional completo.";
+
+  const actions = document.createElement("div");
+  actions.className = "source-doc-actions";
+
+  protocol.sourceDocs.forEach(([docLabel, url]) => {
+    const link = document.createElement("a");
+    link.className = "document-button";
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = docLabel;
+    actions.append(link);
+  });
+
+  panel.append(label, title, text, actions);
   parent.append(panel);
 }
 
@@ -760,6 +1057,7 @@ function renderProtocol(slug) {
   appendFields(protocolDetail, protocol.fields);
   appendFlow(protocolDetail, protocol.flow);
   appendPathologies(protocolDetail, protocol.pathologies);
+  appendSourceDocuments(protocolDetail, protocol);
   appendExternalForm(protocolDetail, protocol);
 
   if (protocol.warning) {
