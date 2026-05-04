@@ -520,7 +520,6 @@ const externalForms = {
 };
 
 const emergencyLawDecreeUrl = "./protocol-docs/decreto-34-25-oct-2022.pdf";
-const emergencyLawOfficialUrl = "https://www.bcn.cl/leychile/navegar?idNorma=1183371";
 const emergencyLawConditions = window.emergencyLawConditions || [];
 const emergencyLawGroups = [
   {
@@ -611,7 +610,6 @@ const turnForms = [
     description: "Decreto 34, buscador de condiciones clínicas adultas, formularios pendientes y alerta operativa.",
     type: "emergencyLaw",
     decreeUrl: emergencyLawDecreeUrl,
-    officialUrl: emergencyLawOfficialUrl,
     activationUrl: externalForms.leyUrgenciasUrl,
     consentUrl: externalForms.leyUrgenciasConsentimientoUrl
   },
@@ -1401,10 +1399,10 @@ function renderEmergencyLawHome() {
   alert.textContent = "Al activar Ley de Urgencias, avisar a jefe de turno y Gestión de Camas.";
 
   const title = document.createElement("h2");
-  title.textContent = "Ruta rápida";
+  title.textContent = "Tres pasos, sin vueltas";
 
   const text = document.createElement("p");
-  text.textContent = "Usa el buscador como apoyo inicial, abre el Decreto 34 completo cuando necesites confirmar, y deja los formularios listos para cuando tengamos los enlaces oficiales.";
+  text.textContent = "Busca la condición, confirma en el Decreto 34 y deja los formularios listos cuando tengamos los enlaces institucionales.";
 
   const actions = document.createElement("div");
   actions.className = "law-menu";
@@ -1412,28 +1410,21 @@ function renderEmergencyLawHome() {
   const search = document.createElement("a");
   search.className = "law-menu-card primary";
   search.href = "#/formularios/ley-urgencias/buscar";
-  search.innerHTML = "<strong>Buscar patología</strong><span>Siglas, sinónimos y diagnósticos relacionados</span>";
+  search.innerHTML = "<span class=\"law-step\">1</span><strong>Buscar patología</strong><span>Siglas, sinónimos y diagnósticos relacionados</span>";
 
   const decree = document.createElement("a");
   decree.className = "law-menu-card";
   decree.href = form.decreeUrl;
   decree.target = "_blank";
   decree.rel = "noopener noreferrer";
-  decree.innerHTML = "<strong>Decreto 34 completo</strong><span>PDF local incluido en la app</span>";
-
-  const official = document.createElement("a");
-  official.className = "law-menu-card";
-  official.href = form.officialUrl;
-  official.target = "_blank";
-  official.rel = "noopener noreferrer";
-  official.innerHTML = "<strong>Fuente oficial</strong><span>BCN / LeyChile como respaldo</span>";
+  decree.innerHTML = "<span class=\"law-step\">2</span><strong>Decreto 34</strong><span>PDF completo incluido en la app</span>";
 
   const forms = document.createElement("a");
   forms.className = "law-menu-card";
   forms.href = "#/formularios/ley-urgencias/formularios";
-  forms.innerHTML = "<strong>Formularios</strong><span>Activación y consentimiento pendientes</span>";
+  forms.innerHTML = "<span class=\"law-step\">3</span><strong>Formularios</strong><span>Activación y consentimiento pendientes</span>";
 
-  actions.append(search, decree, official, forms);
+  actions.append(search, decree, forms);
   panel.append(alert, title, text, actions);
   turnFormsList.append(panel);
 }
@@ -1568,14 +1559,7 @@ function renderEmergencyLawResultsScreen() {
   decree.rel = "noopener noreferrer";
   decree.textContent = "Abrir Decreto 34";
 
-  const official = document.createElement("a");
-  official.className = "law-action-button";
-  official.href = emergencyLawOfficialUrl;
-  official.target = "_blank";
-  official.rel = "noopener noreferrer";
-  official.textContent = "Fuente oficial";
-
-  actions.append(decree, official);
+  actions.append(decree);
   panel.append(back, title, meta);
   turnFormsList.append(panel);
 
