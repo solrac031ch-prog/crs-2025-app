@@ -1,12 +1,15 @@
-const CACHE_NAME = "crs-hph-2025-v13";
+const CACHE_NAME = "crs-hph-2025-v15";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./styles.css?v=13",
-  "./app.js?v=13",
+  "./styles.css?v=15",
+  "./app.js?v=15",
   "./logo-urgencia-hph.svg",
   "./manifest.webmanifest",
-  "./icon.svg"
+  "./icon.svg",
+  "./icon-180.png",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {

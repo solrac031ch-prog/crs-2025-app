@@ -254,6 +254,7 @@ const protocols = [
 
 const externalDocs = {
   llamadosUrl: "",
+  uhdDisponibilidadUrl: "",
   visitaDiariaUrl: ""
 };
 
@@ -285,6 +286,7 @@ const protocolTitle = document.querySelector("#protocolTitle");
 const protocolCategory = document.querySelector("#protocolCategory");
 const protocolDetail = document.querySelector("#protocolDetail");
 const callsDocumentAction = document.querySelector("#callsDocumentAction");
+const uhdDocumentAction = document.querySelector("#uhdDocumentAction");
 const visitDocumentAction = document.querySelector("#visitDocumentAction");
 
 const textRepairPatterns = [
@@ -767,6 +769,7 @@ function renderDocumentAction(container, url, label) {
 
 function renderDocuments() {
   renderDocumentAction(callsDocumentAction, externalDocs.llamadosUrl, "Abrir especialistas de llamado");
+  renderDocumentAction(uhdDocumentAction, externalDocs.uhdDisponibilidadUrl, "Abrir disponibilidad UHD");
   renderDocumentAction(visitDocumentAction, externalDocs.visitaDiariaUrl, "Abrir planilla de visita diaria");
 }
 

@@ -57,7 +57,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 14px clamp(14px, 3vw, 42px);
+  padding: calc(14px + env(safe-area-inset-top)) clamp(14px, 3vw, 42px) 14px;
   color: #fff;
   background: #050505;
   border-bottom: 4px solid var(--accent);
@@ -657,6 +657,16 @@ button {
   display: grid;
   gap: 18px;
   padding: 18px;
+}
+
+.document-panel + .document-panel {
+  margin-top: 14px;
+}
+
+.document-panel h2 {
+  margin: 0;
+  font-size: 1.16rem;
+  line-height: 1.18;
 }
 
 .document-panel p {
