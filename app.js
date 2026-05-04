@@ -255,7 +255,7 @@ const protocols = [
 const externalDocs = {
   llamadosUrl: "",
   uhdDisponibilidadUrl: "",
-  visitaDiariaUrl: ""
+  visitaDiariaUrl: "https://docs.google.com/spreadsheets/d/14-90hMv4JciofpxQz8TTEXwLHxvKb4iNmOGrpQACmpQ/edit?usp=drive_link"
 };
 
 const priorityEmail = "gestionaltaseahph@gmail.com";
