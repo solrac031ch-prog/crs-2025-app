@@ -252,25 +252,85 @@ const protocols = [
   }
 ];
 
+const externalDocs = {
+  llamadosUrl: "",
+  visitaDiariaUrl: ""
+};
+
+const categoryOrder = ["Regla general", "CRS", "Poli choque", "Flujo", "Hospitalizados"];
+
 const state = {
   query: "",
   category: "Todos",
-  shift: "all",
-  selectedTitle: "Antes de derivar"
+  shift: "all"
 };
 
-const cardsEl = document.querySelector("#cards");
-const metaEl = document.querySelector("#resultsMeta");
-const template = document.querySelector("#cardTemplate");
+const pages = {
+  inicio: document.querySelector("#homePage"),
+  especialidades: document.querySelector("#specialtiesPage"),
+  especialidad: document.querySelector("#protocolPage"),
+  llamados: document.querySelector("#callsPage"),
+  visita: document.querySelector("#visitPage")
+};
+
+const todayLabel = document.querySelector("#todayLabel");
 const searchInput = document.querySelector("#searchInput");
-const protocolNav = document.querySelector("#protocolNav");
+const resultsMeta = document.querySelector("#resultsMeta");
+const specialtyGroups = document.querySelector("#specialtyGroups");
+const specialtyTemplate = document.querySelector("#specialtyButtonTemplate");
+const protocolTitle = document.querySelector("#protocolTitle");
+const protocolCategory = document.querySelector("#protocolCategory");
+const protocolDetail = document.querySelector("#protocolDetail");
+const callsDocumentAction = document.querySelector("#callsDocumentAction");
+const visitDocumentAction = document.querySelector("#visitDocumentAction");
+
+const textRepairPatterns = [
+  [/\u00c3\u00a1/g, "á"], [/\u00c3\u00a9/g, "é"], [/\u00c3\u00ad/g, "í"],
+  [/\u00c3\u00b3/g, "ó"], [/\u00c3\u00ba/g, "ú"], [/\u00c3\u00b1/g, "ñ"],
+  [/\u00c3\u00bc/g, "ü"], [/\u00c2\u00bf/g, "¿"], [/\u00c2\u00a1/g, "¡"],
+  [/\u00c2\u00ae/g, "®"], [/\u00c2\u00b7/g, "·"], [/\u00c2\u00a0/g, " "],
+  [/\u00e2\u20ac\u0153/g, "\""], [/\u00e2\u20ac\u009d/g, "\""],
+  [/\u00e2\u20ac\u02dc/g, "'"], [/\u00e2\u20ac\u2122/g, "'"],
+  [/\u00e2\u20ac\u00a2/g, "•"], [/\u00e2\u2020\u2019/g, "→"],
+  [/\u00e2\u2030\u00a5/g, "≥"], [/\u00e2\u2030\u00a4/g, "≤"]
+];
+
+function repairText(text) {
+  return textRepairPatterns.reduce((value, [pattern, replacement]) => value.replace(pattern, replacement), text);
+}
+
+function repairValue(value) {
+  if (typeof value === "string") return repairText(value);
+  if (Array.isArray(value)) return value.map(repairValue);
+  if (value && typeof value === "object") {
+    Object.keys(value).forEach((key) => {
+      value[key] = repairValue(value[key]);
+    });
+  }
+  return value;
+}
 
 function normalize(text) {
-  return text
+  return String(text)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
+
+function displayTitle(title) {
+  return title.replace(/^Poli Choque\s+/i, "").replace(/^Flujo\s+/i, "");
+}
+
+function slugify(text) {
+  return normalize(displayTitle(text))
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+protocols.forEach((protocol) => {
+  repairValue(protocol);
+  protocol.slug = slugify(protocol.title);
+});
 
 function protocolHaystack(protocol) {
   return normalize([
@@ -303,119 +363,289 @@ function filteredProtocols() {
   });
 }
 
-function selectedProtocol(results = filteredProtocols()) {
-  return results.find((protocol) => protocol.title === state.selectedTitle) || results[0] || null;
+function groupProtocols(results) {
+  return results.reduce((groups, protocol) => {
+    if (!groups.has(protocol.category)) groups.set(protocol.category, []);
+    groups.get(protocol.category).push(protocol);
+    return groups;
+  }, new Map());
 }
 
-function displayTitle(title) {
-  return title.replace(/^Poli Choque\s+/i, "").replace(/^Flujo\s+/i, "");
+function orderedCategories(groups) {
+  const present = [...groups.keys()];
+  const ordered = categoryOrder.filter((category) => present.includes(category));
+  const remaining = present.filter((category) => !ordered.includes(category)).sort();
+  return [...ordered, ...remaining];
 }
 
-function renderProtocolNav() {
-  const results = filteredProtocols();
-  const selected = selectedProtocol(results);
-  if (selected && selected.title !== state.selectedTitle) {
-    state.selectedTitle = selected.title;
-  }
+function routeParts() {
+  const hash = window.location.hash || "#/inicio";
+  return hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+}
 
-  protocolNav.innerHTML = "";
-  if (!results.length) {
-    const empty = document.createElement("div");
-    empty.className = "nav-empty";
-    empty.textContent = "Sin coincidencias";
-    protocolNav.append(empty);
-    return;
-  }
+function activeRouteName() {
+  return routeParts()[0] || "inicio";
+}
 
-  results.forEach((protocol) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `protocol-button${protocol.title === state.selectedTitle ? " active" : ""}`;
-    button.dataset.protocolTitle = protocol.title;
-    button.innerHTML = `<strong>${displayTitle(protocol.title)}</strong><span>${protocol.category} · ${protocol.page}</span>`;
-    protocolNav.append(button);
+function showPage(name) {
+  Object.entries(pages).forEach(([key, page]) => {
+    page.classList.toggle("active", key === name);
+  });
+
+  document.querySelectorAll("[data-route-link]").forEach((link) => {
+    const route = link.dataset.routeLink;
+    const isActive = route === name || (name === "especialidad" && route === "especialidades");
+    link.classList.toggle("active", isActive);
   });
 }
 
-function renderCards() {
+function renderHome() {
+  todayLabel.textContent = new Intl.DateTimeFormat("es-CL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(new Date());
+}
+
+function renderSpecialties() {
   const results = filteredProtocols();
-  const protocol = selectedProtocol(results);
-  cardsEl.innerHTML = "";
-  metaEl.textContent = results.length
-    ? `Mostrando: ${protocol.title}`
+  const groups = groupProtocols(results);
+
+  specialtyGroups.innerHTML = "";
+  resultsMeta.textContent = results.length
+    ? `${results.length} protocolos disponibles`
     : "No hay protocolos para mostrar";
 
-  if (!protocol) {
+  if (!results.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
     empty.textContent = "No encontré coincidencias en el documento CRS 2025.";
-    cardsEl.append(empty);
+    specialtyGroups.append(empty);
     return;
   }
 
-  const node = template.content.cloneNode(true);
-  const card = node.querySelector(".protocol-card");
-  card.open = true;
-  node.querySelector("h2").textContent = protocol.title;
-  node.querySelector(".card-category").textContent = protocol.category;
-  node.querySelector(".page-badge").textContent = protocol.page;
-  node.querySelector(".summary").textContent = protocol.summary;
+  orderedCategories(groups).forEach((category) => {
+    const section = document.createElement("section");
+    section.className = "category-section";
 
-  const tags = node.querySelector(".tags");
-  protocol.tags.forEach((tag) => {
+    const title = document.createElement("h2");
+    title.className = "category-title";
+    title.textContent = category;
+
+    const grid = document.createElement("div");
+    grid.className = "specialty-grid";
+
+    groups.get(category).forEach((protocol) => {
+      const node = specialtyTemplate.content.cloneNode(true);
+      const link = node.querySelector(".specialty-button");
+      link.href = `#/especialidad/${protocol.slug}`;
+      link.querySelector(".specialty-category").textContent = `${protocol.category} · ${protocol.page}`;
+      link.querySelector("strong").textContent = displayTitle(protocol.title);
+      link.querySelector(".specialty-summary").textContent = protocol.summary;
+      grid.append(link);
+    });
+
+    section.append(title, grid);
+    specialtyGroups.append(section);
+  });
+}
+
+function appendTags(parent, tags = []) {
+  if (!tags.length) return;
+  const tagsEl = document.createElement("div");
+  tagsEl.className = "tags";
+  tags.forEach((tag) => {
     const span = document.createElement("span");
     span.className = "tag";
     span.textContent = tag;
-    tags.append(span);
+    tagsEl.append(span);
   });
+  parent.append(tagsEl);
+}
 
-  const grid = node.querySelector(".grid");
-  protocol.fields.forEach(([label, value]) => {
+function appendFields(parent, fields = []) {
+  if (!fields.length) return;
+  const section = document.createElement("section");
+  section.className = "detail-section";
+
+  const label = document.createElement("p");
+  label.className = "detail-label";
+  label.textContent = "Detalle operativo";
+
+  const grid = document.createElement("div");
+  grid.className = "grid";
+
+  fields.forEach(([fieldLabel, value]) => {
     const field = document.createElement("div");
     field.className = "field";
-    field.innerHTML = `<strong>${label}</strong><span>${value}</span>`;
+
+    const strong = document.createElement("strong");
+    strong.textContent = fieldLabel;
+
+    const span = document.createElement("span");
+    span.textContent = value;
+
+    field.append(strong, span);
     grid.append(field);
   });
 
-  const flow = node.querySelector(".flow");
-  if (protocol.flow?.length) {
-    protocol.flow.forEach((step, index) => {
-      const row = document.createElement("div");
-      row.className = "flow-step";
-      row.innerHTML = `<span class="step-number">${index + 1}</span><p>${step}</p>`;
-      flow.append(row);
+  section.append(label, grid);
+  parent.append(section);
+}
+
+function appendFlow(parent, flow = []) {
+  if (!flow.length) return;
+  const section = document.createElement("section");
+  section.className = "detail-section";
+
+  const label = document.createElement("p");
+  label.className = "detail-label";
+  label.textContent = "Secuencia";
+
+  const flowEl = document.createElement("div");
+  flowEl.className = "flow";
+
+  flow.forEach((step, index) => {
+    const row = document.createElement("div");
+    row.className = "flow-step";
+
+    const number = document.createElement("span");
+    number.className = "step-number";
+    number.textContent = index + 1;
+
+    const text = document.createElement("p");
+    text.textContent = step;
+
+    row.append(number, text);
+    flowEl.append(row);
+  });
+
+  section.append(label, flowEl);
+  parent.append(section);
+}
+
+function appendPathologies(parent, pathologies = []) {
+  if (!pathologies.length) return;
+  const section = document.createElement("section");
+  section.className = "detail-section pathologies";
+
+  const label = document.createElement("p");
+  label.className = "detail-label";
+  label.textContent = "Patologías según imagen del PDF";
+  section.append(label);
+
+  pathologies.forEach(([group, items]) => {
+    const block = document.createElement("section");
+    block.className = "pathology-group";
+
+    const title = document.createElement("h3");
+    title.textContent = group;
+
+    const list = document.createElement("ul");
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      list.append(li);
     });
-  } else {
-    flow.remove();
+
+    block.append(title, list);
+    section.append(block);
+  });
+
+  parent.append(section);
+}
+
+function renderProtocol(slug) {
+  const protocol = protocols.find((item) => item.slug === slug);
+
+  protocolDetail.innerHTML = "";
+
+  if (!protocol) {
+    protocolCategory.textContent = "No encontrado";
+    protocolTitle.textContent = "Protocolo no disponible";
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Este enlace no coincide con un flujo CRS 2025.";
+    protocolDetail.append(empty);
+    return;
   }
 
-  const pathologies = node.querySelector(".pathologies");
-  if (protocol.pathologies?.length) {
-    const heading = document.createElement("p");
-    heading.className = "detail-label";
-    heading.textContent = "Patologías según imagen del PDF";
-    pathologies.append(heading);
+  protocolCategory.textContent = `${protocol.category} · ${protocol.page}`;
+  protocolTitle.textContent = protocol.title;
 
-    protocol.pathologies.forEach(([group, items]) => {
-      const block = document.createElement("section");
-      block.className = "pathology-group";
-      const list = items.map((item) => `<li>${item}</li>`).join("");
-      block.innerHTML = `<h3>${group}</h3><ul>${list}</ul>`;
-      pathologies.append(block);
-    });
-  } else {
-    pathologies.remove();
-  }
+  const header = document.createElement("section");
+  header.className = "protocol-card";
 
-  const warning = node.querySelector(".warning");
+  const badge = document.createElement("span");
+  badge.className = "page-badge";
+  badge.textContent = protocol.page;
+
+  const summary = document.createElement("p");
+  summary.className = "protocol-summary";
+  summary.textContent = protocol.summary;
+
+  header.append(badge, summary);
+  appendTags(header, protocol.tags);
+  protocolDetail.append(header);
+
+  appendFields(protocolDetail, protocol.fields);
+  appendFlow(protocolDetail, protocol.flow);
+  appendPathologies(protocolDetail, protocol.pathologies);
+
   if (protocol.warning) {
+    const warning = document.createElement("div");
+    warning.className = "warning";
     warning.textContent = protocol.warning;
-    warning.classList.add("visible");
+    protocolDetail.append(warning);
+  }
+}
+
+function renderDocumentAction(container, url, label) {
+  container.innerHTML = "";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "document-action";
+
+  if (url) {
+    const link = document.createElement("a");
+    link.className = "document-button";
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = label;
+    wrapper.append(link);
   } else {
-    warning.remove();
+    const pending = document.createElement("span");
+    pending.className = "document-button-disabled";
+    pending.textContent = "Pendiente de configurar";
+
+    const note = document.createElement("p");
+    note.textContent = "Agregar aquí el enlace fijo de Google Drive cuando esté disponible.";
+
+    wrapper.append(pending, note);
   }
 
-  cardsEl.append(node);
+  container.append(wrapper);
+}
+
+function renderDocuments() {
+  renderDocumentAction(callsDocumentAction, externalDocs.llamadosUrl, "Abrir especialistas de llamado");
+  renderDocumentAction(visitDocumentAction, externalDocs.visitaDiariaUrl, "Abrir planilla de visita diaria");
+}
+
+function renderRoute() {
+  const [name, slug] = routeParts();
+  const pageName = pages[name] ? name : "inicio";
+
+  showPage(pageName);
+
+  if (pageName === "inicio") renderHome();
+  if (pageName === "especialidades") renderSpecialties();
+  if (pageName === "especialidad") renderProtocol(slug || "");
+  if (pageName === "llamados" || pageName === "visita") renderDocuments();
+
+  window.scrollTo(0, 0);
 }
 
 function setCategory(category) {
@@ -423,40 +653,37 @@ function setCategory(category) {
   document.querySelectorAll("[data-category]").forEach((button) => {
     button.classList.toggle("active", button.dataset.category === category);
   });
-  renderProtocolNav();
-  renderCards();
+  if (activeRouteName() === "especialidades") renderSpecialties();
+}
+
+function setShift(shift, activeButton) {
+  state.shift = shift;
+  document.querySelectorAll("[data-shift]").forEach((button) => {
+    button.classList.toggle("active", button === activeButton);
+  });
+  if (activeRouteName() === "especialidades") renderSpecialties();
 }
 
 searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
-  renderProtocolNav();
-  renderCards();
+  if (activeRouteName() === "especialidades") renderSpecialties();
 });
 
 document.addEventListener("click", (event) => {
   const categoryButton = event.target.closest("[data-category]");
   if (categoryButton) setCategory(categoryButton.dataset.category);
 
-  const protocolButton = event.target.closest("[data-protocol-title]");
-  if (protocolButton) {
-    state.selectedTitle = protocolButton.dataset.protocolTitle;
-    renderProtocolNav();
-    renderCards();
-  }
-
   const shiftButton = event.target.closest("[data-shift]");
-  if (shiftButton) {
-    state.shift = shiftButton.dataset.shift;
-    document.querySelectorAll("[data-shift]").forEach((button) => {
-      button.classList.toggle("active", button === shiftButton);
-    });
-    renderProtocolNav();
-    renderCards();
-  }
+  if (shiftButton) setShift(shiftButton.dataset.shift, shiftButton);
 });
 
-renderProtocolNav();
-renderCards();
+window.addEventListener("hashchange", renderRoute);
+
+if (!window.location.hash) {
+  window.location.hash = "#/inicio";
+} else {
+  renderRoute();
+}
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});

@@ -5,21 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#050505" />
     <title>CRS HPH 2025</title>
-    <link rel="manifest" href="./manifest.webmanifest" /ff>
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./styles.css?v=12" />
   </head>
   <body>
     <header class="topbar">
-      <img class="brand-logo" src="./logo-urgencia-hph.svg" alt="Urgencia Hospital Padre Hurtado" />
-      <div class="brand-copy">
-        <p class="eyebrow">Urgencia Adulto HPH</p>
-        <h1>Derivaciones CRS 2025</h1>
-      </div>
-      <div class="source">Fuente: CRS 2025.pdf</div>
+      <a class="brand" href="#/inicio" aria-label="Volver al inicio">
+        <img class="brand-logo" src="./logo-urgencia-hph.svg" alt="Urgencia Hospital Padre Hurtado" />
+        <span>
+          <span class="eyebrow">Urgencia Adulto HPH</span>
+          <span class="brand-title">Derivaciones CRS 2025</span>
+        </span>
+      </a>
+
+      <nav class="topnav" aria-label="Navegación principal">
+        <a href="#/especialidades" data-route-link="especialidades">Especialidades</a>
+        <a href="#/llamados" data-route-link="llamados">Llamados</a>
+        <a href="#/visita" data-route-link="visita">Visita</a>
+      </nav>
     </header>
 
     <main class="layout">
-      <section class="content">
+      <section id="homePage" class="page page-home" aria-labelledby="homeTitle">
+        <div class="hero">
+          <p class="eyebrow">CRS HPH 2025</p>
+          <h1 id="homeTitle">Derivaciones y coordinación de turno</h1>
+          <p id="todayLabel" class="today-label"></p>
+        </div>
+
+        <div class="home-actions" aria-label="Accesos principales">
+          <a class="action-card action-primary" href="#/especialidades">
+            <span class="action-kicker">Protocolos</span>
+            <strong>Especialidades</strong>
+            <span>Flujos CRS, poli choque y hospitalizados</span>
+          </a>
+          <a class="action-card" href="#/llamados">
+            <span class="action-kicker">Documento mensual</span>
+            <strong>Especialistas de llamado</strong>
+            <span>Acceso controlado por Drive</span>
+          </a>
+          <a class="action-card" href="#/visita">
+            <span class="action-kicker">Gestión diaria</span>
+            <strong>Visita diaria</strong>
+            <span>Planilla compartida de jefatura</span>
+          </a>
+        </div>
+
+        <section class="home-panel" aria-label="Regla general">
+          <strong>Recordatorio rápido</strong>
+          <p>Toda derivación se realiza por Pitágoras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p>
+        </section>
+      </section>
+
+      <section id="specialtiesPage" class="page" aria-labelledby="specialtiesTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/inicio">Inicio</a>
+          <div>
+            <p class="eyebrow">Página 2</p>
+            <h1 id="specialtiesTitle">Especialidades y flujos</h1>
+          </div>
+        </div>
+
         <section class="control-panel" aria-label="Buscador y filtros">
           <label class="search">
             <span>Buscar flujo, especialidad o contacto</span>
@@ -34,14 +80,9 @@
               <button class="segment" data-shift="inhabil" type="button">Inhábil</button>
             </div>
           </div>
-
-          <div class="notice">
-            <strong>Recordatorio rápido</strong>
-            <p>Toda derivación se realiza por Pitágoras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p>
-          </div>
         </section>
 
-        <div class="quick-actions">
+        <div class="quick-actions" aria-label="Categorías">
           <button class="chip active" data-category="Todos" type="button">Todos</button>
           <button class="chip" data-category="Flujo" type="button">Flujos</button>
           <button class="chip" data-category="Poli choque" type="button">Especialidades</button>
@@ -50,39 +91,60 @@
         </div>
 
         <div id="resultsMeta" class="results-meta"></div>
-        <nav class="protocol-tabs" id="protocolNav" aria-label="Protocolos"></nav>
-        <div id="cards" class="cards selected-mode" aria-live="polite"></div>
+        <div id="specialtyGroups" class="specialty-groups" aria-live="polite"></div>
+      </section>
+
+      <section id="protocolPage" class="page" aria-labelledby="protocolTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/especialidades">Especialidades</a>
+          <div>
+            <p id="protocolCategory" class="eyebrow"></p>
+            <h1 id="protocolTitle"></h1>
+          </div>
+        </div>
+
+        <div id="protocolDetail" class="protocol-detail"></div>
+      </section>
+
+      <section id="callsPage" class="page" aria-labelledby="callsTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/inicio">Inicio</a>
+          <div>
+            <p class="eyebrow">Documento mensual</p>
+            <h1 id="callsTitle">Especialistas de llamado</h1>
+          </div>
+        </div>
+
+        <div class="document-panel">
+          <p>Documento fijo editable por jefatura. Al actualizar el mes en Drive, este acceso mantiene la misma ruta.</p>
+          <div id="callsDocumentAction"></div>
+        </div>
+      </section>
+
+      <section id="visitPage" class="page" aria-labelledby="visitTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/inicio">Inicio</a>
+          <div>
+            <p class="eyebrow">Gestión diaria</p>
+            <h1 id="visitTitle">Visita diaria</h1>
+          </div>
+        </div>
+
+        <div class="document-panel">
+          <p>Planilla compartida para visita con jefe de servicio en la mañana y jefe de turno en la tarde.</p>
+          <div id="visitDocumentAction"></div>
+        </div>
       </section>
     </main>
 
-    <template id="cardTemplate">
-      <details class="protocol-card">
-        <summary class="card-toggle">
-          <div class="card-head">
-            <div>
-              <p class="card-category"></p>
-              <h2></h2>
-            </div>
-            <div class="card-side">
-              <span class="page-badge"></span>
-              <span class="chevron" aria-hidden="true">⌄</span>
-            </div>
-          </div>
-          <p class="summary"></p>
-          <div class="tags"></div>
-        </summary>
-        <div class="card-detail">
-          <div>
-            <p class="detail-label">Detalle operativo</p>
-          </div>
-          <div class="grid"></div>
-          <div class="flow"></div>
-          <div class="pathologies"></div>
-          <div class="warning"></div>
-        </div>
-      </details>
+    <template id="specialtyButtonTemplate">
+      <a class="specialty-button">
+        <span class="specialty-category"></span>
+        <strong></strong>
+        <span class="specialty-summary"></span>
+      </a>
     </template>
 
-    <script src="./app.js?v=11"></script>
+    <script src="./app.js?v=12"></script>
   </body>
 </html>
