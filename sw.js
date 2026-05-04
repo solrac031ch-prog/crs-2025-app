@@ -1,9 +1,9 @@
-const CACHE_NAME = "crs-hph-2025-v12";
+const CACHE_NAME = "crs-hph-2025-v13";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./styles.css?v=12",
-  "./app.js?v=12",
+  "./styles.css?v=13",
+  "./app.js?v=13",
   "./logo-urgencia-hph.svg",
   "./manifest.webmanifest",
   "./icon.svg"
@@ -24,5 +24,13 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  const request = event.request;
+  const isNavigation = request.mode === "navigate";
+
+  if (isNavigation) {
+    event.respondWith(fetch(request).catch(() => caches.match("./index.html")));
+    return;
+  }
+
+  event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
 });

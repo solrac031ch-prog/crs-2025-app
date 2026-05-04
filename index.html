@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505" />
     <title>CRS HPH 2025</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=12" />
+    <link rel="stylesheet" href="./styles.css?v=13" />
   </head>
   <body>
     <header class="topbar">
@@ -65,6 +65,8 @@
             <h1 id="specialtiesTitle">Especialidades y flujos</h1>
           </div>
         </div>
+
+        <section id="rulesPreview" class="rules-preview" aria-label="Reglas antes de derivar"></section>
 
         <section class="control-panel" aria-label="Buscador y filtros">
           <label class="search">
@@ -139,12 +141,11 @@
 
     <template id="specialtyButtonTemplate">
       <a class="specialty-button">
-        <span class="specialty-category"></span>
+        <span class="specialty-sticker" aria-hidden="true"></span>
         <strong></strong>
-        <span class="specialty-summary"></span>
       </a>
     </template>
 
-    <script src="./app.js?v=12"></script>
+    <script src="./app.js?v=13"></script>
   </body>
 </html>

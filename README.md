@@ -10,6 +10,8 @@ Web app estatica para consulta rapida de flujos de derivacion CRS 2025 de Urgenc
 - `#/llamados`: acceso al documento mensual de especialistas de llamado.
 - `#/visita`: acceso a la planilla de visita diaria.
 
+Cada pagina de especialidad termina con una pregunta de gestion prioritaria. Si se requiere, la app abre un correo prellenado para enviar a `gestionaltaseahph@gmail.com`; el envio final queda a cargo del usuario.
+
 Los enlaces de Google Drive se configuran en `app.js`, dentro de:
 
 ```js

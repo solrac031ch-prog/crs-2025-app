@@ -257,6 +257,8 @@ const externalDocs = {
   visitaDiariaUrl: ""
 };
 
+const priorityEmail = "gestionaltaseahph@gmail.com";
+const publishedBaseUrl = "https://solrac031ch-prog.github.io/crs-2025-app/";
 const categoryOrder = ["Regla general", "CRS", "Poli choque", "Flujo", "Hospitalizados"];
 
 const state = {
@@ -276,6 +278,7 @@ const pages = {
 const todayLabel = document.querySelector("#todayLabel");
 const searchInput = document.querySelector("#searchInput");
 const resultsMeta = document.querySelector("#resultsMeta");
+const rulesPreview = document.querySelector("#rulesPreview");
 const specialtyGroups = document.querySelector("#specialtyGroups");
 const specialtyTemplate = document.querySelector("#specialtyButtonTemplate");
 const protocolTitle = document.querySelector("#protocolTitle");
@@ -319,6 +322,25 @@ function normalize(text) {
 
 function displayTitle(title) {
   return title.replace(/^Poli Choque\s+/i, "").replace(/^Flujo\s+/i, "");
+}
+
+function specialtySticker(protocol) {
+  const title = normalize(protocol.title);
+  if (title.includes("medicina interna")) return "MI";
+  if (title.includes("taco")) return "TACO";
+  if (title.includes("sala pulso")) return "SP";
+  if (title === "eda") return "EDA";
+  if (title.includes("orl")) return "ORL";
+  if (title.includes("oftalmologia")) return "OFT";
+  if (title.includes("dermatologia")) return "DER";
+  if (title.includes("paliativa")) return "PAL";
+  if (title.includes("maxilofacial")) return "MAX";
+  if (title.includes("urologia")) return "URO";
+  if (title.includes("maternidad")) return "MAT";
+  if (title.includes("cirugia")) return "CIR";
+  if (title.includes("tvp")) return "TVP";
+  if (title.includes("nefro")) return "NEF";
+  return protocol.category.slice(0, 3).toUpperCase();
 }
 
 function slugify(text) {
@@ -378,6 +400,10 @@ function orderedCategories(groups) {
   return [...ordered, ...remaining];
 }
 
+function visibleSpecialtyProtocols(results) {
+  return results.filter((protocol) => protocol.category !== "Regla general");
+}
+
 function routeParts() {
   const hash = window.location.hash || "#/inicio";
   return hash.replace(/^#\/?/, "").split("/").filter(Boolean);
@@ -408,8 +434,57 @@ function renderHome() {
   }).format(new Date());
 }
 
+function appendRuleCard(protocol) {
+  if (!protocol) return;
+
+  const card = document.createElement("article");
+  card.className = "rule-card";
+
+  const title = document.createElement("h2");
+  title.textContent = protocol.title;
+
+  const summary = document.createElement("p");
+  summary.textContent = protocol.summary;
+
+  const list = document.createElement("div");
+  list.className = "rule-fields";
+
+  (protocol.fields || []).forEach(([label, value]) => {
+    const item = document.createElement("div");
+    item.className = "rule-field";
+
+    const strong = document.createElement("strong");
+    strong.textContent = label;
+
+    const span = document.createElement("span");
+    span.textContent = value;
+
+    item.append(strong, span);
+    list.append(item);
+  });
+
+  card.append(title, summary, list);
+
+  if (protocol.warning) {
+    const warning = document.createElement("div");
+    warning.className = "rule-warning";
+    warning.textContent = protocol.warning;
+    card.append(warning);
+  }
+
+  rulesPreview.append(card);
+}
+
+function renderRulesPreview() {
+  rulesPreview.innerHTML = "";
+  appendRuleCard(protocols.find((protocol) => protocol.title === "Antes de derivar"));
+  appendRuleCard(protocols.find((protocol) => protocol.title === "Enlaces"));
+}
+
 function renderSpecialties() {
-  const results = filteredProtocols();
+  renderRulesPreview();
+
+  const results = visibleSpecialtyProtocols(filteredProtocols());
   const groups = groupProtocols(results);
 
   specialtyGroups.innerHTML = "";
@@ -440,9 +515,8 @@ function renderSpecialties() {
       const node = specialtyTemplate.content.cloneNode(true);
       const link = node.querySelector(".specialty-button");
       link.href = `#/especialidad/${protocol.slug}`;
-      link.querySelector(".specialty-category").textContent = `${protocol.category} · ${protocol.page}`;
+      link.querySelector(".specialty-sticker").textContent = specialtySticker(protocol);
       link.querySelector("strong").textContent = displayTitle(protocol.title);
-      link.querySelector(".specialty-summary").textContent = protocol.summary;
       grid.append(link);
     });
 
@@ -556,6 +630,66 @@ function appendPathologies(parent, pathologies = []) {
   parent.append(section);
 }
 
+function priorityMailto(protocol) {
+  const subject = `Gestión prioritaria CRS - ${displayTitle(protocol.title)}`;
+  const route = `${publishedBaseUrl}#/especialidad/${protocol.slug}`;
+  const body = [
+    "Estimados/as:",
+    "",
+    "Solicito evaluación para gestión prioritaria de derivación CRS.",
+    "",
+    `Especialidad/flujo: ${protocol.title}`,
+    `Enlace del flujo: ${route}`,
+    "",
+    "Paciente:",
+    "RUN:",
+    "Teléfono:",
+    "Motivo clínico de priorización:",
+    "Gestión ya realizada:",
+    "",
+    "Saludos."
+  ].join("\n");
+
+  return `mailto:${priorityEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function appendPriorityManagement(parent, protocol) {
+  const panel = document.createElement("section");
+  panel.className = "priority-panel";
+
+  const label = document.createElement("p");
+  label.className = "detail-label";
+  label.textContent = "Cierre de derivación";
+
+  const title = document.createElement("h2");
+  title.textContent = "¿Requiere gestión prioritaria?";
+
+  const text = document.createElement("p");
+  text.textContent = "Si requiere priorización, se abrirá un correo prellenado para revisar, completar y enviar desde la cuenta correspondiente.";
+
+  const actions = document.createElement("div");
+  actions.className = "priority-actions";
+
+  const noButton = document.createElement("button");
+  noButton.type = "button";
+  noButton.className = "priority-button secondary";
+  noButton.dataset.priorityNo = "true";
+  noButton.textContent = "No requiere";
+
+  const yesLink = document.createElement("a");
+  yesLink.className = "priority-button primary";
+  yesLink.href = priorityMailto(protocol);
+  yesLink.textContent = "Sí, abrir correo";
+
+  const status = document.createElement("p");
+  status.className = "priority-status";
+  status.setAttribute("aria-live", "polite");
+
+  actions.append(noButton, yesLink);
+  panel.append(label, title, text, actions, status);
+  parent.append(panel);
+}
+
 function renderProtocol(slug) {
   const protocol = protocols.find((item) => item.slug === slug);
 
@@ -599,6 +733,8 @@ function renderProtocol(slug) {
     warning.textContent = protocol.warning;
     protocolDetail.append(warning);
   }
+
+  appendPriorityManagement(protocolDetail, protocol);
 }
 
 function renderDocumentAction(container, url, label) {
@@ -675,6 +811,13 @@ document.addEventListener("click", (event) => {
 
   const shiftButton = event.target.closest("[data-shift]");
   if (shiftButton) setShift(shiftButton.dataset.shift, shiftButton);
+
+  const priorityNo = event.target.closest("[data-priority-no]");
+  if (priorityNo) {
+    const panel = priorityNo.closest(".priority-panel");
+    const status = panel?.querySelector(".priority-status");
+    if (status) status.textContent = "Gestión prioritaria no requerida.";
+  }
 });
 
 window.addEventListener("hashchange", renderRoute);
