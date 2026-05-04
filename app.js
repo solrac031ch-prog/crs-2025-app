@@ -136,6 +136,7 @@ const protocols = [
     page: "p. 11",
     summary: "HPH no tiene prestación formal de urgencia maxilofacial.",
     tags: ["Maxilo", "HSDR", "Anexo"],
+    hidePriority: true,
     fields: [
       ["HPH", "La prestación maxilofacial HPH no existe formalmente; no hay urgencia maxilofacial."],
       ["Destino", "Derivar a Urgencia HSDR, anexo 262356."],
@@ -193,46 +194,51 @@ const protocols = [
     ]
   },
   {
-    title: "Flujo Sospecha TVP",
+    title: "TVP - sospecha, ECO y horario inhábil",
     category: "Flujo",
-    page: "p. 18",
-    summary: "Algoritmo para sospecha o confirmación de TVP según horario y disponibilidad de eco.",
-    tags: ["TVP", "Dímero D", "Eco", "Enoxaparina", "Poli TACO", "Domiciliaria"],
+    page: "p. 18-19 / Doc. 2025",
+    summary: "Ruta única para sospecha de TVP, coordinación de ECO y solicitud en horario inhábil.",
+    tags: ["TVP", "Dímero D", "Eco", "ECO Doppler", "Sótero del Río", "CASR", "Horario inhábil", "Enoxaparina", "Poli TACO", "Domiciliaria"],
     fields: [
-      ["Horario hábil", "08:00 - 16:00, lunes a domingo: si diagnóstico confirmado, presentar a domiciliaria."],
-      ["Horario inhábil", "TVP confirmada sin domiciliaria: derivar a poli TACO día siguiente."],
-      ["Exámenes", "Dímero, creatinina, perfil hemato y coagulación."],
-      ["Eco positiva", "Si paciente tiene TVP, rayos deriva directo a poli TACO, no a Urgencia."]
+      ["Sospecha inicial", "Alta sospecha clínica: solicitar dímero D y exámenes basales según flujo."],
+      ["ECO disponible HPH", "Si ECO confirma TVP, rayos deriva directo a Poli TACO, no a Urgencia."],
+      ["ECO Sótero del Río", "Usar cuando Poli TVP HPH no responde, especialmente fines de semana o feriados."],
+      ["Horario inhábil", "Activar ECO Doppler por formulario operativo sólo si corresponde a indicación clínica y horario."]
+    ],
+    moments: [
+      {
+        title: "1. Sospecha TVP",
+        text: "Paciente con sospecha clínica: dímero D, creatinina, perfil hematológico y coagulación.",
+        steps: ["Si dímero positivo y no hay ECO: anticoagulación según evaluación clínica.", "Derivar a Poli TVP al día hábil siguiente en rayos."]
+      },
+      {
+        title: "2. ECO TVP / Sótero",
+        text: "Si HPH no puede responder, llamar a articuladora de red para cupo y hora específica.",
+        steps: ["Contacto: +569 9253 7195.", "Completar cuestionario tras asignación de hora.", "Destino: Sala 9 Imagenología, block central CASR."]
+      },
+      {
+        title: "3. Horario inhábil",
+        text: "Usar el flujo ECO Doppler horario inhábil cuando la indicación y el contexto lo justifiquen.",
+        steps: ["Abrir formulario asociado.", "Revisar PDF completo si hay duda o cambio operativo.", "Confirmar destino y retorno del paciente para resultado."]
+      }
     ],
     flow: [
       "Paciente con alta sospecha clínica de TVP.",
       "Tomar dímero D.",
       "Si dímero positivo y no hay eco: enoxaparina.",
       "Derivar a “Poli TVP” al día hábil siguiente en rayos, 08:00-10:00 o 14:00-16:00.",
-      "Si TVP confirmada: seguir destino según horario, domiciliaria o poli TACO."
-    ]
-  },
-  {
-    title: "Flujo ECO TVP Hospital Sótero del Río",
-    category: "Flujo",
-    page: "p. 19",
-    summary: "Ruta para eco TVP cuando Poli TVP HPH no puede responder, especialmente fines de semana o feriados.",
-    tags: ["TVP", "CASR", "Imagenología", "Fin de semana", "Feriado"],
-    fields: [
-      ["Indicación", "Sospecha real de TVP: clínica + dímero D elevado, cuando Poli TVP HPH no responde."],
-      ["Contacto", "Llamar a articuladora de red: +569 9253 7195 para asignación de cupo con hora específica."],
-      ["Cuestionario", "Tras hora asignada, completar cuestionario indicado en la descripción del grupo WhatsApp."],
-      ["Destino", "Sala 9 Imagenología, block central CASR, con orden médica."],
-      ["Resultado", "Informe sube a sistema de imágenes aproximadamente en 1 hora; paciente vuelve a HPH para resultado."]
+      "Si HPH no puede resolver ECO, activar ruta Sótero del Río con cupo definido.",
+      "Si TVP confirmada: seguir destino según horario, domiciliaria o Poli TACO."
     ],
     sourceDocs: [
       ["Flujo ECO TVP Sótero del Río", "./protocol-docs/flujo-eco-tvp-sotero-del-rio.pdf"],
-      ["Resumen TVP HPH", "./protocol-docs/resumen-tvp-hph.jpg"]
+      ["Resumen TVP HPH", "./protocol-docs/resumen-tvp-hph.jpg"],
+      ["ECO Doppler horario inhábil 2025", "./protocol-docs/eco-doppler-horario-inhabil-2025.pdf"]
     ],
     formKey: "ecoTvpSoteroUrl",
-    formTitle: "Cuestionario ECO TVP Hospital Sótero del Río",
-    formLabel: "Abrir cuestionario ECO TVP",
-    warning: "Derivar a Imagenología CASR, no a la Urgencia."
+    formTitle: "Formulario ECO TVP / ECO Doppler",
+    formLabel: "Abrir formulario ECO TVP",
+    warning: "Derivar a Imagenología CASR, no a la Urgencia. Confirmar siempre indicación clínica, horario y retorno para resultado."
   },
   {
     title: "Enlaces",
@@ -256,24 +262,6 @@ const protocols = [
       ["Horario inhábil", "Viernes, fines de semana e inhábil: llamar a Nefro de turno."],
       ["Alcance", "Sólo para programar diálisis; calendario se enviará periódicamente."]
     ]
-  },
-  {
-    title: "ECO Doppler horario inhábil 2025",
-    category: "Flujo",
-    page: "Doc. 2025",
-    summary: "Documento actualizado para activar ECO Doppler en horario inhábil mediante formulario operativo.",
-    tags: ["Eco Doppler", "Horario inhábil", "Formulario", "TVP"],
-    fields: [
-      ["Uso", "Abrir el formulario asociado cuando corresponda solicitar ECO Doppler en horario inhábil."],
-      ["Documento fuente", "El PDF contiene el acceso al formulario y debe revisarse si cambia el flujo local."]
-    ],
-    sourceDocs: [
-      ["ECO Doppler horario inhábil 2025", "./protocol-docs/eco-doppler-horario-inhabil-2025.pdf"]
-    ],
-    formKey: "ecoTvpSoteroUrl",
-    formTitle: "Formulario ECO Doppler horario inhábil",
-    formLabel: "Abrir formulario ECO Doppler",
-    warning: "Confirmar siempre que la indicación clínica y el horario correspondan al flujo vigente."
   },
   {
     title: "Viruela símica",
@@ -445,6 +433,7 @@ const protocols = [
     page: "Doc. SSMSO",
     summary: "Resumen de protocolo de violencia sexual y coordinación con unidad clínica forense hospitalaria.",
     tags: ["Violencia sexual", "SSMSO", "Forense", "CASR"],
+    hidePriority: true,
     fields: [
       ["Unidad de referencia", "Unidad clínica forense hospitalaria del Complejo Asistencial Sótero del Río."],
       ["Derivación", "Si no se puede realizar la denuncia o procedimiento en HPH, contactar a la unidad correspondiente y trasladar en ambulancia."],
@@ -461,6 +450,7 @@ const protocols = [
     page: "Anexo 4",
     summary: "Flujograma institucional ante agresión a funcionario, con seguridad, constatación de lesiones, denuncia y derivación ACHS.",
     tags: ["Agresión", "Funcionario", "Seguridad", "ACHS", "Carabineros"],
+    hidePriority: true,
     fields: [
       ["Primer paso", "Funcionario agredido debe retirarse del sitio y avisar a jefe directo; jefatura llama a personal de seguridad."],
       ["Continuidad de atención", "Jefe directo evalúa continuar o suspender la atención en el área, resguardando usuarios y funcionarios."],
@@ -488,6 +478,7 @@ const protocols = [
     page: "Referencia",
     summary: "Referencia rápida de niveles de intensidad terapéutica para acordar alcance de medidas diagnósticas y terapéuticas.",
     tags: ["NIT", "UCI", "VM", "RCP", "IOT", "Confort"],
+    hidePriority: true,
     fields: [
       ["Nivel 1", "Paciente tributario de todas las medidas diagnósticas y terapéuticas, incluyendo RCP e IOT para ventilación mecánica. Tributario de UCI."],
       ["Nivel 2", "Tributario de todas las medidas terapéuticas, incluida VMNI, DVA, hemodiálisis, transfusiones o nutrición parenteral, exceptuando RCP e IOT para VM. No tributario de UCI."],
@@ -747,6 +738,12 @@ protocols.forEach((protocol) => {
 
 emergencyLawConditions.forEach(repairValue);
 
+const protocolSlugAliases = new Map([
+  ["flujo-sospecha-tvp", "tvp-sospecha-eco-y-horario-inhabil"],
+  ["flujo-eco-tvp-hospital-sotero-del-rio", "tvp-sospecha-eco-y-horario-inhabil"],
+  ["eco-doppler-horario-inhabil-2025", "tvp-sospecha-eco-y-horario-inhabil"]
+]);
+
 function protocolHaystack(protocol) {
   return normalize([
     protocol.title,
@@ -755,10 +752,16 @@ function protocolHaystack(protocol) {
     ...(protocol.tags || []),
     ...(protocol.fields || []).flat(),
     ...(protocol.flow || []),
+    ...((protocol.moments || []).flatMap((moment) => [moment.title, moment.text, ...(moment.steps || [])])),
     ...((protocol.pathologies || []).flat(2)),
     ...((protocol.sourceDocs || []).flat()),
     protocol.warning || ""
   ].join(" "));
+}
+
+function findProtocolBySlug(slug) {
+  const canonicalSlug = protocolSlugAliases.get(slug) || slug;
+  return protocols.find((item) => item.slug === canonicalSlug);
 }
 
 function isShiftMatch(protocol) {
@@ -999,6 +1002,48 @@ function appendFlow(parent, flow = []) {
   parent.append(section);
 }
 
+function appendMoments(parent, moments = []) {
+  if (!moments.length) return;
+
+  const section = document.createElement("section");
+  section.className = "detail-section moments-panel";
+
+  const label = document.createElement("p");
+  label.className = "detail-label";
+  label.textContent = "Momentos del flujo";
+
+  const grid = document.createElement("div");
+  grid.className = "moment-grid";
+
+  moments.forEach((moment) => {
+    const card = document.createElement("article");
+    card.className = "moment-card";
+
+    const title = document.createElement("h3");
+    title.textContent = moment.title;
+
+    const text = document.createElement("p");
+    text.textContent = moment.text;
+
+    card.append(title, text);
+
+    if (moment.steps?.length) {
+      const list = document.createElement("ul");
+      moment.steps.forEach((step) => {
+        const item = document.createElement("li");
+        item.textContent = step;
+        list.append(item);
+      });
+      card.append(list);
+    }
+
+    grid.append(card);
+  });
+
+  section.append(label, grid);
+  parent.append(section);
+}
+
 function appendPathologies(parent, pathologies = []) {
   if (!pathologies.length) return;
   const section = document.createElement("section");
@@ -1152,7 +1197,7 @@ function appendPriorityManagement(parent, protocol) {
 }
 
 function renderProtocol(slug) {
-  const protocol = protocols.find((item) => item.slug === slug);
+  const protocol = findProtocolBySlug(slug);
 
   protocolDetail.innerHTML = "";
 
@@ -1185,6 +1230,7 @@ function renderProtocol(slug) {
   protocolDetail.append(header);
 
   appendFields(protocolDetail, protocol.fields);
+  appendMoments(protocolDetail, protocol.moments);
   appendFlow(protocolDetail, protocol.flow);
   appendPathologies(protocolDetail, protocol.pathologies);
   appendSourceDocuments(protocolDetail, protocol);
@@ -1197,7 +1243,7 @@ function renderProtocol(slug) {
     protocolDetail.append(warning);
   }
 
-  appendPriorityManagement(protocolDetail, protocol);
+  if (!protocol.hidePriority) appendPriorityManagement(protocolDetail, protocol);
 }
 
 function renderDocumentAction(container, url, label) {
@@ -1363,6 +1409,72 @@ function createEmergencyLawResultCard(item) {
   return card;
 }
 
+function emergencyLawSearchUrl(query) {
+  return `#/formularios/ley-urgencias/resultados?q=${encodeURIComponent(query.trim())}`;
+}
+
+function emergencyLawSearchEditUrl(query) {
+  const cleanQuery = query.trim();
+  return cleanQuery
+    ? `#/formularios/ley-urgencias/buscar?q=${encodeURIComponent(cleanQuery)}`
+    : "#/formularios/ley-urgencias/buscar";
+}
+
+function renderEmergencyLawLiveResults(container, query = "") {
+  container.innerHTML = "";
+
+  const cleanQuery = query.trim();
+  if (!cleanQuery) {
+    const idle = document.createElement("div");
+    idle.className = "law-live-empty";
+    idle.textContent = "Escribe y aparecerán coincidencias por palabra, sigla o sinónimo.";
+    container.append(idle);
+    return;
+  }
+
+  const matches = getEmergencyLawMatches(cleanQuery);
+  const head = document.createElement("div");
+  head.className = "law-live-head";
+
+  const count = document.createElement("strong");
+  count.textContent = `${matches.length} coincidencia${matches.length === 1 ? "" : "s"}`;
+
+  const open = document.createElement("a");
+  open.href = emergencyLawSearchUrl(cleanQuery);
+  open.textContent = "Ver pantalla completa";
+
+  head.append(count, open);
+  container.append(head);
+
+  if (!matches.length) {
+    const empty = document.createElement("div");
+    empty.className = "law-live-empty";
+    empty.textContent = "Sin coincidencias por ahora. Prueba otra palabra o una sigla relacionada.";
+    container.append(empty);
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "law-live-list";
+
+  matches.slice(0, 5).forEach((item) => {
+    const link = document.createElement("a");
+    link.className = "law-live-item";
+    link.href = emergencyLawSearchUrl(cleanQuery);
+
+    const meta = document.createElement("span");
+    meta.textContent = `${item.category} · ${emergencyLawMatchLabel(item)}`;
+
+    const title = document.createElement("strong");
+    title.textContent = item.title;
+
+    link.append(meta, title);
+    list.append(link);
+  });
+
+  container.append(list);
+}
+
 function renderEmergencyLawForm(form) {
   const panel = document.createElement("section");
   panel.className = "document-panel law-card";
@@ -1432,6 +1544,7 @@ function renderEmergencyLawHome() {
 function renderEmergencyLawSearch() {
   formsTitle.textContent = "Buscar Ley de Urgencias";
   turnFormsList.innerHTML = "";
+  const query = hashParams().get("q") || "";
 
   const panel = document.createElement("section");
   panel.className = "law-search-page";
@@ -1445,10 +1558,10 @@ function renderEmergencyLawSearch() {
   searchStage.className = "law-search-stage";
 
   const title = document.createElement("h2");
-  title.textContent = "Buscar por diagnóstico, sigla o problema clínico";
+  title.textContent = "Buscar y ajustar sin partir de cero";
 
   const note = document.createElement("p");
-  note.textContent = "La búsqueda considera sinónimos habituales y abre los resultados en una pantalla aparte.";
+  note.textContent = "Escribe una palabra o sigla: la app busca coincidencias y sinónimos mientras escribes.";
 
   const form = document.createElement("form");
   form.className = "law-search-form";
@@ -1459,6 +1572,7 @@ function renderEmergencyLawSearch() {
   input.name = "q";
   input.placeholder = "Diagnóstico, sigla o problema clínico";
   input.autocomplete = "off";
+  input.value = query;
 
   const button = document.createElement("button");
   button.type = "submit";
@@ -1469,9 +1583,14 @@ function renderEmergencyLawSearch() {
 
   const helper = document.createElement("p");
   helper.className = "law-note";
-  helper.textContent = "Apoyo orientativo para paciente adulto. Confirmar siempre con el Decreto 34 completo y criterio clínico.";
+  helper.textContent = "Puedes volver desde resultados y modificar la misma búsqueda. Confirmar siempre con Decreto 34 y criterio clínico.";
 
-  searchStage.append(title, note, form, helper);
+  const liveResults = document.createElement("div");
+  liveResults.className = "law-live-results";
+  liveResults.dataset.lawLiveResults = "true";
+
+  searchStage.append(title, note, form, helper, liveResults);
+  renderEmergencyLawLiveResults(liveResults, query);
 
   const shortcuts = document.createElement("div");
   shortcuts.className = "law-shortcuts";
@@ -1526,8 +1645,8 @@ function renderEmergencyLawResultsScreen() {
 
   const back = document.createElement("a");
   back.className = "back-link";
-  back.href = "#/formularios/ley-urgencias/buscar";
-  back.textContent = "Nueva búsqueda";
+  back.href = emergencyLawSearchEditUrl(query);
+  back.textContent = query ? "Modificar búsqueda" : "Nueva búsqueda";
 
   const title = document.createElement("h2");
   if (query) title.textContent = `Resultados para "${query}"`;
@@ -1549,6 +1668,24 @@ function renderEmergencyLawResultsScreen() {
     meta.textContent = "Vuelve al buscador e ingresa una patología, sigla o diagnóstico.";
   }
 
+  const revise = document.createElement("form");
+  revise.className = "law-inline-search";
+  revise.dataset.lawSearchForm = "true";
+
+  const reviseInput = document.createElement("input");
+  reviseInput.type = "search";
+  reviseInput.name = "q";
+  reviseInput.value = query;
+  reviseInput.placeholder = "Ajustar búsqueda";
+  reviseInput.autocomplete = "off";
+
+  const reviseButton = document.createElement("button");
+  reviseButton.type = "submit";
+  reviseButton.className = "law-action-button";
+  reviseButton.textContent = "Actualizar";
+
+  revise.append(reviseInput, reviseButton);
+
   const actions = document.createElement("div");
   actions.className = "law-actions";
 
@@ -1561,6 +1698,7 @@ function renderEmergencyLawResultsScreen() {
 
   actions.append(decree);
   panel.append(back, title, meta);
+  if (query) panel.append(revise);
   turnFormsList.append(panel);
 
   if ((!query && !group) || !matches.length) {
@@ -1747,6 +1885,18 @@ document.addEventListener("click", (event) => {
 
 });
 
+document.addEventListener("input", (event) => {
+  const input = event.target.closest("[data-law-search-form] input[name='q']");
+  if (!input) return;
+
+  const preview = input.closest(".law-search-stage")?.querySelector("[data-law-live-results]");
+  if (preview) {
+    renderEmergencyLawLiveResults(preview, input.value);
+    const editUrl = emergencyLawSearchEditUrl(input.value);
+    window.history.replaceState(null, "", editUrl);
+  }
+});
+
 document.addEventListener("submit", (event) => {
   const form = event.target.closest("[data-law-search-form]");
   if (form) {
@@ -1754,7 +1904,7 @@ document.addEventListener("submit", (event) => {
     const input = form.querySelector("input[name='q']");
     const query = input?.value.trim() || "";
     if (query) {
-      window.location.hash = `#/formularios/ley-urgencias/resultados?q=${encodeURIComponent(query)}`;
+      window.location.hash = emergencyLawSearchUrl(query);
     }
   }
 });
