@@ -199,11 +199,12 @@ const protocols = [
     page: "p. 18-19 / Doc. 2025",
     summary: "Ruta única para sospecha de TVP, coordinación de ECO y solicitud en horario inhábil.",
     tags: ["TVP", "Dímero D", "Eco", "ECO Doppler", "Sótero del Río", "CASR", "Horario inhábil", "Enoxaparina", "Poli TACO", "Domiciliaria"],
+    hidePriority: true,
     fields: [
       ["Sospecha inicial", "Alta sospecha clínica: solicitar dímero D y exámenes basales según flujo."],
       ["ECO disponible HPH", "Si ECO confirma TVP, rayos deriva directo a Poli TACO, no a Urgencia."],
-      ["ECO Sótero del Río", "Usar cuando Poli TVP HPH no responde, especialmente fines de semana o feriados."],
-      ["Horario inhábil", "Activar ECO Doppler por formulario operativo sólo si corresponde a indicación clínica y horario."]
+      ["Horario inhábil entre semana", "Derivar a Poli TVP al día hábil siguiente en rayos, 08:00-10:00 o 14:00-16:00."],
+      ["Fin de semana o feriado", "Activar ruta Sótero del Río con cupo definido si la indicación clínica corresponde."]
     ],
     moments: [
       {
@@ -212,22 +213,28 @@ const protocols = [
         steps: ["Si dímero positivo y no hay ECO: anticoagulación según evaluación clínica.", "Derivar a Poli TVP al día hábil siguiente en rayos."]
       },
       {
-        title: "2. ECO TVP / Sótero",
-        text: "Si HPH no puede responder, llamar a articuladora de red para cupo y hora específica.",
-        steps: ["Contacto: +569 9253 7195.", "Completar cuestionario tras asignación de hora.", "Destino: Sala 9 Imagenología, block central CASR."]
+        title: "2. ECO disponible / TVP confirmada",
+        text: "Si el ECO confirma TVP, definir destino según horario y disponibilidad de domiciliaria.",
+        steps: ["Rayos deriva directo a Poli TACO cuando corresponde.", "No enviar de vuelta a Urgencia sólo para gestionar hora si el flujo ya está resuelto."]
       },
       {
-        title: "3. Horario inhábil",
-        text: "Usar el flujo ECO Doppler horario inhábil cuando la indicación y el contexto lo justifiquen.",
-        steps: ["Abrir formulario asociado.", "Revisar PDF completo si hay duda o cambio operativo.", "Confirmar destino y retorno del paciente para resultado."]
+        title: "3A. Inhábil entre semana",
+        text: "Si ocurre en horario inhábil de lunes a viernes y no corresponde ruta Sótero, continuar al día hábil siguiente.",
+        steps: ["Derivar a “Poli TVP” al día hábil siguiente en rayos.", "Horarios: 08:00-10:00 o 14:00-16:00.", "Dejar indicación y anticoagulación según evaluación clínica."]
+      },
+      {
+        title: "3B. Fin de semana / feriado",
+        text: "Si requiere ECO y es fin de semana o feriado, activar ruta Sótero del Río con cupo definido.",
+        steps: ["Llamar a articuladora de red: +569 9253 7195.", "Completar cuestionario tras asignación de hora.", "Destino: Sala 9 Imagenología, block central CASR.", "Informe disponible aproximadamente en 1 hora; paciente vuelve a HPH para resultado."],
+        alert: "Derivar a Imagenología CASR, no a la Urgencia. Confirmar siempre indicación clínica, horario y retorno para resultado."
       }
     ],
     flow: [
       "Paciente con alta sospecha clínica de TVP.",
       "Tomar dímero D.",
       "Si dímero positivo y no hay eco: enoxaparina.",
-      "Derivar a “Poli TVP” al día hábil siguiente en rayos, 08:00-10:00 o 14:00-16:00.",
-      "Si HPH no puede resolver ECO, activar ruta Sótero del Río con cupo definido.",
+      "Si es inhábil entre semana: derivar a “Poli TVP” al día hábil siguiente en rayos, 08:00-10:00 o 14:00-16:00.",
+      "Si es fin de semana o feriado y requiere ECO: activar ruta Sótero del Río con cupo definido.",
       "Si TVP confirmada: seguir destino según horario, domiciliaria o Poli TACO."
     ],
     sourceDocs: [
@@ -237,8 +244,7 @@ const protocols = [
     ],
     formKey: "ecoTvpSoteroUrl",
     formTitle: "Formulario ECO TVP / ECO Doppler",
-    formLabel: "Abrir formulario ECO TVP",
-    warning: "Derivar a Imagenología CASR, no a la Urgencia. Confirmar siempre indicación clínica, horario y retorno para resultado."
+    formLabel: "Abrir formulario ECO TVP"
   },
   {
     title: "Enlaces",
@@ -265,7 +271,7 @@ const protocols = [
   },
   {
     title: "Viruela símica",
-    category: "Flujo",
+    category: "Protocolo",
     page: "Doc. feb 2023",
     summary: "Flujo actualizado para sospecha de viruela símica en SEA HPH, coordinación con UHD, SEREMI y Epidemiología HPH.",
     tags: ["Viruela símica", "UHD", "SEREMI", "Epidemiología", "Aislamiento"],
@@ -291,19 +297,45 @@ const protocols = [
     warning: "Flujo sensible a cambios sanitarios: confirmar indicaciones vigentes con SEREMI/Epidemiología si hay dudas."
   },
   {
-    title: "Flujos Neuro 2025",
+    title: "Neurología",
     category: "Flujo",
     page: "Doc. 2025",
-    summary: "Documento actualizado de flujos neurológicos 2025 para consulta directa del PDF completo.",
-    tags: ["Neurología", "Neuro", "2025", "Documento escaneado"],
+    summary: "Flujos neurológicos 2025: neurorradiología intervencional, evaluación a distancia para reperfusión y posible donante.",
+    tags: ["Neurología", "Neuro", "ACV", "Stroke", "Trombectomía", "Trombólisis", "HSA", "Donante", "CASR"],
+    hidePriority: true,
     fields: [
-      ["Consulta rápida", "El documento viene como imagen escaneada; abrir el PDF completo para revisar el algoritmo vigente."],
-      ["Uso sugerido", "Utilizar como respaldo rápido cuando se active un flujo neurológico de turno."]
+      ["Centro de referencia", "CASR."],
+      ["Teléfonos CASR", "Estación de enfermería 2 2576 2662 / 2 2576 2363; reanimador UEH adultos 2 2576 2353; médico coordinador UEH adultos 9 9998 0214."],
+      ["Especialistas", "Neurólogo de turno 9 4448 1955; neurocirujano de turno 2 2576 2284."],
+      ["Gestión de camas", "Para procedimientos o traslados, coordinar con Gestión de Camas CASR y asegurar retorno al hospital de origen cuando corresponda."]
+    ],
+    moments: [
+      {
+        title: "1. Neurorradiología intervencional",
+        text: "Para mayores de 15 años de la red sur-oriente que requieren procedimiento neurointervencional.",
+        steps: ["Prestaciones: angiografía cerebral diagnóstica y tratamiento endovascular, incluyendo trombectomía mecánica/embolización.", "Criterios: oclusión aguda de arterias cerebrales, HSA por aneurisma roto, vasoespasmo en HSA o malformaciones arteriovenosas rotas.", "Activación: neurólogo de turno CASR o neurocirujano de turno CASR."]
+      },
+      {
+        title: "2. Evaluación neurológica a distancia",
+        text: "Respuesta telemática para pacientes con ACV isquémico en ventana y criterios de reperfusión.",
+        steps: ["Alcance: mayores de 18 años de la red sur-oriente.", "Prestaciones: consulta neurología y reevaluación post trombólisis.", "Criterios: ACV en ventana o status epiléptico.", "Activación: articulador de la red del Servicio de Salud.", "Considera 3 llamados: evaluación inicial, control post trombólisis y recontrol si es necesario."]
+      },
+      {
+        title: "3. Posible donante",
+        text: "Apoyo neurológico para proceso de donación de órganos cuando no se disponga de especialista local por rotativa regular.",
+        steps: ["Alcance: pacientes pediátricos y adultos de la red sur-oriente.", "Prestación: evaluación neurológica más informe EEG.", "Criterio: posible o potencial donante.", "Activación: CLP CASR - SSMSO."]
+      }
+    ],
+    flow: [
+      "Identificar cuál de los 3 flujos aplica: neurointervencional, evaluación a distancia o posible donante.",
+      "Contactar al referente indicado según el flujo.",
+      "Coordinar Gestión de Camas CASR si requiere procedimiento, traslado, cama o retorno.",
+      "Registrar indicaciones y comunicación en la ficha clínica."
     ],
     sourceDocs: [
       ["Flujos Neuro 2025", "./protocol-docs/flujos-neuro-2025.pdf"]
     ],
-    warning: "No se pudo extraer texto confiable del PDF escaneado; revisar siempre el documento completo."
+    warning: "El PDF contiene flujogramas escaneados: revisar documento completo antes de activar traslado o procedimiento."
   },
   {
     title: "Hemorragia digestiva alta",
@@ -741,7 +773,8 @@ emergencyLawConditions.forEach(repairValue);
 const protocolSlugAliases = new Map([
   ["flujo-sospecha-tvp", "tvp-sospecha-eco-y-horario-inhabil"],
   ["flujo-eco-tvp-hospital-sotero-del-rio", "tvp-sospecha-eco-y-horario-inhabil"],
-  ["eco-doppler-horario-inhabil-2025", "tvp-sospecha-eco-y-horario-inhabil"]
+  ["eco-doppler-horario-inhabil-2025", "tvp-sospecha-eco-y-horario-inhabil"],
+  ["flujos-neuro-2025", "neurologia"]
 ]);
 
 function protocolHaystack(protocol) {
@@ -752,7 +785,7 @@ function protocolHaystack(protocol) {
     ...(protocol.tags || []),
     ...(protocol.fields || []).flat(),
     ...(protocol.flow || []),
-    ...((protocol.moments || []).flatMap((moment) => [moment.title, moment.text, ...(moment.steps || [])])),
+    ...((protocol.moments || []).flatMap((moment) => [moment.title, moment.text, moment.alert || "", ...(moment.steps || [])])),
     ...((protocol.pathologies || []).flat(2)),
     ...((protocol.sourceDocs || []).flat()),
     protocol.warning || ""
@@ -1035,6 +1068,13 @@ function appendMoments(parent, moments = []) {
         list.append(item);
       });
       card.append(list);
+    }
+
+    if (moment.alert) {
+      const alert = document.createElement("div");
+      alert.className = "moment-alert";
+      alert.textContent = moment.alert;
+      card.append(alert);
     }
 
     grid.append(card);

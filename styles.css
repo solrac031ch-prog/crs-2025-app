@@ -685,6 +685,16 @@ svg {
   line-height: 1.34;
 }
 
+.moment-alert {
+  padding: 10px 11px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid #f4bbb6;
+  border-radius: 6px;
+  font-weight: 800;
+  line-height: 1.36;
+}
+
 .pathologies {
   display: grid;
   gap: 10px;
