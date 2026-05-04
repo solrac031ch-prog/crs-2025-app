@@ -522,6 +522,82 @@ const externalForms = {
 const emergencyLawDecreeUrl = "./protocol-docs/decreto-34-25-oct-2022.pdf";
 const emergencyLawOfficialUrl = "https://www.bcn.cl/leychile/navegar?idNorma=1183371";
 const emergencyLawConditions = window.emergencyLawConditions || [];
+const emergencyLawGroups = [
+  {
+    id: "respiratorio",
+    title: "Respiratorio",
+    description: "Vía aérea, oxigenación y ventilación.",
+    categories: ["Respiratoria", "Respiratoria/Trauma"]
+  },
+  {
+    id: "cardiovascular",
+    title: "Cardiovascular",
+    description: "Shock, ritmo, presión y perfusión.",
+    categories: ["Circulatoria", "Circulatoria/Neurológica", "Vascular", "Vascular/Trauma"]
+  },
+  {
+    id: "neurologia",
+    title: "Neurología",
+    description: "Conciencia, déficit focal y cráneo.",
+    categories: ["Neurológica", "Neurológica/Trauma", "Neurológica/Infectológica"]
+  },
+  {
+    id: "trauma",
+    title: "Trauma",
+    description: "Alta energía, heridas y fracturas.",
+    categories: ["Trauma", "Trauma/Sistémica", "Trauma/Piel", "Quemados"]
+  },
+  {
+    id: "digestivo-quirurgico",
+    title: "Digestivo / quirúrgico",
+    description: "Abdomen, sangrado y urgencia quirúrgica.",
+    categories: ["Gastroenterológica", "Quirúrgica"]
+  },
+  {
+    id: "infeccioso-metabolico",
+    title: "Infeccioso / metabólico",
+    description: "Sepsis, toxicología y descompensación.",
+    categories: ["Infectológica", "Toxicología", "Metabólica", "Endocrinológica", "Nefrológica"]
+  },
+  {
+    id: "otros",
+    title: "Otros sistemas",
+    description: "Urología, ORL, oftalmo, piel y salud mental.",
+    categories: ["Urológica", "Oftalmológica", "ORL", "Piel/Infectológica", "Inmunoalérgica", "Hemato-oncológica", "Psiquiátrica", "Sistémica", "Sistémica/Piel", "Accidentes", "Gineco-obstétrica"]
+  }
+];
+
+const emergencyLawSearchExpansions = {
+  acv: ["ave", "ictus", "stroke", "cerebrovascular"],
+  ave: ["acv", "ictus", "stroke", "cerebrovascular"],
+  iam: ["infarto", "sca", "coronario", "miocardio"],
+  sca: ["infarto", "iam", "coronario", "dolor", "toracico"],
+  tep: ["embolia", "pulmonar", "tromboembolismo"],
+  tvp: ["trombosis", "venosa", "profunda"],
+  hda: ["hemorragia", "digestiva", "alta"],
+  hdb: ["hemorragia", "digestiva", "baja"],
+  hta: ["hipertension", "presion"],
+  epoc: ["obstructiva", "hipercapnia", "ventilatorio"],
+  vni: ["ventilacion", "vmni"],
+  vmni: ["ventilacion", "vni"],
+  iot: ["intubacion", "via", "aerea"],
+  tec: ["trauma", "craneal", "glasgow"],
+  hsa: ["subaracnoidea", "hemorragia"],
+  hic: ["hemorragia", "intracraneal"],
+  ira: ["renal", "rinon", "aguda"],
+  sepsis: ["shock", "infeccion", "septico"],
+  torax: ["toracico", "pecho"],
+  toraxico: ["toracico", "pecho"],
+  pecho: ["toracico", "coronario"],
+  corazon: ["cardiaco", "cardiaca", "coronario"],
+  presion: ["hipertension", "hta"],
+  azucar: ["glicemia", "hiperglicemia", "hipoglicemia"],
+  alergia: ["anafilaxia", "inmunoalergica"],
+  intoxicacion: ["sobredosis", "toxicologia"],
+  bala: ["arma", "fuego", "proyectil"],
+  rinon: ["renal", "nefrologica"],
+  embarazo: ["obstetrica", "gineco"]
+};
 
 const turnForms = [
   {
@@ -670,6 +746,8 @@ protocols.forEach((protocol) => {
   repairValue(protocol);
   protocol.slug = slugify(protocol.title);
 });
+
+emergencyLawConditions.forEach(repairValue);
 
 function protocolHaystack(protocol) {
   return normalize([
@@ -1182,20 +1260,87 @@ function emergencyLawHaystack(item) {
   ].join(" "));
 }
 
-function getEmergencyLawMatches(query = "") {
+function emergencyLawTokens(query = "") {
   const cleanQuery = normalize(query.trim());
-  const words = cleanQuery.split(/\s+/).filter((word) => word.length > 1);
-  if (!words.length) return [];
-  return emergencyLawConditions.filter((item) => words.every((word) => emergencyLawHaystack(item).includes(word)));
+  const baseWords = cleanQuery
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 1);
+
+  return [...new Set(baseWords.flatMap((word) => [word, ...(emergencyLawSearchExpansions[word] || [])]))];
+}
+
+function emergencyLawGroupById(groupId = "") {
+  return emergencyLawGroups.find((group) => group.id === groupId) || null;
+}
+
+function isEmergencyLawGroupMatch(item, group) {
+  if (!group) return true;
+  return group.categories.some((category) => item.category === category);
+}
+
+function emergencyLawMatchScore(item, words) {
+  if (!words.length) return 1;
+
+  const fields = [
+    { text: normalize(item.title), weight: 8 },
+    { text: normalize((item.aliases || []).join(" ")), weight: 6 },
+    { text: normalize(item.category), weight: 4 },
+    { text: normalize(item.criteria), weight: 2 }
+  ];
+
+  return words.reduce((score, word) => {
+    const hitScore = fields.reduce((total, field) => total + (field.text.includes(word) ? field.weight : 0), 0);
+    return score + hitScore;
+  }, 0);
+}
+
+function emergencyLawMatchLabel(item) {
+  if (item.matchMode === "group") return "Categoría";
+  if (item.matchScore >= 14) return "Alta";
+  if (item.matchScore >= 8) return "Probable";
+  return "Posible";
+}
+
+function getEmergencyLawMatches(query = "", groupId = "") {
+  const words = emergencyLawTokens(query);
+  const group = emergencyLawGroupById(groupId);
+  if (!words.length && !group) return [];
+
+  return emergencyLawConditions
+    .map((item) => {
+      if (!isEmergencyLawGroupMatch(item, group)) return null;
+      const score = emergencyLawMatchScore(item, words);
+      if (words.length && score <= 0) return null;
+      return {
+        ...item,
+        matchMode: words.length ? "search" : "group",
+        matchScore: score
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+      return a.title.localeCompare(b.title, "es");
+    });
 }
 
 function createEmergencyLawResultCard(item) {
   const card = document.createElement("article");
   card.className = "law-result";
 
+  const head = document.createElement("div");
+  head.className = "law-result-head";
+
   const category = document.createElement("span");
   category.className = "law-result-category";
   category.textContent = item.category;
+
+  const match = document.createElement("span");
+  match.className = "law-match-badge";
+  match.textContent = emergencyLawMatchLabel(item);
+
+  head.append(category, match);
 
   const title = document.createElement("h3");
   title.textContent = item.title;
@@ -1203,12 +1348,12 @@ function createEmergencyLawResultCard(item) {
   const criteria = document.createElement("p");
   criteria.textContent = item.criteria;
 
-  card.append(category, title, criteria);
+  card.append(head, title, criteria);
 
   if (item.aliases?.length) {
     const aliases = document.createElement("div");
     aliases.className = "law-aliases";
-    item.aliases.slice(0, 8).forEach((alias) => {
+    item.aliases.slice(0, 5).forEach((alias) => {
       const tag = document.createElement("span");
       tag.className = "tag";
       tag.textContent = alias;
@@ -1298,18 +1443,21 @@ function renderEmergencyLawSearch() {
   turnFormsList.innerHTML = "";
 
   const panel = document.createElement("section");
-  panel.className = "law-hero-panel compact";
+  panel.className = "law-search-page";
 
   const back = document.createElement("a");
   back.className = "back-link";
   back.href = "#/formularios/ley-urgencias";
   back.textContent = "Ley de Urgencias";
 
+  const searchStage = document.createElement("div");
+  searchStage.className = "law-search-stage";
+
   const title = document.createElement("h2");
-  title.textContent = "¿Qué estás buscando?";
+  title.textContent = "Buscar por diagnóstico, sigla o problema clínico";
 
   const note = document.createElement("p");
-  note.textContent = "Escribe una patología, sigla o concepto clínico. Los resultados se abrirán en una pantalla limpia.";
+  note.textContent = "La búsqueda considera sinónimos habituales y abre los resultados en una pantalla aparte.";
 
   const form = document.createElement("form");
   form.className = "law-search-form";
@@ -1318,7 +1466,7 @@ function renderEmergencyLawSearch() {
   const input = document.createElement("input");
   input.type = "search";
   input.name = "q";
-  input.placeholder = "Ej: infarto, ACV, sepsis, TEP, HDA...";
+  input.placeholder = "Diagnóstico, sigla o problema clínico";
   input.autocomplete = "off";
 
   const button = document.createElement("button");
@@ -1330,9 +1478,44 @@ function renderEmergencyLawSearch() {
 
   const helper = document.createElement("p");
   helper.className = "law-note";
-  helper.textContent = "Buscador orientativo para paciente adulto. Confirmar siempre con el Decreto 34 completo y criterio clínico.";
+  helper.textContent = "Apoyo orientativo para paciente adulto. Confirmar siempre con el Decreto 34 completo y criterio clínico.";
 
-  panel.append(back, title, note, form, helper);
+  searchStage.append(title, note, form, helper);
+
+  const shortcuts = document.createElement("div");
+  shortcuts.className = "law-shortcuts";
+
+  const shortcutsHead = document.createElement("div");
+  shortcutsHead.className = "law-shortcuts-head";
+
+  const shortcutsTitle = document.createElement("h3");
+  shortcutsTitle.textContent = "También puedes entrar por sistema";
+
+  const shortcutsText = document.createElement("p");
+  shortcutsText.textContent = "Sirve cuando no recuerdas el nombre exacto o quieres revisar un grupo clínico.";
+
+  shortcutsHead.append(shortcutsTitle, shortcutsText);
+
+  const shortcutsGrid = document.createElement("div");
+  shortcutsGrid.className = "law-shortcut-grid";
+
+  emergencyLawGroups.forEach((group) => {
+    const link = document.createElement("a");
+    link.className = "law-shortcut-card";
+    link.href = `#/formularios/ley-urgencias/resultados?grupo=${encodeURIComponent(group.id)}`;
+
+    const linkTitle = document.createElement("strong");
+    linkTitle.textContent = group.title;
+
+    const description = document.createElement("span");
+    description.textContent = group.description;
+
+    link.append(linkTitle, description);
+    shortcutsGrid.append(link);
+  });
+
+  shortcuts.append(shortcutsHead, shortcutsGrid);
+  panel.append(back, searchStage, shortcuts);
   turnFormsList.append(panel);
   input.focus();
 }
@@ -1341,8 +1524,11 @@ function renderEmergencyLawResultsScreen() {
   formsTitle.textContent = "Resultados";
   turnFormsList.innerHTML = "";
 
-  const query = hashParams().get("q") || "";
-  const matches = getEmergencyLawMatches(query);
+  const params = hashParams();
+  const query = params.get("q") || "";
+  const groupId = params.get("grupo") || "";
+  const group = emergencyLawGroupById(groupId);
+  const matches = getEmergencyLawMatches(query, groupId);
 
   const panel = document.createElement("section");
   panel.className = "law-hero-panel compact";
@@ -1353,12 +1539,24 @@ function renderEmergencyLawResultsScreen() {
   back.textContent = "Nueva búsqueda";
 
   const title = document.createElement("h2");
-  title.textContent = query ? `Resultados para "${query}"` : "Sin búsqueda";
+  if (query) title.textContent = `Resultados para "${query}"`;
+  else if (group) title.textContent = group.title;
+  else title.textContent = "Sin búsqueda";
 
   const meta = document.createElement("p");
-  meta.textContent = query
-    ? `${matches.length} coincidencia${matches.length === 1 ? "" : "s"} encontradas.`
-    : "Vuelve al buscador e ingresa una patología, sigla o diagnóstico.";
+  const matchWord = matches.length === 1 ? "coincidencia" : "coincidencias";
+  const foundWord = matches.length === 1 ? "encontrada" : "encontradas";
+  const orderedWord = matches.length === 1 ? "ordenada" : "ordenadas";
+  const criteriaWord = matches.length === 1 ? "criterio" : "criterios";
+  if (query && group) {
+    meta.textContent = `${matches.length} ${matchWord} ${foundWord} dentro de ${group.title}.`;
+  } else if (query) {
+    meta.textContent = `${matches.length} ${matchWord} ${orderedWord} por probabilidad.`;
+  } else if (group) {
+    meta.textContent = `${matches.length} ${criteriaWord} asociados a este sistema.`;
+  } else {
+    meta.textContent = "Vuelve al buscador e ingresa una patología, sigla o diagnóstico.";
+  }
 
   const actions = document.createElement("div");
   actions.className = "law-actions";
@@ -1378,21 +1576,21 @@ function renderEmergencyLawResultsScreen() {
   official.textContent = "Fuente oficial";
 
   actions.append(decree, official);
-  panel.append(back, title, meta, actions);
+  panel.append(back, title, meta);
   turnFormsList.append(panel);
 
-  if (!query || !matches.length) {
+  if ((!query && !group) || !matches.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = "No encontré coincidencias. Prueba con otra sigla o diagnóstico similar.";
-    turnFormsList.append(empty);
+    empty.textContent = "No encontré coincidencias. Prueba otra palabra, sigla o abre el Decreto 34 completo.";
+    turnFormsList.append(empty, actions);
     return;
   }
 
   const results = document.createElement("div");
   results.className = "law-results";
   matches.slice(0, 18).forEach((item) => results.append(createEmergencyLawResultCard(item)));
-  turnFormsList.append(results);
+  turnFormsList.append(results, actions);
 }
 
 function renderEmergencyLawForms() {
