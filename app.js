@@ -258,6 +258,11 @@ const externalDocs = {
   visitaDiariaUrl: "https://docs.google.com/spreadsheets/d/14-90hMv4JciofpxQz8TTEXwLHxvKb4iNmOGrpQACmpQ/edit?usp=drive_link"
 };
 
+const externalForms = {
+  ecoTvpSoteroUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdkgwTx1dr00gxIMOdjIZVqibjhqYgwZqlmgmdSi_CfzbwQbg/viewform",
+  homeActivationUrl: "https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform"
+};
+
 const priorityEmail = "gestionaltaseahph@gmail.com";
 const publishedBaseUrl = "https://solrac031ch-prog.github.io/crs-2025-app/";
 const categoryOrder = ["Regla general", "CRS", "Poli choque", "Flujo", "Hospitalizados"];
@@ -632,6 +637,33 @@ function appendPathologies(parent, pathologies = []) {
   parent.append(section);
 }
 
+function appendExternalForm(parent, protocol) {
+  if (protocol.slug !== "eco-tvp-hospital-sotero-del-rio") return;
+
+  const panel = document.createElement("section");
+  panel.className = "external-form-panel";
+
+  const label = document.createElement("p");
+  label.className = "detail-label";
+  label.textContent = "Formulario asociado";
+
+  const title = document.createElement("h2");
+  title.textContent = "Cuestionario ECO TVP Hospital Sótero del Río";
+
+  const text = document.createElement("p");
+  text.textContent = "Abrir el formulario indicado para completar la solicitud asociada a este flujo.";
+
+  const link = document.createElement("a");
+  link.className = "document-button";
+  link.href = externalForms.ecoTvpSoteroUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = "Abrir cuestionario ECO TVP";
+
+  panel.append(label, title, text, link);
+  parent.append(panel);
+}
+
 function priorityMailto(protocol) {
   const subject = `Gestión prioritaria CRS - ${displayTitle(protocol.title)}`;
   const route = `${publishedBaseUrl}#/especialidad/${protocol.slug}`;
@@ -728,6 +760,7 @@ function renderProtocol(slug) {
   appendFields(protocolDetail, protocol.fields);
   appendFlow(protocolDetail, protocol.flow);
   appendPathologies(protocolDetail, protocol.pathologies);
+  appendExternalForm(protocolDetail, protocol);
 
   if (protocol.warning) {
     const warning = document.createElement("div");

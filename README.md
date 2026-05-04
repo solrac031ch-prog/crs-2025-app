@@ -12,6 +12,8 @@ Web app estatica para consulta rapida de flujos de derivacion CRS 2025 de Urgenc
 
 Cada pagina de especialidad termina con una pregunta de gestion prioritaria. Si se requiere, la app abre un correo prellenado para enviar a `gestionaltaseahph@gmail.com`; el envio final queda a cargo del usuario.
 
+La portada incluye un boton externo `Activar formulario`. El flujo `ECO TVP Hospital Sotero del Rio` incluye un boton propio para abrir su cuestionario de Google Forms.
+
 ## Instalacion en dispositivos
 
 ### Windows con Chrome

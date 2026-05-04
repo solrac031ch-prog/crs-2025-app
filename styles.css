@@ -170,7 +170,7 @@ button {
 
 .home-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -596,6 +596,7 @@ button {
   line-height: 1.38;
 }
 
+.external-form-panel,
 .priority-panel {
   display: grid;
   gap: 11px;
@@ -607,11 +608,17 @@ button {
   box-shadow: var(--shadow);
 }
 
+.external-form-panel {
+  border-left-color: var(--accent);
+}
+
+.external-form-panel h2,
 .priority-panel h2 {
   margin: 0;
   font-size: 1.15rem;
 }
 
+.external-form-panel p,
 .priority-panel p {
   margin: 0;
   color: var(--muted);
