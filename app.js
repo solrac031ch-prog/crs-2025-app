@@ -513,10 +513,14 @@ const externalForms = {
   ecoTvpSoteroUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdkgwTx1dr00gxIMOdjIZVqibjhqYgwZqlmgmdSi_CfzbwQbg/viewform",
   antimicrobianosHphUrl: "https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform",
   leyUrgenciasUrl: "",
+  leyUrgenciasConsentimientoUrl: "",
   medicamentosUsoOcasionalUrl: "",
   solicitudVihUrl: "",
   notificacionObligatoriaUrl: ""
 };
+
+const emergencyLawDecreeUrl = "./protocol-docs/decreto-34-25-oct-2022.pdf";
+const emergencyLawConditions = window.emergencyLawConditions || [];
 
 const turnForms = [
   {
@@ -527,9 +531,11 @@ const turnForms = [
   },
   {
     title: "Ley de urgencias",
-    description: "Espacio preparado para anexar el formulario de notificación y el consentimiento cuando estén disponibles.",
-    url: externalForms.leyUrgenciasUrl,
-    actionLabel: "Abrir formulario Ley de urgencias"
+    description: "Material de consulta, buscador de condiciones clínicas y formularios pendientes para activación de Ley de Urgencias.",
+    type: "emergencyLaw",
+    decreeUrl: emergencyLawDecreeUrl,
+    activationUrl: externalForms.leyUrgenciasUrl,
+    consentUrl: externalForms.leyUrgenciasConsentimientoUrl
   },
   {
     title: "Medicamentos de uso ocasional",
@@ -714,7 +720,7 @@ function visibleSpecialtyProtocols(results) {
 }
 
 function routeParts() {
-  const hash = window.location.hash || "#/inicio";
+  const hash = (window.location.hash || "#/inicio").split("?")[0];
   return hash.replace(/^#\/?/, "").split("/").filter(Boolean);
 }
 
@@ -1137,16 +1143,239 @@ function renderDocumentAction(container, url, label) {
   container.append(wrapper);
 }
 
+function createPendingAction(text, noteText) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "document-action";
+
+  const pending = document.createElement("span");
+  pending.className = "document-button-disabled";
+  pending.textContent = text;
+
+  const note = document.createElement("p");
+  note.textContent = noteText;
+
+  wrapper.append(pending, note);
+  return wrapper;
+}
+
 function renderDocuments() {
   renderDocumentAction(callsDocumentAction, externalDocs.llamadosUrl, "Abrir especialistas de llamado");
   renderDocumentAction(uhdDocumentAction, externalDocs.uhdDisponibilidadUrl, "Abrir disponibilidad UHD");
   renderDocumentAction(visitDocumentAction, externalDocs.visitaDiariaUrl, "Abrir planilla de visita diaria");
 }
 
+function emergencyLawHaystack(item) {
+  return normalize([
+    item.title,
+    item.category,
+    item.criteria,
+    ...(item.aliases || [])
+  ].join(" "));
+}
+
+function renderEmergencyLawResults(query = "") {
+  const resultsEl = document.querySelector("#emergencyLawResults");
+  if (!resultsEl) return;
+
+  const cleanQuery = normalize(query.trim());
+  const words = cleanQuery.split(/\s+/).filter((word) => word.length > 1);
+  const matches = words.length
+    ? emergencyLawConditions.filter((item) => words.every((word) => emergencyLawHaystack(item).includes(word)))
+    : emergencyLawConditions.slice(0, 10);
+
+  resultsEl.innerHTML = "";
+
+  const meta = document.createElement("p");
+  meta.className = "results-meta";
+  meta.textContent = words.length
+    ? `${matches.length} coincidencia${matches.length === 1 ? "" : "s"} encontradas`
+    : "Ejemplos frecuentes. Escribe una patología, diagnóstico o sinónimo para buscar.";
+  resultsEl.append(meta);
+
+  if (!matches.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No encontré coincidencias. Prueba con un diagnóstico similar, sigla o condición general, por ejemplo: ACV, infarto, sepsis, TEP, trauma, HDA, anafilaxia.";
+    resultsEl.append(empty);
+    return;
+  }
+
+  matches.slice(0, 18).forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "law-result";
+
+    const category = document.createElement("span");
+    category.className = "law-result-category";
+    category.textContent = item.category;
+
+    const title = document.createElement("h3");
+    title.textContent = item.title;
+
+    const criteria = document.createElement("p");
+    criteria.textContent = item.criteria;
+
+    card.append(category, title, criteria);
+
+    if (item.aliases?.length) {
+      const aliases = document.createElement("div");
+      aliases.className = "law-aliases";
+      item.aliases.slice(0, 8).forEach((alias) => {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = alias;
+        aliases.append(tag);
+      });
+      card.append(aliases);
+    }
+
+    resultsEl.append(card);
+  });
+}
+
+function showEmergencyLawSection(name) {
+  document.querySelectorAll("[data-law-section]").forEach((section) => {
+    section.classList.toggle("active", section.dataset.lawSection === name);
+  });
+
+  document.querySelectorAll("[data-law-panel]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.lawPanel === name);
+  });
+}
+
+function renderEmergencyLawForm(form) {
+  const panel = document.createElement("section");
+  panel.className = "document-panel law-panel";
+
+  const title = document.createElement("h2");
+  title.textContent = form.title;
+
+  const description = document.createElement("p");
+  description.textContent = form.description;
+
+  const actions = document.createElement("div");
+  actions.className = "law-actions";
+
+  const decreeLink = document.createElement("a");
+  decreeLink.className = "document-button";
+  decreeLink.href = form.decreeUrl;
+  decreeLink.target = "_blank";
+  decreeLink.rel = "noopener noreferrer";
+  decreeLink.textContent = "Decreto 34";
+
+  const searchButton = document.createElement("button");
+  searchButton.type = "button";
+  searchButton.className = "law-action-button active";
+  searchButton.dataset.lawPanel = "buscador";
+  searchButton.textContent = "Buscador";
+
+  const formsButton = document.createElement("button");
+  formsButton.type = "button";
+  formsButton.className = "law-action-button";
+  formsButton.dataset.lawPanel = "formularios";
+  formsButton.textContent = "Formularios";
+
+  const noteButton = document.createElement("button");
+  noteButton.type = "button";
+  noteButton.className = "law-action-button";
+  noteButton.dataset.lawPanel = "nota";
+  noteButton.textContent = "Nota";
+
+  actions.append(decreeLink, searchButton, formsButton, noteButton);
+
+  const searchSection = document.createElement("section");
+  searchSection.className = "law-section active";
+  searchSection.dataset.lawSection = "buscador";
+
+  const searchLabel = document.createElement("label");
+  searchLabel.className = "search law-search";
+
+  const searchText = document.createElement("span");
+  searchText.textContent = "Buscar patología, enfermedad, sigla o sinónimo";
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "search";
+  searchInput.placeholder = "Ej: infarto, ACV, sepsis, TEP, HDA, trauma...";
+  searchInput.autocomplete = "off";
+  searchInput.dataset.emergencyLawSearch = "true";
+
+  searchLabel.append(searchText, searchInput);
+
+  const searchNote = document.createElement("p");
+  searchNote.className = "law-note";
+  searchNote.textContent = "Buscador orientativo basado en el Título V del Decreto 34 para paciente adulto. Confirmar siempre en el decreto completo y con criterio clínico.";
+
+  const results = document.createElement("div");
+  results.id = "emergencyLawResults";
+  results.className = "law-results";
+
+  searchSection.append(searchLabel, searchNote, results);
+
+  const formsSection = document.createElement("section");
+  formsSection.className = "law-section";
+  formsSection.dataset.lawSection = "formularios";
+
+  const formsTitle = document.createElement("h3");
+  formsTitle.textContent = "Formularios de Ley de Urgencias";
+
+  const formGrid = document.createElement("div");
+  formGrid.className = "law-form-grid";
+
+  if (form.activationUrl) {
+    const activation = document.createElement("a");
+    activation.className = "document-button";
+    activation.href = form.activationUrl;
+    activation.target = "_blank";
+    activation.rel = "noopener noreferrer";
+    activation.textContent = "Abrir activación";
+    formGrid.append(activation);
+  } else {
+    formGrid.append(createPendingAction("Activación pendiente", "Aquí se agregará el formulario de activación de Ley de Urgencias."));
+  }
+
+  if (form.consentUrl) {
+    const consent = document.createElement("a");
+    consent.className = "document-button";
+    consent.href = form.consentUrl;
+    consent.target = "_blank";
+    consent.rel = "noopener noreferrer";
+    consent.textContent = "Abrir consentimiento";
+    formGrid.append(consent);
+  } else {
+    formGrid.append(createPendingAction("Consentimiento pendiente", "Aquí se agregará el consentimiento cuando esté disponible."));
+  }
+
+  formsSection.append(formsTitle, formGrid);
+
+  const noteSection = document.createElement("section");
+  noteSection.className = "law-section";
+  noteSection.dataset.lawSection = "nota";
+
+  const noteTitle = document.createElement("h3");
+  noteTitle.textContent = "Nota operativa";
+
+  const noteText = document.createElement("div");
+  noteText.className = "law-alert";
+  noteText.textContent = "Cuando se pretenda activar Ley de Urgencias, avisar a jefe de turno y Gestión de Camas.";
+
+  const noteDetail = document.createElement("p");
+  noteDetail.textContent = "La certificación debe quedar respaldada por evaluación médica, DAU y antecedentes clínicos/paraclínicos concordantes.";
+
+  noteSection.append(noteTitle, noteText, noteDetail);
+
+  panel.append(title, description, actions, searchSection, formsSection, noteSection);
+  return panel;
+}
+
 function renderTurnForms() {
   turnFormsList.innerHTML = "";
 
   turnForms.forEach((form) => {
+    if (form.type === "emergencyLaw") {
+      turnFormsList.append(renderEmergencyLawForm(form));
+      renderEmergencyLawResults();
+      return;
+    }
+
     const panel = document.createElement("section");
     panel.className = "document-panel";
 
@@ -1231,6 +1460,15 @@ document.addEventListener("click", (event) => {
     const panel = priorityNo.closest(".priority-panel");
     const status = panel?.querySelector(".priority-status");
     if (status) status.textContent = "Gestión prioritaria no requerida.";
+  }
+
+  const lawPanelButton = event.target.closest("[data-law-panel]");
+  if (lawPanelButton) showEmergencyLawSection(lawPanelButton.dataset.lawPanel);
+});
+
+document.addEventListener("input", (event) => {
+  if (event.target.matches("[data-emergency-law-search]")) {
+    renderEmergencyLawResults(event.target.value);
   }
 });
 

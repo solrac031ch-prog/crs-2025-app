@@ -740,6 +740,120 @@ svg {
   margin-top: 0;
 }
 
+.law-panel {
+  max-width: 920px;
+}
+
+.law-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.law-action-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 15px;
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+  border: 1px solid #b7ddd6;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.law-action-button.active {
+  color: #fff;
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.law-section {
+  display: none;
+  gap: 12px;
+  padding: 14px;
+  background: #fbfcfc;
+  border: 1px solid #e8ebe7;
+  border-radius: 8px;
+}
+
+.law-section.active {
+  display: grid;
+}
+
+.law-section h3 {
+  margin: 0;
+  font-size: 1.04rem;
+}
+
+.law-search {
+  box-shadow: none;
+}
+
+.law-note {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.law-results {
+  display: grid;
+  gap: 9px;
+}
+
+.law-result {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.law-result-category {
+  justify-self: start;
+  padding: 4px 7px;
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+  border-radius: 5px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.law-result h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.law-result p {
+  margin: 0;
+}
+
+.law-aliases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.law-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.law-alert {
+  padding: 12px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid #f4bbb6;
+  border-radius: 6px;
+  font-weight: 700;
+  line-height: 1.38;
+}
+
 .document-panel h2 {
   margin: 0;
   font-size: 1.16rem;
@@ -887,8 +1001,13 @@ svg {
 
   .document-button,
   .document-button-disabled,
+  .law-action-button,
   .priority-button {
     width: 100%;
     justify-self: stretch;
+  }
+
+  .law-form-grid {
+    grid-template-columns: 1fr;
   }
 }
