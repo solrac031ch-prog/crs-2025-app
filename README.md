@@ -81,4 +81,4 @@ https://TU-USUARIO.github.io/crs-2025-app/
 - `pdf-images/`: imagenes de apoyo extraidas del PDF original.
 - `protocol-docs/`: PDFs e imagenes fuente de los flujos actualizados.
 - `form-docs/`: documentos operativos anexados a formularios y respaldos internos.
-  - `examenes-hph-editable.pdf` y `transfusion-editable.pdf`: versiones digitales rellenables.
+  - `examenes-hph-rellenable.pdf` y `transfusion-rellenable.pdf`: los formatos originales con campos rellenables superpuestos.

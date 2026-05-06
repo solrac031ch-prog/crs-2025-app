@@ -12,12 +12,12 @@ const APP_FILES = [
   "./icon-192.png",
   "./icon-512.png",
   "./protocol-docs/decreto-34-25-oct-2022.pdf",
-  "./form-docs/examenes-hph-editable.pdf",
   "./form-docs/examenes-hph.pdf",
+  "./form-docs/examenes-hph-rellenable.pdf",
   "./form-docs/mayo.pdf",
-  "./form-docs/transfusion-editable.pdf",
   "./form-docs/telefonos-hph.pdf",
-  "./form-docs/transfusion.pdf"
+  "./form-docs/transfusion.pdf",
+  "./form-docs/transfusion-rellenable.pdf"
 ];
 
 self.addEventListener("install", (event) => {
