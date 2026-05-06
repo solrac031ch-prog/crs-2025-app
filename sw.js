@@ -1,17 +1,21 @@
-const CACHE_NAME = "crs-hph-2025-v32";
+const CACHE_NAME = "crs-hph-2025-v33";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./styles.css?v=32",
-  "./ley-urgencias-data.js?v=32",
-  "./app.js?v=32",
+  "./styles.css?v=33",
+  "./ley-urgencias-data.js?v=33",
+  "./app.js?v=33",
   "./logo-urgencia-hph.svg",
   "./manifest.webmanifest",
   "./icon.svg",
   "./icon-180.png",
   "./icon-192.png",
   "./icon-512.png",
-  "./protocol-docs/decreto-34-25-oct-2022.pdf"
+  "./protocol-docs/decreto-34-25-oct-2022.pdf",
+  "./form-docs/examenes-hph.pdf",
+  "./form-docs/mayo.pdf",
+  "./form-docs/telefonos-hph.pdf",
+  "./form-docs/transfusion.pdf"
 ];
 
 self.addEventListener("install", (event) => {

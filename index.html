@@ -15,7 +15,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-180.png" />
-    <link rel="stylesheet" href="./styles.css?v=32" />
+    <link rel="stylesheet" href="./styles.css?v=33" />
   </head>
   <body>
     <header class="topbar">
@@ -30,6 +30,7 @@
       <nav class="topnav" aria-label="Navegación principal">
         <a href="#/especialidades" data-route-link="especialidades">Especialidades</a>
         <a href="#/llamados" data-route-link="llamados">Llamados</a>
+        <a href="#/telefonos" data-route-link="telefonos">Anexos</a>
         <a href="#/visita" data-route-link="visita">Visita</a>
         <a href="#/formularios" data-route-link="formularios">Formularios</a>
       </nav>
@@ -75,6 +76,30 @@
             </span>
             <strong>Formularios de turno</strong>
             <span>Antimicrobianos, Ley de Urgencias y notificaciones.</span>
+          </a>
+          <a class="action-card" href="#/telefonos">
+            <span class="action-top">
+              <span class="action-number">5</span>
+              <span class="action-kicker">Anexos</span>
+            </span>
+            <strong>Telefonos de urgencia</strong>
+            <span>Directorio interno de anexos y contactos frecuentes.</span>
+          </a>
+          <a class="action-card" href="#/educacion">
+            <span class="action-top">
+              <span class="action-number">6</span>
+              <span class="action-kicker">Docencia</span>
+            </span>
+            <strong>Educacion medica</strong>
+            <span>Canal de Urgencias HPH, podcasts y material docente.</span>
+          </a>
+          <a class="action-card" href="#/gestion">
+            <span class="action-top">
+              <span class="action-number">7</span>
+              <span class="action-kicker">Gestion</span>
+            </span>
+            <strong>Casos prioritarios</strong>
+            <span>Registro local para seguimiento y checklist de jefatura.</span>
           </a>
         </div>
 
@@ -184,6 +209,42 @@
 
         <div id="turnFormsList" class="document-list" aria-live="polite"></div>
       </section>
+
+      <section id="phonesPage" class="page" aria-labelledby="phonesTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/inicio">Inicio</a>
+          <div>
+            <p class="eyebrow">Directorio interno</p>
+            <h1 id="phonesTitle">Telefonos y anexos de urgencia</h1>
+          </div>
+        </div>
+
+        <div id="phonesContent" aria-live="polite"></div>
+      </section>
+
+      <section id="educationPage" class="page" aria-labelledby="educationTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/inicio">Inicio</a>
+          <div>
+            <p class="eyebrow">Educacion medica</p>
+            <h1 id="educationTitle">Urgencias HPH</h1>
+          </div>
+        </div>
+
+        <div id="educationContent" class="document-list"></div>
+      </section>
+
+      <section id="managementPage" class="page" aria-labelledby="managementTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/inicio">Inicio</a>
+          <div>
+            <p class="eyebrow">Seguimiento local</p>
+            <h1 id="managementTitle">Casos con gestion prioritaria</h1>
+          </div>
+        </div>
+
+        <div id="managementContent" aria-live="polite"></div>
+      </section>
     </main>
 
     <template id="specialtyButtonTemplate">
@@ -193,7 +254,7 @@
       </a>
     </template>
 
-    <script src="./ley-urgencias-data.js?v=32"></script>
-    <script src="./app.js?v=32"></script>
+    <script src="./ley-urgencias-data.js?v=33"></script>
+    <script src="./app.js?v=33"></script>
   </body>
 </html>

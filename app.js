@@ -527,20 +527,68 @@ const protocols = [
 ];
 
 const externalDocs = {
-  llamadosUrl: "",
+  llamadosUrl: "./form-docs/mayo.pdf",
   uhdDisponibilidadUrl: "",
+  telefonosUrgenciaUrl: "./form-docs/telefonos-hph.pdf",
+  transfusionUrl: "./form-docs/transfusion.pdf",
   visitaDiariaUrl: "https://docs.google.com/spreadsheets/d/14-90hMv4JciofpxQz8TTEXwLHxvKb4iNmOGrpQACmpQ/edit?usp=drive_link"
 };
 
 const externalForms = {
   ecoTvpSoteroUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdkgwTx1dr00gxIMOdjIZVqibjhqYgwZqlmgmdSi_CfzbwQbg/viewform",
   antimicrobianosHphUrl: "https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform",
+  examenesManualesUrl: "./form-docs/examenes-hph.pdf",
+  transfusionUrl: "./form-docs/transfusion.pdf",
   leyUrgenciasUrl: "",
   leyUrgenciasConsentimientoUrl: "",
   medicamentosUsoOcasionalUrl: "",
   solicitudVihUrl: "",
   notificacionObligatoriaUrl: ""
 };
+
+const phoneDirectory = [
+  {
+    group: "Urgencia Adulto HPH",
+    items: [
+      { name: "Maternidad", detail: "Coordinacion paciente estable", phone: "260659 / 260653", tags: ["maternidad", "obstetricia"] },
+      { name: "Residencia medico maternidad", detail: "Apoyo caso a caso", phone: "260649", tags: ["maternidad", "residencia"] },
+      { name: "ORL", detail: "Hospitalizados en Urgencia", phone: "260532 / 260533", tags: ["orl", "otorrino"] }
+    ]
+  },
+  {
+    group: "Red externa frecuente",
+    items: [
+      { name: "Maxilofacial HSDR", detail: "Derivacion a Urgencia HSDR", phone: "262356", tags: ["maxilo", "hsdr"] },
+      { name: "Articuladora de red", detail: "Ruta ECO TVP Sotero del Rio", phone: "+569 9253 7195", tags: ["tvp", "eco", "sotero"] }
+    ]
+  },
+  {
+    group: "Gestion y apoyo ambulatorio",
+    items: [
+      { name: "Sala Pulso", detail: "Coordinacion horario habil", phone: "+569 9312 4816", tags: ["pulso", "transfusion"] },
+      { name: "Sala Pulso correo", detail: "Coordinacion horario inhabil", phone: "admpulsos@gmail.com", tags: ["pulso", "correo"] },
+      { name: "Gestion de alta SEA HPH", detail: "Casos con gestion prioritaria", phone: "gestionaltaseahph@gmail.com", tags: ["gestion", "prioritaria"] }
+    ]
+  }
+];
+
+const educationLinks = [
+  {
+    title: "Canal YouTube Urgencias HPH",
+    description: "Pendiente de conectar. Se agregara aqui el canal institucional cuando compartas el enlace.",
+    url: ""
+  },
+  {
+    title: "Podcast 1",
+    description: "Espacio reservado para podcast docente de urgencia.",
+    url: ""
+  },
+  {
+    title: "Podcast 2",
+    description: "Espacio reservado para segundo podcast docente.",
+    url: ""
+  }
+];
 
 const emergencyLawDecreeUrl = "./protocol-docs/decreto-34-25-oct-2022.pdf";
 const emergencyLawConditions = window.emergencyLawConditions || [];
@@ -637,6 +685,18 @@ const turnForms = [
     consentUrl: externalForms.leyUrgenciasConsentimientoUrl
   },
   {
+    title: "Orden de examenes manuales HPH",
+    description: "Formato manual vigente para completar, imprimir o guardar como PDF desde el navegador.",
+    url: externalForms.examenesManualesUrl,
+    actionLabel: "Abrir orden de examenes"
+  },
+  {
+    title: "Transfusion",
+    description: "Documento manual vigente para transfusion y respaldo operativo asociado.",
+    url: externalForms.transfusionUrl,
+    actionLabel: "Abrir documento de transfusion"
+  },
+  {
     title: "Medicamentos de uso ocasional",
     description: "Espacio preparado para anexar el formulario cuando se defina el enlace institucional.",
     url: externalForms.medicamentosUsoOcasionalUrl,
@@ -658,6 +718,7 @@ const turnForms = [
 
 const priorityEmail = "gestionaltaseahph@gmail.com";
 const publishedBaseUrl = "https://solrac031ch-prog.github.io/crs-2025-app/";
+const priorityCasesStorageKey = "crsPriorityCases";
 const categoryOrder = ["Regla general", "Flujo", "CRS", "Poli choque", "Hospitalizados", "Protocolo"];
 
 const state = {
@@ -672,7 +733,10 @@ const pages = {
   especialidad: document.querySelector("#protocolPage"),
   llamados: document.querySelector("#callsPage"),
   visita: document.querySelector("#visitPage"),
-  formularios: document.querySelector("#formsPage")
+  formularios: document.querySelector("#formsPage"),
+  telefonos: document.querySelector("#phonesPage"),
+  educacion: document.querySelector("#educationPage"),
+  gestion: document.querySelector("#managementPage")
 };
 
 const todayLabel = document.querySelector("#todayLabel");
@@ -688,6 +752,9 @@ const callsDocumentAction = document.querySelector("#callsDocumentAction");
 const uhdDocumentAction = document.querySelector("#uhdDocumentAction");
 const visitDocumentAction = document.querySelector("#visitDocumentAction");
 const turnFormsList = document.querySelector("#turnFormsList");
+const phonesContent = document.querySelector("#phonesContent");
+const educationContent = document.querySelector("#educationContent");
+const managementContent = document.querySelector("#managementContent");
 const formsTitle = document.querySelector("#formsTitle");
 
 const textRepairPatterns = [
@@ -1199,6 +1266,95 @@ function priorityMailto(protocol) {
   return `mailto:${priorityEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+function priorityCases() {
+  try {
+    return JSON.parse(localStorage.getItem(priorityCasesStorageKey) || "[]");
+  } catch (_) {
+    return [];
+  }
+}
+
+function savePriorityCases(cases) {
+  localStorage.setItem(priorityCasesStorageKey, JSON.stringify(cases));
+}
+
+function savePriorityCase(protocol, values) {
+  const cases = priorityCases();
+  const now = new Date();
+  const item = {
+    id: `${now.getTime()}`,
+    createdAt: now.toISOString(),
+    status: "Pendiente",
+    flow: protocol.title,
+    route: `${publishedBaseUrl}#/especialidad/${protocol.slug}`,
+    patientName: values.patientName,
+    rut: values.rut,
+    phone: values.phone,
+    summary: values.summary,
+    need: values.need
+  };
+  cases.unshift(item);
+  savePriorityCases(cases);
+  return item;
+}
+
+function downloadTextFile(filename, text, type = "text/plain;charset=utf-8") {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  return `"${String(value || "").replaceAll('"', '""')}"`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function exportPriorityCasesCsv() {
+  const headers = ["Fecha", "Estado", "Flujo", "Paciente", "RUN", "Telefono", "Resumen", "Necesita", "Enlace"];
+  const rows = priorityCases().map((item) => [
+    new Date(item.createdAt).toLocaleString("es-CL"),
+    item.status,
+    item.flow,
+    item.patientName,
+    item.rut,
+    item.phone,
+    item.summary,
+    item.need,
+    item.route
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(";")).join("\n");
+  downloadTextFile("casos-gestion-prioritaria.csv", `\ufeff${csv}`, "text/csv;charset=utf-8");
+}
+
+function exportPriorityCasesWord() {
+  const rows = priorityCases().map((item) => `
+    <tr>
+      <td>${new Date(item.createdAt).toLocaleString("es-CL")}</td>
+      <td>${escapeHtml(item.status)}</td>
+      <td>${escapeHtml(item.flow)}</td>
+      <td>${escapeHtml(item.patientName)}<br>${escapeHtml(item.rut)}<br>${escapeHtml(item.phone)}</td>
+      <td>${escapeHtml(item.summary)}</td>
+      <td>${escapeHtml(item.need)}</td>
+    </tr>
+  `).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Casos gestion prioritaria</title><style>body{font-family:Arial,sans-serif}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:8px;vertical-align:top}th{background:#eef4f3}</style></head><body><h1>Casos con gestion prioritaria</h1><table><thead><tr><th>Fecha</th><th>Estado</th><th>Flujo</th><th>Paciente</th><th>Resumen</th><th>Necesita</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  downloadTextFile("casos-gestion-prioritaria.doc", html, "application/msword;charset=utf-8");
+}
+
 function appendPriorityManagement(parent, protocol) {
   const panel = document.createElement("section");
   panel.className = "priority-panel";
@@ -1211,7 +1367,7 @@ function appendPriorityManagement(parent, protocol) {
   title.textContent = "¿Requiere gestión prioritaria?";
 
   const text = document.createElement("p");
-  text.textContent = "Si requiere priorización, se abrirá un correo prellenado para revisar, completar y enviar desde la cuenta correspondiente.";
+  text.textContent = "Si requiere priorizacion, registra los datos minimos del paciente. La app guardara el caso en este dispositivo y tambien puede abrir un correo prellenado.";
 
   const actions = document.createElement("div");
   actions.className = "priority-actions";
@@ -1222,17 +1378,34 @@ function appendPriorityManagement(parent, protocol) {
   noButton.dataset.priorityNo = "true";
   noButton.textContent = "No requiere";
 
-  const yesLink = document.createElement("a");
-  yesLink.className = "priority-button primary";
-  yesLink.href = priorityMailto(protocol);
-  yesLink.textContent = "Sí, abrir correo";
+  const yesButton = document.createElement("button");
+  yesButton.type = "button";
+  yesButton.className = "priority-button primary";
+  yesButton.dataset.priorityOpen = "true";
+  yesButton.textContent = "Si, registrar caso";
 
   const status = document.createElement("p");
   status.className = "priority-status";
   status.setAttribute("aria-live", "polite");
 
-  actions.append(noButton, yesLink);
-  panel.append(label, title, text, actions, status);
+  const form = document.createElement("form");
+  form.className = "priority-form";
+  form.hidden = true;
+  form.dataset.priorityForm = protocol.slug;
+  form.innerHTML = `
+    <label>Nombre paciente<input name="patientName" required autocomplete="off"></label>
+    <label>RUN<input name="rut" required autocomplete="off"></label>
+    <label>Telefono<input name="phone" required autocomplete="off"></label>
+    <label>Resumen corto<textarea name="summary" required rows="4"></textarea></label>
+    <label>Que necesita<textarea name="need" required rows="3"></textarea></label>
+    <div class="priority-actions">
+      <button class="priority-button primary" type="submit">Guardar en gestion</button>
+      <a class="priority-button secondary" href="${priorityMailto(protocol)}">Abrir correo</a>
+    </div>
+  `;
+
+  actions.append(noButton, yesButton);
+  panel.append(label, title, text, actions, form, status);
   parent.append(panel);
 }
 
@@ -1333,6 +1506,117 @@ function renderDocuments() {
   renderDocumentAction(callsDocumentAction, externalDocs.llamadosUrl, "Abrir especialistas de llamado");
   renderDocumentAction(uhdDocumentAction, externalDocs.uhdDisponibilidadUrl, "Abrir disponibilidad UHD");
   renderDocumentAction(visitDocumentAction, externalDocs.visitaDiariaUrl, "Abrir planilla de visita diaria");
+}
+
+function renderPhones() {
+  phonesContent.innerHTML = "";
+
+  const search = document.createElement("label");
+  search.className = "search phone-search";
+  search.innerHTML = "<span>Buscar nombre, unidad, anexo o palabra clave</span><input id=\"phoneSearchInput\" type=\"search\" placeholder=\"Ej: ORL, maternidad, pulso, 260...\" autocomplete=\"off\">";
+
+  const list = document.createElement("div");
+  list.className = "phone-directory";
+
+  const renderList = (query = "") => {
+    const q = normalize(query);
+    list.innerHTML = "";
+    phoneDirectory.forEach((section) => {
+      const items = section.items.filter((item) => {
+        const haystack = normalize([item.name, item.detail, item.phone, ...(item.tags || [])].join(" "));
+        return !q || haystack.includes(q);
+      });
+      if (!items.length) return;
+
+      const group = document.createElement("section");
+      group.className = "phone-group";
+      const title = document.createElement("h2");
+      title.textContent = section.group;
+      const grid = document.createElement("div");
+      grid.className = "phone-grid";
+      items.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "phone-card";
+        const href = item.phone.includes("@") ? `mailto:${item.phone}` : `tel:${item.phone.replace(/[^+0-9]/g, "")}`;
+        card.innerHTML = `<span>${item.detail}</span><strong>${item.name}</strong><a href="${href}">${item.phone}</a>`;
+        grid.append(card);
+      });
+      group.append(title, grid);
+      list.append(group);
+    });
+  };
+
+  const note = document.createElement("section");
+  note.className = "home-panel";
+  note.innerHTML = `<strong>Directorio editable</strong><p>Deje cargados los anexos frecuentes como tarjetas internas. El PDF completo queda incorporado como respaldo para completar o auditar la lista.</p><p><a class="inline-link" href="${externalDocs.telefonosUrgenciaUrl}" target="_blank" rel="noopener noreferrer">Abrir respaldo PDF</a></p>`;
+
+  phonesContent.append(search, list, note);
+  renderList();
+  search.querySelector("input").addEventListener("input", (event) => renderList(event.target.value));
+}
+
+function renderEducation() {
+  educationContent.innerHTML = "";
+  educationLinks.forEach((item) => {
+    const panel = document.createElement("section");
+    panel.className = "document-panel";
+    const title = document.createElement("h2");
+    title.textContent = item.title;
+    const description = document.createElement("p");
+    description.textContent = item.description;
+    const action = document.createElement("div");
+    action.className = "document-action";
+    if (item.url) {
+      const link = document.createElement("a");
+      link.className = "document-button";
+      link.href = item.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Abrir";
+      action.append(link);
+    } else {
+      const pending = document.createElement("span");
+      pending.className = "document-button-disabled";
+      pending.textContent = "Pendiente de enlace";
+      action.append(pending);
+    }
+    panel.append(title, description, action);
+    educationContent.append(panel);
+  });
+}
+
+function renderManagement() {
+  const cases = priorityCases();
+  managementContent.innerHTML = "";
+
+  const toolbar = document.createElement("section");
+  toolbar.className = "management-toolbar";
+  toolbar.innerHTML = `
+    <div><strong>${cases.length} caso${cases.length === 1 ? "" : "s"} guardado${cases.length === 1 ? "" : "s"}</strong><p>Registro local para jefatura. Exporta a Excel compatible o Word para revision y checklist.</p></div>
+    <div class="priority-actions">
+      <button class="priority-button primary" type="button" data-export-cases="csv">Exportar Excel</button>
+      <button class="priority-button secondary" type="button" data-export-cases="word">Exportar Word</button>
+    </div>
+  `;
+
+  const list = document.createElement("div");
+  list.className = "case-list";
+
+  if (!cases.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Aun no hay casos guardados. Se agregan desde cada flujo al marcar gestion prioritaria.";
+    list.append(empty);
+  } else {
+    cases.forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "case-card";
+      card.innerHTML = `<div><span class="detail-label">${new Date(item.createdAt).toLocaleString("es-CL")} · ${escapeHtml(item.status)}</span><h2>${escapeHtml(item.patientName)}</h2><p><strong>RUN:</strong> ${escapeHtml(item.rut)} · <strong>Telefono:</strong> ${escapeHtml(item.phone)}</p><p><strong>Flujo:</strong> ${escapeHtml(item.flow)}</p><p>${escapeHtml(item.summary)}</p><p><strong>Necesita:</strong> ${escapeHtml(item.need)}</p></div><label class="case-check"><input type="checkbox" data-case-done="${escapeHtml(item.id)}" ${item.status === "Gestionado" ? "checked" : ""}> Gestionado</label>`;
+      list.append(card);
+    });
+  }
+
+  managementContent.append(toolbar, list);
 }
 
 function emergencyLawHaystack(item) {
@@ -1884,6 +2168,9 @@ function renderRoute() {
   if (pageName === "especialidad") renderProtocol(slug || "");
   if (pageName === "llamados" || pageName === "visita") renderDocuments();
   if (pageName === "formularios") renderFormsRoute(parts.slice(1));
+  if (pageName === "telefonos") renderPhones();
+  if (pageName === "educacion") renderEducation();
+  if (pageName === "gestion") renderManagement();
 
   window.scrollTo(0, 0);
 }
@@ -1923,9 +2210,33 @@ document.addEventListener("click", (event) => {
     if (status) status.textContent = "Gestión prioritaria no requerida.";
   }
 
+  const priorityOpen = event.target.closest("[data-priority-open]");
+  if (priorityOpen) {
+    const panel = priorityOpen.closest(".priority-panel");
+    const form = panel?.querySelector("[data-priority-form]");
+    if (form) form.hidden = false;
+    form?.querySelector("input")?.focus();
+  }
+
+  const exportCases = event.target.closest("[data-export-cases]");
+  if (exportCases) {
+    if (exportCases.dataset.exportCases === "csv") exportPriorityCasesCsv();
+    if (exportCases.dataset.exportCases === "word") exportPriorityCasesWord();
+  }
+
 });
 
 document.addEventListener("input", (event) => {
+  const caseDone = event.target.closest("[data-case-done]");
+  if (caseDone) {
+    const cases = priorityCases().map((item) => (
+      item.id === caseDone.dataset.caseDone ? { ...item, status: caseDone.checked ? "Gestionado" : "Pendiente" } : item
+    ));
+    savePriorityCases(cases);
+    if (activeRouteName() === "gestion") renderManagement();
+    return;
+  }
+
   const input = event.target.closest("[data-law-search-form] input[name='q']");
   if (!input) return;
 
@@ -1938,6 +2249,26 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("submit", (event) => {
+  const priorityForm = event.target.closest("[data-priority-form]");
+  if (priorityForm) {
+    event.preventDefault();
+    const protocol = findProtocolBySlug(priorityForm.dataset.priorityForm);
+    if (!protocol) return;
+    const data = new FormData(priorityForm);
+    savePriorityCase(protocol, {
+      patientName: data.get("patientName").trim(),
+      rut: data.get("rut").trim(),
+      phone: data.get("phone").trim(),
+      summary: data.get("summary").trim(),
+      need: data.get("need").trim()
+    });
+    const status = priorityForm.closest(".priority-panel")?.querySelector(".priority-status");
+    if (status) status.textContent = "Caso guardado en Gestion prioritaria.";
+    priorityForm.reset();
+    priorityForm.hidden = true;
+    return;
+  }
+
   const form = event.target.closest("[data-law-search-form]");
   if (form) {
     event.preventDefault();
