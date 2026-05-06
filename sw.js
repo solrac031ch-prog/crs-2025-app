@@ -1,10 +1,10 @@
-const CACHE_NAME = "crs-hph-2025-v37";
+const CACHE_NAME = "crs-hph-2025-v38";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./styles.css?v=37",
-  "./ley-urgencias-data.js?v=37",
-  "./app.js?v=37",
+  "./styles.css?v=38",
+  "./ley-urgencias-data.js?v=38",
+  "./app.js?v=38",
   "./logo-urgencia-hph.svg",
   "./manifest.webmanifest",
   "./icon.svg",
@@ -14,7 +14,13 @@ const APP_FILES = [
   "./protocol-docs/decreto-34-25-oct-2022.pdf",
   "./form-docs/examenes-hph.pdf",
   "./form-docs/examenes-hph-rellenable.pdf",
+  "./form-docs/ley-urgencia-activacion.pdf",
+  "./form-docs/ley-urgencia-activacion-rellenable.pdf",
+  "./form-docs/ley-urgencia-consentimiento.pdf",
+  "./form-docs/ley-urgencia-consentimiento-rellenable.pdf",
   "./form-docs/mayo.pdf",
+  "./form-docs/medicamentos-uso-ocasional.pdf",
+  "./form-docs/medicamentos-uso-ocasional-rellenable.pdf",
   "./form-docs/telefonos-hph.pdf",
   "./form-docs/transfusion.pdf",
   "./form-docs/transfusion-rellenable.pdf"

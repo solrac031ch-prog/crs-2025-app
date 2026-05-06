@@ -539,9 +539,9 @@ const externalForms = {
   antimicrobianosHphUrl: "https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform",
   examenesManualesUrl: "./form-docs/examenes-hph-rellenable.pdf",
   transfusionUrl: "./form-docs/transfusion-rellenable.pdf",
-  leyUrgenciasUrl: "",
-  leyUrgenciasConsentimientoUrl: "",
-  medicamentosUsoOcasionalUrl: "",
+  leyUrgenciasUrl: "./form-docs/ley-urgencia-activacion-rellenable.pdf",
+  leyUrgenciasConsentimientoUrl: "./form-docs/ley-urgencia-consentimiento-rellenable.pdf",
+  medicamentosUsoOcasionalUrl: "./form-docs/medicamentos-uso-ocasional-rellenable.pdf",
   solicitudVihUrl: "",
   notificacionObligatoriaUrl: "https://epivigila.minsal.cl/"
 };
@@ -1070,7 +1070,7 @@ const turnForms = [
   },
   {
     title: "Ley de urgencias",
-    description: "Decreto 34, buscador de condiciones clínicas adultas, formularios pendientes y alerta operativa.",
+    description: "Decreto 34, buscador de condiciones clinicas adultas, formulario de activacion, consentimiento y alerta operativa.",
     type: "emergencyLaw",
     decreeUrl: emergencyLawDecreeUrl,
     activationUrl: externalForms.leyUrgenciasUrl,
@@ -1090,7 +1090,7 @@ const turnForms = [
   },
   {
     title: "Medicamentos de uso ocasional",
-    description: "Espacio preparado para anexar el formulario cuando se defina el enlace institucional.",
+    description: "Pagina 7 del procedimiento APF 1.2 para solicitud de farmaco no considerado en arsenal, en PDF rellenable.",
     url: externalForms.medicamentosUsoOcasionalUrl,
     actionLabel: "Abrir formulario medicamentos"
   },
@@ -2949,10 +2949,10 @@ function renderEmergencyLawForms() {
   back.textContent = "Ley de Urgencias";
 
   const title = document.createElement("h2");
-  title.textContent = "Pendientes de enlace";
+  title.textContent = "Formularios rellenables";
 
   const text = document.createElement("p");
-  text.textContent = "Cuando tengas los formularios institucionales, quedarán conectados aquí sin cambiar la estructura.";
+  text.textContent = "Activacion de Ley de Urgencias y consentimiento de traslado listos para completar, guardar o imprimir.";
 
   const grid = document.createElement("div");
   grid.className = "law-form-grid";

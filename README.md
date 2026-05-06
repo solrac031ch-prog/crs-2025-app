@@ -7,7 +7,7 @@ Web app estatica para consulta rapida de flujos de derivacion CRS 2025 de Urgenc
 - `#/inicio`: portada y accesos rapidos.
 - `#/especialidades`: grilla de especialidades y flujos con buscador.
 - `#/especialidad/urologia`: ejemplo de pagina individual por especialidad.
-- `#/llamados`: acceso al documento mensual de especialistas de llamado y disponibilidad UHD.
+- `#/llamados`: buscador diario de especialistas de llamado segun la rotativa de mayo 2026, con acceso al PDF original y disponibilidad UHD.
 - `#/visita`: acceso a la planilla de visita diaria.
 - `#/formularios`: formularios de turno, con antimicrobianos activo y otros espacios preparados.
   - Incluye notificacion obligatoria con acceso a EPIVIGILA y buscador de patologias inmediatas/diarias.
@@ -17,7 +17,9 @@ Web app estatica para consulta rapida de flujos de derivacion CRS 2025 de Urgenc
 
 Cada pagina de especialidad termina con una pregunta de gestion prioritaria. Si se requiere, la app solicita nombre, RUN, telefono, resumen y necesidad del paciente; guarda el caso localmente para jefatura y mantiene disponible el correo prellenado a `gestionaltaseahph@gmail.com`.
 
-La portada incluye un boton `Formularios de turno`. El primer formulario activo es `Antimicrobianos H. Padre Hurtado`. Ley de urgencias abre una pantalla propia con alerta operativa, Decreto 34 local completo y buscador dinamico por patologia/sigla/sinonimo. La busqueda se puede modificar sin partir de cero y los resultados se abren en pantalla separada, ordenados por probabilidad. Los formularios de activacion/consentimiento quedan pendientes. Los formularios de medicamentos de uso ocasional, solicitud de VIH y notificacion obligatoria quedan preparados como pendientes. Los flujos de TVP quedaron concentrados en un solo boton: sospecha TVP, ECO TVP Sotero del Rio y ECO Doppler horario inhabil, con decision separada para inhabil entre semana versus fin de semana. Neurologia queda como boton unico con tres flujos internos: neurorradiologia intervencional, evaluacion neurologica a distancia y posible donante. Viruela simica queda en Protocolos.
+La portada incluye un boton `Formularios de turno`. El primer formulario activo es `Antimicrobianos H. Padre Hurtado`. Ley de urgencias abre una pantalla propia con alerta operativa, Decreto 34 local completo, buscador dinamico por patologia/sigla/sinonimo y formularios rellenables de activacion y consentimiento. Medicamentos de uso ocasional abre la pagina 7 del procedimiento APF 1.2 como PDF rellenable. La busqueda se puede modificar sin partir de cero y los resultados se abren en pantalla separada, ordenados por probabilidad. Los formularios de solicitud de VIH y notificacion obligatoria quedan preparados como pendientes. Los flujos de TVP quedaron concentrados en un solo boton: sospecha TVP, ECO TVP Sotero del Rio y ECO Doppler horario inhabil, con decision separada para inhabil entre semana versus fin de semana. Neurologia queda como boton unico con tres flujos internos: neurorradiologia intervencional, evaluacion neurologica a distancia y posible donante. Viruela simica queda en Protocolos.
+
+En `Llamados`, la app usa la fecha del dispositivo para consultar la rotativa cargada de `Mayo.pdf`. El buscador muestra coincidencias por especialidad y la disponibilidad del dia seleccionado; los telefonos no se muestran hasta contar con autorizacion.
 
 La app tambien incluye una carpeta `protocol-docs/` con documentos fuente para abrir el PDF o imagen original desde cada flujo. Al subir esta carpeta a GitHub Pages, esos documentos quedan disponibles para toda persona que tenga el enlace de la app, por lo que deben ser documentos autorizados para publicacion o uso institucional compartido.
 
@@ -83,3 +85,5 @@ https://TU-USUARIO.github.io/crs-2025-app/
 - `protocol-docs/`: PDFs e imagenes fuente de los flujos actualizados.
 - `form-docs/`: documentos operativos anexados a formularios y respaldos internos.
   - `examenes-hph-rellenable.pdf` y `transfusion-rellenable.pdf`: los formatos originales con campos rellenables superpuestos.
+  - `medicamentos-uso-ocasional-rellenable.pdf`: solo pagina 7 del APF 1.2, con campos rellenables.
+  - `ley-urgencia-activacion-rellenable.pdf` y `ley-urgencia-consentimiento-rellenable.pdf`: formularios Ley de Urgencias con campos rellenables.
