@@ -1237,6 +1237,35 @@ svg {
   text-transform: uppercase;
 }
 
+.notification-badge {
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.notification-badge.immediate {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.notification-badge.daily {
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+}
+
+.notification-section {
+  display: grid;
+  gap: 10px;
+}
+
+.notification-section h2 {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
 .law-result h3 {
   margin: 0;
   font-size: 1rem;

@@ -543,8 +543,73 @@ const externalForms = {
   leyUrgenciasConsentimientoUrl: "",
   medicamentosUsoOcasionalUrl: "",
   solicitudVihUrl: "",
-  notificacionObligatoriaUrl: ""
+  notificacionObligatoriaUrl: "https://epivigila.minsal.cl/"
 };
+
+const mandatoryNotificationDiseases = [
+  {
+    type: "Inmediata",
+    trigger: "Notificar frente a la sospecha de un caso.",
+    items: [
+      ["Arbovirus", "Dengue, zika, chikungunya, fiebre amarilla"],
+      ["Botulismo", ""],
+      ["Botulismo infantil", ""],
+      ["Carbunco", ""],
+      ["Colera", ""],
+      ["Coronavirus", "COVID-19"],
+      ["Difteria", ""],
+      ["Enfermedad de Chagas agudo", ""],
+      ["Fiebre del Nilo Occidental", ""],
+      ["Fiebres hemorragicas", ""],
+      ["Intoxicaciones agudas por plaguicidas", ""],
+      ["Leptospirosis", ""],
+      ["Malaria", ""],
+      ["Meningitis bacteriana, enfermedad meningococica y enfermedad invasora por Haemophilus influenzae", ""],
+      ["Peste", ""],
+      ["Poliomielitis", "Paralisis flacidas agudas"],
+      ["Rabia humana", ""],
+      ["Rubeola", ""],
+      ["Sarampion", ""],
+      ["Sindrome pulmonar por Hantavirus", ""],
+      ["Triquinosis", ""]
+    ]
+  },
+  {
+    type: "Diaria",
+    trigger: "Notificar frente a la confirmacion de un caso.",
+    items: [
+      ["Brucelosis", ""],
+      ["Cisticercosis", ""],
+      ["Coqueluche", "Tos ferina"],
+      ["Enfermedad de Chagas cronico", ""],
+      ["Enfermedad de Creutzfeldt-Jakob", "ECJ"],
+      ["Fiebre Q", ""],
+      ["Fiebre tifoidea y paratifoidea", ""],
+      ["Gonorrea", ""],
+      ["Hepatitis A", ""],
+      ["Hepatitis B", ""],
+      ["Hepatitis C", ""],
+      ["Hepatitis E", ""],
+      ["Hidatidosis", "Equinococosis"],
+      ["Leishmaniasis", ""],
+      ["Lepra", ""],
+      ["Listeriosis", ""],
+      ["Neumococo", ""],
+      ["Parotiditis", ""],
+      ["Psitacosis", ""],
+      ["Sifilis", ""],
+      ["Sindrome de Inmunodeficiencia Adquirida", "VIH/SIDA"],
+      ["Tetanos", ""],
+      ["Tetanos neonatal", ""],
+      ["Tuberculosis", "Todas sus formas y localizaciones"]
+    ]
+  }
+].flatMap((group) => group.items.map(([name, aliases]) => ({
+  name,
+  aliases,
+  type: group.type,
+  trigger: group.trigger
+})));
 
 const phoneDirectory = [
   {
@@ -710,7 +775,8 @@ const turnForms = [
   },
   {
     title: "Formularios de notificación obligatoria",
-    description: "Espacio preparado para centralizar formularios de notificación obligatoria cuando se agreguen los enlaces.",
+    description: "Acceso a EPIVIGILA y buscador de patologías de notificación obligatoria en Chile.",
+    type: "mandatoryNotification",
     url: externalForms.notificacionObligatoriaUrl,
     actionLabel: "Abrir notificación obligatoria"
   }
@@ -1822,6 +1888,211 @@ function renderEmergencyLawForm(form) {
   return panel;
 }
 
+function renderMandatoryNotificationForm(form) {
+  const panel = document.createElement("section");
+  panel.className = "document-panel law-card notification-card";
+
+  const title = document.createElement("h2");
+  title.textContent = form.title;
+
+  const description = document.createElement("p");
+  description.textContent = form.description;
+
+  const actions = document.createElement("div");
+  actions.className = "law-card-actions";
+
+  const openLink = document.createElement("a");
+  openLink.className = "document-button";
+  openLink.href = "#/formularios/notificacion-obligatoria";
+  openLink.textContent = "Consultar patologías";
+
+  const epivigila = document.createElement("a");
+  epivigila.className = "document-button secondary-link";
+  epivigila.href = form.url;
+  epivigila.target = "_blank";
+  epivigila.rel = "noopener noreferrer";
+  epivigila.textContent = "Abrir EPIVIGILA";
+
+  actions.append(openLink, epivigila);
+  panel.append(title, description, actions);
+  return panel;
+}
+
+function mandatoryNotificationMatches(query = "", type = "Todos") {
+  const q = normalize(query.trim());
+  return mandatoryNotificationDiseases
+    .filter((item) => type === "Todos" || item.type === type)
+    .filter((item) => {
+      if (!q) return true;
+      const haystack = normalize([item.name, item.aliases, item.type, item.trigger].join(" "));
+      return haystack.includes(q);
+    })
+    .sort((a, b) => {
+      if (a.type !== b.type) return a.type.localeCompare(b.type, "es");
+      return a.name.localeCompare(b.name, "es");
+    });
+}
+
+function createMandatoryNotificationCard(item) {
+  const card = document.createElement("article");
+  card.className = "law-result notification-result";
+
+  const head = document.createElement("div");
+  head.className = "law-result-head";
+
+  const category = document.createElement("span");
+  category.className = item.type === "Inmediata" ? "notification-badge immediate" : "notification-badge daily";
+  category.textContent = item.type;
+
+  const trigger = document.createElement("span");
+  trigger.className = "law-match-badge";
+  trigger.textContent = item.type === "Inmediata" ? "SOSPECHA" : "CONFIRMACIÓN";
+
+  head.append(category, trigger);
+
+  const title = document.createElement("h3");
+  title.textContent = item.name;
+
+  const text = document.createElement("p");
+  text.textContent = item.trigger;
+
+  card.append(head, title, text);
+
+  if (item.aliases) {
+    const aliases = document.createElement("div");
+    aliases.className = "law-aliases";
+    item.aliases.split(",").map((alias) => alias.trim()).filter(Boolean).forEach((alias) => {
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = alias;
+      aliases.append(tag);
+    });
+    card.append(aliases);
+  }
+
+  return card;
+}
+
+function renderMandatoryNotificationResults(container, query = "", type = "Todos") {
+  const matches = mandatoryNotificationMatches(query, type);
+  container.innerHTML = "";
+
+  const meta = document.createElement("div");
+  meta.className = "results-meta";
+  meta.textContent = `${matches.length} patología${matches.length === 1 ? "" : "s"} encontrada${matches.length === 1 ? "" : "s"}`;
+  container.append(meta);
+
+  if (!matches.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No encontré coincidencias. Prueba con otro nombre, sigla o sinónimo.";
+    container.append(empty);
+    return;
+  }
+
+  const groups = ["Inmediata", "Diaria"];
+  groups.forEach((groupName) => {
+    const items = matches.filter((item) => item.type === groupName);
+    if (!items.length) return;
+
+    const section = document.createElement("section");
+    section.className = "notification-section";
+    const title = document.createElement("h2");
+    title.textContent = groupName === "Inmediata" ? "Notificación inmediata" : "Notificación diaria";
+    const grid = document.createElement("div");
+    grid.className = "law-results";
+    items.forEach((item) => grid.append(createMandatoryNotificationCard(item)));
+    section.append(title, grid);
+    container.append(section);
+  });
+}
+
+function renderMandatoryNotificationHome() {
+  formsTitle.textContent = "Notificación obligatoria";
+  turnFormsList.innerHTML = "";
+
+  const panel = document.createElement("section");
+  panel.className = "law-search-page notification-page";
+
+  const back = document.createElement("a");
+  back.className = "back-link";
+  back.href = "#/formularios";
+  back.textContent = "Formularios";
+
+  const stage = document.createElement("section");
+  stage.className = "law-search-stage";
+
+  const title = document.createElement("h2");
+  title.textContent = "Patologías de notificación obligatoria";
+
+  const text = document.createElement("p");
+  text.textContent = "Consulta si una patología requiere notificación inmediata por sospecha o diaria por confirmación. Para notificar, ingresa a EPIVIGILA.";
+
+  const actions = document.createElement("div");
+  actions.className = "law-actions";
+
+  const epivigila = document.createElement("a");
+  epivigila.className = "law-action-button active";
+  epivigila.href = externalForms.notificacionObligatoriaUrl;
+  epivigila.target = "_blank";
+  epivigila.rel = "noopener noreferrer";
+  epivigila.textContent = "Abrir EPIVIGILA";
+
+  const allButton = document.createElement("button");
+  allButton.type = "button";
+  allButton.className = "law-action-button";
+  allButton.dataset.notificationType = "Todos";
+  allButton.textContent = "Todas";
+
+  const immediateButton = document.createElement("button");
+  immediateButton.type = "button";
+  immediateButton.className = "law-action-button";
+  immediateButton.dataset.notificationType = "Inmediata";
+  immediateButton.textContent = "Inmediatas";
+
+  const dailyButton = document.createElement("button");
+  dailyButton.type = "button";
+  dailyButton.className = "law-action-button";
+  dailyButton.dataset.notificationType = "Diaria";
+  dailyButton.textContent = "Diarias";
+
+  actions.append(epivigila, allButton, immediateButton, dailyButton);
+
+  const form = document.createElement("form");
+  form.className = "law-search-form";
+  form.innerHTML = `
+    <input name="q" type="search" placeholder="Ej: hantavirus, sarampión, VIH, tuberculosis..." autocomplete="off">
+    <button class="law-action-button active" type="submit">Buscar</button>
+  `;
+
+  const results = document.createElement("div");
+  results.className = "notification-results";
+
+  let selectedType = "Todos";
+  const render = () => renderMandatoryNotificationResults(results, form.querySelector("input").value, selectedType);
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    render();
+  });
+  form.querySelector("input").addEventListener("input", render);
+  actions.querySelectorAll("[data-notification-type]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedType = button.dataset.notificationType;
+      actions.querySelectorAll("[data-notification-type]").forEach((item) => {
+        item.classList.toggle("active", item === button);
+      });
+      render();
+    });
+  });
+  allButton.classList.add("active");
+
+  stage.append(title, text, actions, form);
+  panel.append(back, stage, results);
+  turnFormsList.append(panel);
+  render();
+}
+
 function renderEmergencyLawHome() {
   formsTitle.textContent = "Ley de Urgencias";
   turnFormsList.innerHTML = "";
@@ -2095,6 +2366,11 @@ function renderFormsRoute(parts = []) {
     return;
   }
 
+  if (parts[0] === "notificacion-obligatoria") {
+    renderMandatoryNotificationHome();
+    return;
+  }
+
   if (parts[0] !== "ley-urgencias") {
     renderTurnForms();
     return;
@@ -2117,6 +2393,10 @@ function renderTurnForms() {
   turnForms.forEach((form) => {
     if (form.type === "emergencyLaw") {
       turnFormsList.append(renderEmergencyLawForm(form));
+      return;
+    }
+    if (form.type === "mandatoryNotification") {
+      turnFormsList.append(renderMandatoryNotificationForm(form));
       return;
     }
 

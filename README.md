@@ -10,6 +10,7 @@ Web app estatica para consulta rapida de flujos de derivacion CRS 2025 de Urgenc
 - `#/llamados`: acceso al documento mensual de especialistas de llamado y disponibilidad UHD.
 - `#/visita`: acceso a la planilla de visita diaria.
 - `#/formularios`: formularios de turno, con antimicrobianos activo y otros espacios preparados.
+  - Incluye notificacion obligatoria con acceso a EPIVIGILA y buscador de patologias inmediatas/diarias.
 - `#/telefonos`: directorio interno de anexos frecuentes, con buscador y respaldo PDF.
 - `#/educacion`: espacio para canal YouTube de Urgencias HPH y podcasts docentes.
 - `#/gestion`: registro local de casos con gestion prioritaria, exportable a CSV/Excel compatible o Word.
