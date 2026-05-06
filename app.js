@@ -537,8 +537,8 @@ const externalDocs = {
 const externalForms = {
   ecoTvpSoteroUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdkgwTx1dr00gxIMOdjIZVqibjhqYgwZqlmgmdSi_CfzbwQbg/viewform",
   antimicrobianosHphUrl: "https://docs.google.com/forms/d/e/1FAIpQLScwwKbXlot8vopzZAt2KIUxaIb_JbNE0pf4eecQEJ6OmOoOJw/viewform",
-  examenesManualesUrl: "./form-docs/examenes-hph.pdf",
-  transfusionUrl: "./form-docs/transfusion.pdf",
+  examenesManualesUrl: "./form-docs/examenes-hph-editable.pdf",
+  transfusionUrl: "./form-docs/transfusion-editable.pdf",
   leyUrgenciasUrl: "",
   leyUrgenciasConsentimientoUrl: "",
   medicamentosUsoOcasionalUrl: "",

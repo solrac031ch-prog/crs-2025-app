@@ -1,0 +1,135 @@
+%PDF-1.7
+%u00E2u00E3u00CFu00D3
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (paciente_nombre) /Rect [180 710 330 730] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+3 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (paciente_run) /Rect [430 710 540 730] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+4 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (paciente_edad) /Rect [180 679 330 699] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (fecha) /Rect [430 679 540 699] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (ubicacion) /Rect [180 648 330 668] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (medico) /Rect [430 648 540 668] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (globulos_rojos) /Rect [54 585 66 597] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (plaquetas) /Rect [54 563 66 575] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (plasma) /Rect [54 541 66 553] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (crio) /Rect [54 519 66 531] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (unidades) /Rect [180 499 330 519] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (grupo_rh) /Rect [430 499 540 519] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (diagnostico) /Rect [180 468 540 488] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (hb_hto) /Rect [180 407 330 427] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+16 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (hora) /Rect [430 407 540 427] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+17 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (observaciones) /Rect [54 376 540 426] /F 4 /Ff 4096 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+18 0 obj
+<< /Length 1470 >>
+stream
+BT /F1 16 Tf 54 792 Td (Solicitud / registro de transfusion HPH) Tj ET
+BT /F1 10 Tf 54 770 Td (Hospital Padre Hurtado - Urgencia Adulto) Tj ET
+54 760 m 558 760 l S
+BT /F1 12 Tf 54 732 Td (Datos del paciente) Tj ET
+BT /F1 9 Tf 54 716 Td (Nombre) Tj ET
+180 710 150 20 re S
+BT /F1 9 Tf 346 716 Td (RUN) Tj ET
+430 710 110 20 re S
+BT /F1 9 Tf 54 685 Td (Edad) Tj ET
+180 679 150 20 re S
+BT /F1 9 Tf 346 685 Td (Fecha) Tj ET
+430 679 110 20 re S
+BT /F1 9 Tf 54 654 Td (Ubicacion / Box) Tj ET
+180 648 150 20 re S
+BT /F1 9 Tf 346 654 Td (Medico) Tj ET
+430 648 110 20 re S
+BT /F1 12 Tf 54 609 Td (Solicitud) Tj ET
+54 585 12 12 re S
+BT /F1 10 Tf 74 587 Td (Globulos rojos) Tj ET
+54 563 12 12 re S
+BT /F1 10 Tf 74 565 Td (Plaquetas) Tj ET
+54 541 12 12 re S
+BT /F1 10 Tf 74 543 Td (Plasma fresco congelado) Tj ET
+54 519 12 12 re S
+BT /F1 10 Tf 74 521 Td (Crioprecipitado) Tj ET
+BT /F1 9 Tf 54 505 Td (Unidades) Tj ET
+180 499 150 20 re S
+BT /F1 9 Tf 346 505 Td (Grupo/Rh) Tj ET
+430 499 110 20 re S
+BT /F1 9 Tf 54 474 Td (Diagnostico / motivo) Tj ET
+180 468 360 20 re S
+BT /F1 12 Tf 54 429 Td (Control y observaciones) Tj ET
+BT /F1 9 Tf 54 413 Td (Hb / Hto) Tj ET
+180 407 150 20 re S
+BT /F1 9 Tf 346 413 Td (Hora indicada) Tj ET
+430 407 110 20 re S
+BT /F1 9 Tf 54 430 Td (Riesgos, antecedentes, indicacion especial o reaccion adversa) Tj ET
+54 376 486 50 re S
+BT /F1 8 Tf 54 38 Td (Documento digital rellenable. Verificar indicacion, datos del paciente y firma segun norma local.) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 18 0 R /Annots [2 0 R 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R] >>
+endobj
+20 0 obj
+<< /Type /Pages /Kids [19 0 R] /Count 1 >>
+endobj
+21 0 obj
+<< /Type /Catalog /Pages 20 0 R /AcroForm << /Fields [2 0 R 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R] /NeedAppearances true /DR << /Font << /Helv 1 0 R >> >> /DA (/Helv 10 Tf 0 0 0 rg) >> >>
+endobj
+xref
+0 22
+0000000000 65535 f 
+0000000031 00000 n 
+0000000128 00000 n 
+0000000340 00000 n 
+0000000549 00000 n 
+0000000759 00000 n 
+0000000961 00000 n 
+0000001167 00000 n 
+0000001370 00000 n 
+0000001521 00000 n 
+0000001667 00000 n 
+0000001811 00000 n 
+0000001953 00000 n 
+0000002159 00000 n 
+0000002365 00000 n 
+0000002574 00000 n 
+0000002778 00000 n 
+0000002980 00000 n 
+0000003193 00000 n 
+0000004716 00000 n 
+0000004959 00000 n 
+0000005018 00000 n 
+trailer
+<< /Size 22 /Root 21 0 R >>
+startxref
+5282
+%%EOF

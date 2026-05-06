@@ -1,0 +1,135 @@
+%PDF-1.7
+%u00E2u00E3u00CFu00D3
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (paciente_nombre) /Rect [180 710 330 730] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+3 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (paciente_run) /Rect [430 710 540 730] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+4 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (paciente_edad) /Rect [180 679 330 699] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (fecha) /Rect [430 679 540 699] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (ubicacion) /Rect [180 648 330 668] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (medico) /Rect [430 648 540 668] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (hemograma) /Rect [54 585 66 597] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (perfil_bioquimico) /Rect [54 563 66 575] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (elp) /Rect [54 541 66 553] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (creatinina) /Rect [54 519 66 531] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (pruebas_hepaticas) /Rect [54 497 66 509] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (coagulacion) /Rect [54 475 66 487] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (gases_lactato) /Rect [54 453 66 465] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (orina_urocultivo) /Rect [54 431 66 443] /F 4 /V /Off /AS /Off /DA (/Helv 10 Tf 0 0 0 rg) >>
+endobj
+16 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (otros_examenes) /Rect [180 411 540 431] /F 4 /Ff 0 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+17 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (observaciones) /Rect [54 350 540 400] /F 4 /Ff 4096 /V () /DA (/Helv 10 Tf 0 0 0 rg) /MK << /BC [0.72 0.76 0.74] /BG [1 1 1] >> /BS << /W 1 /S /S >> >>
+endobj
+18 0 obj
+<< /Length 1454 >>
+stream
+BT /F1 16 Tf 54 792 Td (Orden de examenes manuales HPH) Tj ET
+BT /F1 10 Tf 54 770 Td (Hospital Padre Hurtado - Urgencia Adulto) Tj ET
+54 760 m 558 760 l S
+BT /F1 12 Tf 54 732 Td (Datos del paciente) Tj ET
+BT /F1 9 Tf 54 716 Td (Nombre) Tj ET
+180 710 150 20 re S
+BT /F1 9 Tf 346 716 Td (RUN) Tj ET
+430 710 110 20 re S
+BT /F1 9 Tf 54 685 Td (Edad) Tj ET
+180 679 150 20 re S
+BT /F1 9 Tf 346 685 Td (Fecha) Tj ET
+430 679 110 20 re S
+BT /F1 9 Tf 54 654 Td (Ubicacion / Box) Tj ET
+180 648 150 20 re S
+BT /F1 9 Tf 346 654 Td (Medico) Tj ET
+430 648 110 20 re S
+BT /F1 12 Tf 54 609 Td (Examenes) Tj ET
+54 585 12 12 re S
+BT /F1 10 Tf 74 587 Td (Hemograma) Tj ET
+54 563 12 12 re S
+BT /F1 10 Tf 74 565 Td (Perfil bioquimico) Tj ET
+54 541 12 12 re S
+BT /F1 10 Tf 74 543 Td (Electrolitos plasmaticos) Tj ET
+54 519 12 12 re S
+BT /F1 10 Tf 74 521 Td (Funcion renal / creatinina) Tj ET
+54 497 12 12 re S
+BT /F1 10 Tf 74 499 Td (Pruebas hepaticas) Tj ET
+54 475 12 12 re S
+BT /F1 10 Tf 74 477 Td (Coagulacion) Tj ET
+54 453 12 12 re S
+BT /F1 10 Tf 74 455 Td (Gases / lactato) Tj ET
+54 431 12 12 re S
+BT /F1 10 Tf 74 433 Td (Orina completa / urocultivo) Tj ET
+BT /F1 9 Tf 54 417 Td (Otros examenes) Tj ET
+180 411 360 20 re S
+BT /F1 12 Tf 54 372 Td (Observaciones) Tj ET
+BT /F1 9 Tf 54 404 Td (Indicacion / contexto clinico) Tj ET
+54 350 486 50 re S
+BT /F1 8 Tf 54 38 Td (Documento digital rellenable. Verificar indicacion, datos del paciente y firma segun norma local.) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 20 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 18 0 R /Annots [2 0 R 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R] >>
+endobj
+20 0 obj
+<< /Type /Pages /Kids [19 0 R] /Count 1 >>
+endobj
+21 0 obj
+<< /Type /Catalog /Pages 20 0 R /AcroForm << /Fields [2 0 R 3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R] /NeedAppearances true /DR << /Font << /Helv 1 0 R >> >> /DA (/Helv 10 Tf 0 0 0 rg) >> >>
+endobj
+xref
+0 22
+0000000000 65535 f 
+0000000031 00000 n 
+0000000128 00000 n 
+0000000340 00000 n 
+0000000549 00000 n 
+0000000759 00000 n 
+0000000961 00000 n 
+0000001167 00000 n 
+0000001370 00000 n 
+0000001516 00000 n 
+0000001670 00000 n 
+0000001811 00000 n 
+0000001959 00000 n 
+0000002114 00000 n 
+0000002263 00000 n 
+0000002414 00000 n 
+0000002568 00000 n 
+0000002780 00000 n 
+0000002993 00000 n 
+0000004500 00000 n 
+0000004743 00000 n 
+0000004802 00000 n 
+trailer
+<< /Size 22 /Root 21 0 R >>
+startxref
+5066
+%%EOF
