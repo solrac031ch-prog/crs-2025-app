@@ -1,10 +1,10 @@
-const CACHE_NAME = "crs-hph-2025-v35";
+const CACHE_NAME = "crs-hph-2025-v36";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./styles.css?v=35",
-  "./ley-urgencias-data.js?v=35",
-  "./app.js?v=35",
+  "./styles.css?v=36",
+  "./ley-urgencias-data.js?v=36",
+  "./app.js?v=36",
   "./logo-urgencia-hph.svg",
   "./manifest.webmanifest",
   "./icon.svg",

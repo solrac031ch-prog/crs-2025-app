@@ -1113,6 +1113,21 @@ svg {
   text-transform: uppercase;
 }
 
+.search-preview-link {
+  border: 1px solid #b7ddd6;
+}
+
+.search-preview-link:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
+.route-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .law-shortcuts {
   display: grid;
   gap: 12px;

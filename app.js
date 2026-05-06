@@ -1832,7 +1832,7 @@ function searchPreviewWords(query = "", sourceItems = []) {
   return [...related].slice(0, 8);
 }
 
-function renderSearchPreview(container, query = "", sourceItems = []) {
+function renderSearchPreview(container, query = "", sourceItems = [], options = {}) {
   container.innerHTML = "";
   const cleanQuery = query.trim();
 
@@ -1853,9 +1853,15 @@ function renderSearchPreview(container, query = "", sourceItems = []) {
   preview.append(label);
 
   searchPreviewWords(cleanQuery, sourceItems).forEach((word) => {
-    const chip = document.createElement("span");
-    chip.className = "tag";
+    const chip = options.linkUrl ? document.createElement("a") : document.createElement("span");
+    chip.className = options.linkUrl ? "tag search-preview-link" : "tag";
     chip.textContent = word;
+    if (options.linkUrl) {
+      chip.href = options.linkUrl;
+      chip.target = "_blank";
+      chip.rel = "noopener noreferrer";
+      chip.setAttribute("aria-label", `Abrir EPIVIGILA por ${word}`);
+    }
     preview.append(chip);
   });
 
@@ -2006,6 +2012,24 @@ function renderMandatoryNotificationResults(container, query = "", type = "Todos
     section.append(title, grid);
     container.append(section);
   });
+
+  const actions = document.createElement("div");
+  actions.className = "route-actions";
+
+  const epivigila = document.createElement("a");
+  epivigila.className = "back-link";
+  epivigila.href = externalForms.notificacionObligatoriaUrl;
+  epivigila.target = "_blank";
+  epivigila.rel = "noopener noreferrer";
+  epivigila.textContent = "Abrir EPIVIGILA";
+
+  const back = document.createElement("a");
+  back.className = "back-link";
+  back.href = "#/formularios";
+  back.textContent = "Volver a formularios";
+
+  actions.append(epivigila, back);
+  container.append(actions);
 }
 
 function renderMandatoryNotificationHome() {
@@ -2015,10 +2039,20 @@ function renderMandatoryNotificationHome() {
   const panel = document.createElement("section");
   panel.className = "law-search-page notification-page";
 
+  const nav = document.createElement("div");
+  nav.className = "route-actions";
+
   const back = document.createElement("a");
   back.className = "back-link";
   back.href = "#/formularios";
-  back.textContent = "Formularios";
+  back.textContent = "Volver a formularios";
+
+  const home = document.createElement("a");
+  home.className = "back-link";
+  home.href = "#/inicio";
+  home.textContent = "Inicio";
+
+  nav.append(back, home);
 
   const stage = document.createElement("section");
   stage.className = "law-search-stage";
@@ -2082,7 +2116,9 @@ function renderMandatoryNotificationHome() {
   const renderPreview = () => {
     results.hidden = true;
     results.innerHTML = "";
-    renderSearchPreview(preview, input.value, mandatoryNotificationDiseases);
+    renderSearchPreview(preview, input.value, mandatoryNotificationDiseases, {
+      linkUrl: externalForms.notificacionObligatoriaUrl
+    });
   };
 
   form.addEventListener("submit", (event) => {
@@ -2102,7 +2138,7 @@ function renderMandatoryNotificationHome() {
   allButton.classList.add("active");
 
   stage.append(title, text, actions, form, preview);
-  panel.append(back, stage, results);
+  panel.append(nav, stage, results);
   turnFormsList.append(panel);
   renderPreview();
 }
