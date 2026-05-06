@@ -1095,6 +1095,24 @@ svg {
   line-height: 1.38;
 }
 
+.search-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 11px;
+  background: #fbfcfc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.search-preview-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .law-shortcuts {
   display: grid;
   gap: 12px;

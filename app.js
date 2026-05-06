@@ -1810,59 +1810,60 @@ function emergencyLawSearchEditUrl(query) {
     : "#/formularios/ley-urgencias/buscar";
 }
 
-function renderEmergencyLawLiveResults(container, query = "") {
-  container.innerHTML = "";
+function searchPreviewWords(query = "", sourceItems = []) {
+  const baseWords = normalize(query.trim())
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 1);
+  const related = new Set(baseWords);
 
+  baseWords.forEach((word) => {
+    (emergencyLawSearchExpansions[word] || []).forEach((item) => related.add(item));
+  });
+
+  sourceItems.forEach((item) => {
+    const aliases = Array.isArray(item.aliases) ? item.aliases : String(item.aliases || "").split(",");
+    const haystack = normalize([item.title, item.name, item.criteria, item.trigger, ...aliases].join(" "));
+    if (baseWords.some((word) => haystack.includes(word))) {
+      aliases.map((alias) => alias.trim()).filter(Boolean).slice(0, 4).forEach((alias) => related.add(alias));
+    }
+  });
+
+  return [...related].slice(0, 8);
+}
+
+function renderSearchPreview(container, query = "", sourceItems = []) {
+  container.innerHTML = "";
   const cleanQuery = query.trim();
+
   if (!cleanQuery) {
     const idle = document.createElement("div");
     idle.className = "law-live-empty";
-    idle.textContent = "Escribe y aparecerán coincidencias por palabra, sigla o sinónimo.";
+    idle.textContent = "Escribe una palabra, sigla o sinónimo.";
     container.append(idle);
     return;
   }
 
-  const matches = getEmergencyLawMatches(cleanQuery);
-  const head = document.createElement("div");
-  head.className = "law-live-head";
+  const preview = document.createElement("div");
+  preview.className = "search-preview";
 
-  const count = document.createElement("strong");
-  count.textContent = `${matches.length} coincidencia${matches.length === 1 ? "" : "s"}`;
+  const label = document.createElement("span");
+  label.className = "search-preview-label";
+  label.textContent = "Buscando";
+  preview.append(label);
 
-  const open = document.createElement("a");
-  open.href = emergencyLawSearchUrl(cleanQuery);
-  open.textContent = "Ver pantalla completa";
-
-  head.append(count, open);
-  container.append(head);
-
-  if (!matches.length) {
-    const empty = document.createElement("div");
-    empty.className = "law-live-empty";
-    empty.textContent = "Sin coincidencias por ahora. Prueba otra palabra o una sigla relacionada.";
-    container.append(empty);
-    return;
-  }
-
-  const list = document.createElement("div");
-  list.className = "law-live-list";
-
-  matches.slice(0, 5).forEach((item) => {
-    const link = document.createElement("a");
-    link.className = "law-live-item";
-    link.href = emergencyLawSearchUrl(cleanQuery);
-
-    const meta = document.createElement("span");
-    meta.textContent = `${item.category} · ${emergencyLawMatchLabel(item)}`;
-
-    const title = document.createElement("strong");
-    title.textContent = item.title;
-
-    link.append(meta, title);
-    list.append(link);
+  searchPreviewWords(cleanQuery, sourceItems).forEach((word) => {
+    const chip = document.createElement("span");
+    chip.className = "tag";
+    chip.textContent = word;
+    preview.append(chip);
   });
 
-  container.append(list);
+  container.append(preview);
+}
+
+function renderEmergencyLawLiveResults(container, query = "") {
+  renderSearchPreview(container, query, emergencyLawConditions);
 }
 
 function renderEmergencyLawForm(form) {
@@ -2067,30 +2068,43 @@ function renderMandatoryNotificationHome() {
 
   const results = document.createElement("div");
   results.className = "notification-results";
+  results.hidden = true;
+
+  const preview = document.createElement("div");
+  preview.className = "law-live-results";
 
   let selectedType = "Todos";
-  const render = () => renderMandatoryNotificationResults(results, form.querySelector("input").value, selectedType);
+  const input = form.querySelector("input");
+  const renderResults = () => {
+    results.hidden = false;
+    renderMandatoryNotificationResults(results, input.value, selectedType);
+  };
+  const renderPreview = () => {
+    results.hidden = true;
+    results.innerHTML = "";
+    renderSearchPreview(preview, input.value, mandatoryNotificationDiseases);
+  };
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    render();
+    renderResults();
   });
-  form.querySelector("input").addEventListener("input", render);
+  input.addEventListener("input", renderPreview);
   actions.querySelectorAll("[data-notification-type]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedType = button.dataset.notificationType;
       actions.querySelectorAll("[data-notification-type]").forEach((item) => {
         item.classList.toggle("active", item === button);
       });
-      render();
+      renderResults();
     });
   });
   allButton.classList.add("active");
 
-  stage.append(title, text, actions, form);
+  stage.append(title, text, actions, form, preview);
   panel.append(back, stage, results);
   turnFormsList.append(panel);
-  render();
+  renderPreview();
 }
 
 function renderEmergencyLawHome() {
