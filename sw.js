@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-2025-recovery-v44";
+const CACHE_NAME = "crs-hph-2025-recovery-v45";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -20,6 +20,6 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   event.respondWith(
-    fetch(request).catch(() => caches.match(request))
+    fetch(request, { cache: "no-store" }).catch(() => caches.match(request))
   );
 });
