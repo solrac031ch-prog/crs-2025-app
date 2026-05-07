@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-2025-recovery-v45";
+const CACHE_NAME = "crs-hph-2025-recovery-v46";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
