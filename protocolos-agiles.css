@@ -1,0 +1,251 @@
+.quick-protocol {
+  display: grid;
+  gap: 12px;
+}
+
+.quick-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 18px;
+  color: #ffffff;
+  background: #101214;
+  border-bottom: 5px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.quick-hero .detail-label {
+  color: #c8f1ea;
+}
+
+.quick-hero h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  line-height: 1.08;
+}
+
+.quick-hero p:last-child {
+  margin: 0;
+  color: #e7ecea;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.quick-page {
+  min-width: 56px;
+  padding: 8px 10px;
+  color: #101214;
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.quick-decision {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--blue);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.decision-question {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+.decision-question > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #ffffff;
+  background: var(--blue);
+  border-radius: 50%;
+  font-weight: 900;
+}
+
+.decision-question strong,
+.decision-question small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.decision-question strong {
+  font-size: 1.02rem;
+  line-height: 1.18;
+}
+
+.decision-question small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.decision-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.decision-option {
+  min-height: 60px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.decision-option strong {
+  font-size: 1.08rem;
+  line-height: 1;
+}
+
+.decision-option span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.decision-option.is-yes {
+  color: #073b35;
+  background: var(--accent-soft);
+  border-color: #a7d8cf;
+}
+
+.decision-option.is-no {
+  color: #5c3605;
+  background: var(--amber-soft);
+  border-color: #ebcf8b;
+}
+
+.quick-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quick-card {
+  position: relative;
+  min-height: 154px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 15px 42px 15px 15px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.quick-card-alert {
+  border-left-color: var(--danger);
+}
+
+.quick-card-route {
+  border-left-color: var(--amber);
+}
+
+.quick-number {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: #ffffff;
+  background: var(--ink);
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.quick-card small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.quick-card strong {
+  font-size: 1.02rem;
+  line-height: 1.16;
+}
+
+.quick-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.36;
+  overflow-wrap: anywhere;
+}
+
+.quick-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 13px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid #f4bbb6;
+  border-radius: 8px;
+}
+
+.quick-warning span {
+  flex: 0 0 auto;
+  justify-self: start;
+  padding: 4px 7px;
+  color: #ffffff;
+  background: var(--danger);
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.quick-warning strong {
+  line-height: 1.34;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 860px) {
+  .quick-decision,
+  .quick-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-decision {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 560px) {
+  .quick-hero,
+  .decision-options {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-page {
+    justify-self: start;
+  }
+
+  .quick-warning {
+    display: grid;
+  }
+}
