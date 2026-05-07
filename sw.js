@@ -281,4 +281,4 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
-}
+});
