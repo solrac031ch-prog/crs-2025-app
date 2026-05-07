@@ -24,17 +24,18 @@
     ["Dialisis Externa", "externo", "Centro de Dialisis", [["Vespucio - Max Jara 10111, La Granja", "232424170 / 225469373"], ["La Granja - Canto General 050, La Granja", "2-5439958"], ["San Gabriel - Av Gabriela 02540, La Pintana", "22 5429264"], ["San Ramon - Av. Ossa 1891, San Ramon", "22-5436264"], ["Nephrocare - Av Macken 6969, La Florida", "2217141"], ["Dialisis 300 - Duble Almeyda 2911, Nunoa", "3264660"], ["Renacer - Santa Ester 747, San Miguel", "5523967"]]],
     ["Extrasistema", "externo", "Extrasistema", [["Clinica Ensenada", "227900100"], ["Hemodinamia HSR", "262250"], ["Imagenologia HLF", "221361"], ["Imagenologia HSR", "262466"], ["Neurocirugia HSR", "262503 / 262284"], ["Neurologia HSR", "225762779"], ["Maxilo", "262356", "HSR"], ["Reanimador HSR", "262353"]]]
   ];
+
   const filters = [["todos", "Todos"], ["urgencia", "Urgencia"], ["critico", "Criticos"], ["hospitalizacion", "Hospitalizacion"], ["diagnostico", "Diagnostico"], ["apoyo", "Apoyo"], ["ambulatorio", "Ambulatorio"], ["externo", "Externo"]];
   const quickSearches = [["REA 1 / REA 2", "REA"], ["Laboratorio Urgencia", "Laboratorio Urgencia"], ["Ambulancias HPH", "Ambulancias HPH"], ["Telefonos HSR", "HSR"], ["Telefonos HLF", "HLF"]];
   const state = { query: "", filter: "todos" };
   const totalContacts = sections.reduce((sum, section) => sum + section[3].length, 0);
+  let rootObserver = null;
+  let observedRoot = null;
 
   function text(value) { return String(value || "").toLowerCase(); }
   function tel(value) { return value.replace(/[^0-9+]/g, ""); }
   function splitPhones(value) { return value.split("/").map((item) => item.trim()).filter(Boolean); }
-  function escapeHtml(value) {
-    return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
+  function escapeHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
   function setLabels() {
     const navLink = document.querySelector('[data-route-link="telefonos"]');
@@ -71,10 +72,7 @@
     document.head.append(style);
   }
 
-  function phoneLinks(phoneText) {
-    return splitPhones(phoneText).map((phone) => `<a class="dt-phone" href="tel:${tel(phone)}"><span aria-hidden="true">&#9742;</span>${escapeHtml(phone)}</a>`).join("");
-  }
-
+  function phoneLinks(phoneText) { return splitPhones(phoneText).map((phone) => `<a class="dt-phone" href="tel:${tel(phone)}"><span aria-hidden="true">&#9742;</span>${escapeHtml(phone)}</a>`).join(""); }
   function filterSections() {
     const query = text(state.query.trim());
     return sections.map((section) => {
@@ -89,6 +87,7 @@
   }
 
   function renderResults(root) {
+    if (!hasDirectoryMarkup(root)) { root.dataset.directoryReady = "false"; build(root); return; }
     const matches = filterSections();
     const count = matches.reduce((sum, section) => sum + section[3].length, 0);
     root.querySelector("[data-dt-count]").textContent = count;
@@ -109,41 +108,35 @@
     clearTimeout(showToast.timer);
     showToast.timer = setTimeout(() => toast.classList.remove("is-visible"), 1700);
   }
-
   function copyText(root, value) {
     const done = () => showToast(root, `Copiado: ${value}`);
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(value).then(done).catch(() => showToast(root, value));
-      return;
-    }
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(value).then(done).catch(() => showToast(root, value)); return; }
     showToast(root, value);
+  }
+  function hasDirectoryMarkup(root) { return Boolean(root.querySelector("[data-dt-count]") && root.querySelector("[data-dt-total]") && root.querySelector("[data-dt-results]")); }
+  function watchRoot(root) {
+    if (observedRoot === root) return;
+    if (rootObserver) rootObserver.disconnect();
+    observedRoot = root;
+    rootObserver = new MutationObserver(() => {
+      if (!location.hash.startsWith("#/telefonos")) return;
+      if (hasDirectoryMarkup(root)) return;
+      root.dataset.directoryReady = "false";
+      build(root);
+    });
+    rootObserver.observe(root, { childList: true });
   }
 
   function build(root) {
-    if (root.dataset.directoryReady === "true") {
-      renderResults(root);
-      return;
-    }
+    if (root.dataset.directoryReady === "true" && hasDirectoryMarkup(root)) { renderResults(root); return; }
     root.dataset.directoryReady = "true";
     root.innerHTML = `<section class="dt-shell"><section class="dt-sos"><div><span>S.O.S.</span><h2>Emergencias, claves rojas y amarilla</h2></div><a href="tel:260745"><small>Anexo directo</small><strong>260745</strong></a></section><section class="dt-quick" aria-label="Accesos rapidos">${quickSearches.map(([label, query]) => `<button type="button" data-dt-quick="${escapeHtml(query)}"><span class="dt-kicker">Acceso rapido</span><strong>${escapeHtml(label)}</strong><small>Ver contactos</small></button>`).join("")}</section><section class="dt-tools"><label class="dt-search"><span>Buscar</span><input data-dt-search type="search" placeholder="Buscar por nombre, area o numero" autocomplete="off" /></label><div class="dt-count"><strong data-dt-count>0</strong><span data-dt-total>de ${totalContacts}</span></div></section><nav class="dt-filters" aria-label="Filtros de directorio">${filters.map(([value, label]) => `<button class="dt-chip" type="button" data-dt-filter="${value}">${escapeHtml(label)}</button>`).join("")}</nav><section class="dt-results" data-dt-results aria-live="polite"></section></section><div class="dt-toast" data-dt-toast role="status" aria-live="polite"></div>`;
-    root.addEventListener("input", (event) => {
-      const input = event.target.closest("[data-dt-search]");
-      if (!input) return;
-      state.query = input.value;
-      renderResults(root);
-    });
+    root.addEventListener("input", (event) => { const input = event.target.closest("[data-dt-search]"); if (!input) return; state.query = input.value; renderResults(root); });
     root.addEventListener("click", (event) => {
       const quick = event.target.closest("[data-dt-quick]");
       const filter = event.target.closest("[data-dt-filter]");
       const copy = event.target.closest("[data-dt-copy]");
-      if (quick) {
-        state.query = quick.dataset.dtQuick;
-        state.filter = "todos";
-        const input = root.querySelector("[data-dt-search]");
-        if (input) { input.value = state.query; input.focus({ preventScroll: true }); }
-        renderResults(root);
-        return;
-      }
+      if (quick) { state.query = quick.dataset.dtQuick; state.filter = "todos"; const input = root.querySelector("[data-dt-search]"); if (input) { input.value = state.query; input.focus({ preventScroll: true }); } renderResults(root); return; }
       if (filter) { state.filter = filter.dataset.dtFilter; renderResults(root); return; }
       if (copy) copyText(root, copy.dataset.dtCopy);
     });
@@ -156,14 +149,10 @@
     const root = document.querySelector("#phonesContent");
     if (!root) return;
     addStyles();
+    watchRoot(root);
     build(root);
   }
-
-  function scheduleRender() {
-    setTimeout(render, 0);
-    setTimeout(render, 120);
-  }
-
+  function scheduleRender() { setTimeout(render, 0); setTimeout(render, 120); setTimeout(render, 500); setTimeout(render, 1200); }
   window.addEventListener("hashchange", scheduleRender);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", scheduleRender);
   else scheduleRender();
