@@ -1,25 +1,18 @@
 (function () {
   const targetHash = "#/especialidad/antes-de-derivar";
+  const specialtiesHash = "#/especialidades";
   const renderDelays = [0, 80, 260, 700];
 
   function isTargetRoute() {
     return window.location.hash.startsWith(targetHash);
   }
 
-  function renderQuickProtocol() {
-    if (!isTargetRoute()) return;
+  function isSpecialtiesRoute() {
+    return window.location.hash.startsWith(specialtiesHash);
+  }
 
-    const detail = document.querySelector("#protocolDetail");
-    if (!detail) return;
-
-    const title = document.querySelector("#protocolTitle");
-    const category = document.querySelector("#protocolCategory");
-    if (title) title.textContent = "Antes de derivar";
-    if (category) category.textContent = "Regla general · p. 2";
-
-    if (detail.querySelector(".quick-protocol")) return;
-
-    detail.innerHTML = `
+  function quickProtocolMarkup() {
+    return `
       <section class="quick-protocol">
         <div class="quick-hero">
           <div>
@@ -39,14 +32,14 @@
             </div>
           </div>
           <div class="decision-options">
-            <a class="decision-option is-yes" href="#/especialidades">
+            <button class="decision-option is-yes" data-focus-protocol-search type="button">
               <strong>Sí</strong>
               <span>Buscar flujo</span>
-            </a>
-            <div class="decision-option is-no">
+            </button>
+            <button class="decision-option is-no" type="button">
               <strong>No</strong>
               <span>Derivar a APS</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -86,8 +79,39 @@
     `;
   }
 
+  function renderQuickProtocol() {
+    if (!isTargetRoute()) return;
+
+    const detail = document.querySelector("#protocolDetail");
+    if (!detail) return;
+
+    const title = document.querySelector("#protocolTitle");
+    const category = document.querySelector("#protocolCategory");
+    if (title) title.textContent = "Antes de derivar";
+    if (category) category.textContent = "Regla general · p. 2";
+
+    if (detail.querySelector(".quick-protocol")) return;
+
+    detail.innerHTML = quickProtocolMarkup();
+  }
+
+  function renderSpecialtiesQuickRules() {
+    if (!isSpecialtiesRoute()) return;
+
+    const rules = document.querySelector("#rulesPreview");
+    if (!rules) return;
+
+    rules.classList.add("quick-rules");
+    if (rules.querySelector(".quick-protocol")) return;
+
+    rules.innerHTML = quickProtocolMarkup();
+  }
+
   function scheduleRender() {
-    renderDelays.forEach((delay) => window.setTimeout(renderQuickProtocol, delay));
+    renderDelays.forEach((delay) => {
+      window.setTimeout(renderQuickProtocol, delay);
+      window.setTimeout(renderSpecialtiesQuickRules, delay);
+    });
   }
 
   function watchProtocolDetail() {
@@ -103,12 +127,40 @@
     observer.observe(detail, { childList: true, subtree: false });
   }
 
+  function watchRulesPreview() {
+    const rules = document.querySelector("#rulesPreview");
+    if (!rules || rules.dataset.quickRulesWatch) return;
+    rules.dataset.quickRulesWatch = "true";
+
+    const observer = new MutationObserver(() => {
+      if (isSpecialtiesRoute() && !rules.querySelector(".quick-protocol")) {
+        window.setTimeout(renderSpecialtiesQuickRules, 0);
+      }
+    });
+    observer.observe(rules, { childList: true, subtree: false });
+  }
+
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-focus-protocol-search]");
+    if (!button) return;
+
+    if (!isSpecialtiesRoute()) {
+      window.location.hash = specialtiesHash;
+      window.setTimeout(() => document.querySelector("#searchInput")?.focus(), 120);
+      return;
+    }
+
+    document.querySelector("#searchInput")?.focus();
+  });
+
   window.addEventListener("hashchange", scheduleRender);
   window.addEventListener("DOMContentLoaded", () => {
     watchProtocolDetail();
+    watchRulesPreview();
     scheduleRender();
   });
 
   watchProtocolDetail();
+  watchRulesPreview();
   scheduleRender();
 })();
