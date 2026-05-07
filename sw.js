@@ -242,7 +242,7 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         const response = await fetch(request).catch(() => caches.match(request));
         const text = response ? await response.text() : "";
-        return new Response(text + "\\n;" + PHONE_PATCH, {
+        return new Response(text + "\n;" + PHONE_PATCH, {
           headers: { "Content-Type": "application/javascript; charset=utf-8" }
         });
       })()
@@ -281,4 +281,4 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
-});
+}
