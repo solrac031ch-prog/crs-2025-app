@@ -18,7 +18,7 @@
           <div>
             <p class="detail-label">Chequeo en 20 segundos</p>
             <h2>Antes de derivar</h2>
-            <p>CRS por Pitágoras o APS.</p>
+            <p>CRS por Pitagoras o APS.</p>
           </div>
           <span class="quick-page">p. 2</span>
         </div>
@@ -27,13 +27,13 @@
           <div class="decision-question">
             <span>1</span>
             <div>
-              <strong>¿El paciente entra en un flujo CRS?</strong>
-              <small>Sigue por IC en Pitágoras.</small>
+              <strong>&iquest;El paciente entra en un flujo CRS?</strong>
+              <small>Sigue por IC en Pitagoras.</small>
             </div>
           </div>
           <div class="decision-options">
             <button class="decision-option is-yes" data-focus-protocol-search type="button">
-              <strong>Sí</strong>
+              <strong>Si</strong>
               <span>Buscar flujo</span>
             </button>
             <button class="decision-option is-no" type="button">
@@ -47,18 +47,18 @@
           <article class="quick-card quick-card-good">
             <span class="quick-number">1</span>
             <small>Paso seguro</small>
-            <strong>Sistema válido</strong>
-            <p>Toda derivación se realiza por Pitágoras.</p>
+            <strong>Sistema valido</strong>
+            <p>Toda derivacion se realiza por Pitagoras.</p>
           </article>
           <article class="quick-card quick-card-alert">
             <span class="quick-number">2</span>
             <small>Evitar</small>
             <strong>No validado</strong>
-            <p>Otros sistemas no están validados administrativamente.</p>
+            <p>Otros sistemas no estan validados administrativamente.</p>
           </article>
           <article class="quick-card quick-card-route">
             <span class="quick-number">3</span>
-            <small>Salida rápida</small>
+            <small>Salida rapida</small>
             <strong>Fuera de flujo</strong>
             <p>Si no entra en los flujos descritos, derivar a APS.</p>
           </article>
@@ -66,12 +66,12 @@
 
         <div class="quick-warning">
           <span>Alerta</span>
-          <strong>IC directa no Pitágoras: se devuelve.</strong>
+          <strong>IC directa no Pitagoras: se devuelve.</strong>
         </div>
 
         <div class="tags">
           <span class="tag">Reglas</span>
-          <span class="tag">Pitágoras</span>
+          <span class="tag">Pitagoras</span>
           <span class="tag">APS</span>
           <span class="tag">IC</span>
         </div>
@@ -163,4 +163,179 @@
   watchProtocolDetail();
   watchRulesPreview();
   scheduleRender();
+})();
+
+(function () {
+  const specialtiesHash = "#/especialidades";
+  const categoryOrder = ["Flujo", "CRS", "Poli choque", "Hospitalizados", "Protocolo"];
+  const categoryLabels = {
+    Flujo: "Flujos",
+    CRS: "CRS",
+    "Poli choque": "Poli choque",
+    Hospitalizados: "Hospitalizados",
+    Protocolo: "Protocolos"
+  };
+  const renameMap = new Map([
+    ["Hemorragia intracerebral", "Neurocirugia"],
+    ["Patologia aguda de columna", "Cirugia de columna"],
+    ["Patología aguda de columna", "Cirugia de columna"],
+    ["Radiologia Intervencional 2025", "Radiologia intervencional"],
+    ["Radiología Intervencional 2025", "Radiologia intervencional"],
+    ["Patologia urologia de urgencia 2025", "Urgencias urologicas"],
+    ["Patología urología de urgencia 2025", "Urgencias urologicas"],
+    ["Hemodinamia 2025", "Hemodinamia"],
+    ["EDA", "Endoscopia de urgencias"],
+    ["Hemorragia digestiva alta", "Endoscopia de urgencias"]
+  ]);
+  const hdaTitles = new Set(["EDA", "Hemorragia digestiva alta", "Endoscopia de urgencias"]);
+  const renderDelays = [0, 80, 220, 600, 1200];
+
+  function isSpecialtiesRoute() {
+    return window.location.hash.startsWith(specialtiesHash);
+  }
+
+  function addStyles() {
+    if (document.querySelector("#specialties-side-layout-style")) return;
+    const style = document.createElement("style");
+    style.id = "specialties-side-layout-style";
+    style.textContent = `
+      #specialtiesPage.active{display:grid;grid-template-columns:minmax(170px,220px) minmax(0,1fr);gap:14px;align-items:start}
+      #specialtiesPage .page-head,#specialtiesPage #rulesPreview{grid-column:1 / -1}
+      #specialtiesPage .control-panel{grid-column:2;grid-row:3;margin-bottom:0}
+      #specialtiesPage .quick-actions{grid-column:1;grid-row:3 / span 3;display:grid;align-content:start;gap:8px;margin:0;position:sticky;top:96px}
+      #specialtiesPage .quick-actions .chip{width:100%;min-height:44px;justify-content:flex-start;text-align:left;font-weight:800;white-space:normal}
+      #specialtiesPage .quick-actions [data-category="Todos"]{display:none!important}
+      #specialtiesPage #resultsMeta,#specialtiesPage #specialtyGroups{grid-column:2}
+      #specialtiesPage .specialty-groups{min-height:220px}
+      #specialtiesPage .specialty-button[hidden]{display:none!important}
+      @media(max-width:780px){#specialtiesPage.active{display:block}#specialtiesPage .quick-actions{position:static;display:flex;overflow-x:auto;margin-bottom:12px}#specialtiesPage .quick-actions .chip{width:auto;min-width:max-content;white-space:nowrap}}
+    `;
+    document.head.append(style);
+  }
+
+  function patchCategoryButtons() {
+    const quick = document.querySelector("#specialtiesPage .quick-actions");
+    if (!quick) return;
+
+    const todos = quick.querySelector('[data-category="Todos"]');
+    if (todos) todos.classList.remove("active");
+
+    categoryOrder.forEach((category) => {
+      let button = quick.querySelector(`[data-category="${category}"]`);
+      if (!button) {
+        button = document.createElement("button");
+        button.className = "chip";
+        button.type = "button";
+        button.dataset.category = category;
+      }
+      button.textContent = categoryLabels[category];
+      quick.appendChild(button);
+    });
+
+    if (!quick.dataset.defaultedToFlows && isSpecialtiesRoute()) {
+      quick.dataset.defaultedToFlows = "true";
+      const active = quick.querySelector(".chip.active");
+      const flow = quick.querySelector('[data-category="Flujo"]');
+      if (flow && (!active || active.dataset.category === "Todos")) flow.click();
+    }
+  }
+
+  function patchSpecialtyCards() {
+    document.querySelectorAll("#specialtyGroups .specialty-button").forEach((link) => {
+      const strong = link.querySelector("strong");
+      if (!strong) return;
+      const current = strong.textContent.trim();
+      if (current === "Hemorragia digestiva alta") {
+        link.hidden = true;
+        return;
+      }
+      const replacement = renameMap.get(current);
+      if (replacement) strong.textContent = replacement;
+    });
+  }
+
+  function makeField(title, text) {
+    const field = document.createElement("div");
+    field.className = "field";
+    field.dataset.hdaUpgrade = "true";
+    const strong = document.createElement("strong");
+    strong.textContent = title;
+    const span = document.createElement("span");
+    span.textContent = text;
+    field.append(strong, span);
+    return field;
+  }
+
+  function patchEndoscopyDetail() {
+    const title = document.querySelector("#protocolTitle");
+    const detail = document.querySelector("#protocolDetail");
+    if (!title || !detail) return;
+
+    const originalTitle = title.textContent.trim();
+    const replacement = renameMap.get(originalTitle);
+    if (replacement) title.textContent = replacement;
+
+    if (!hdaTitles.has(originalTitle) && title.textContent.trim() !== "Endoscopia de urgencias") return;
+
+    const summary = detail.querySelector(".protocol-summary");
+    if (summary) summary.textContent = "Concentra EDA, hemorragia digestiva alta y criterios de endoscopia urgente.";
+
+    const grid = detail.querySelector(".detail-section .grid");
+    if (!grid || grid.querySelector('[data-hda-upgrade="true"]')) return;
+
+    const fields = [
+      ["Sospecha HDA", "Melena con o sin hematemesis."],
+      ["EDA urgente", "Indicar EDA urgente si hay sospecha clinica de varices o shock hemorragico."],
+      ["Blatchford 0-1", "Riesgo muy bajo: alta y control por Poli EDA segun juicio clinico."],
+      ["Blatchford 2", "Riesgo bajo: controlar hemoglobina/BUN en 4 a 6 horas; si estable, alta y Poli EDA."],
+      ["Blatchford >=3", "EDA antes de 24 horas."],
+      ["Tratamiento base", "Si DHC: ceftriaxona 2 g. Si varices: terlipresina 1-2 mg EV. Transfusion restrictiva con meta Hb >7. Omeprazol 80 mg EV bolo."]
+    ];
+    fields.reverse().forEach(([fieldTitle, text]) => {
+      grid.prepend(makeField(fieldTitle, text));
+    });
+  }
+
+  function patchProtocolTitle() {
+    const title = document.querySelector("#protocolTitle");
+    if (!title) return;
+    const replacement = renameMap.get(title.textContent.trim());
+    if (replacement) title.textContent = replacement;
+  }
+
+  function patchSearchPlaceholder() {
+    const input = document.querySelector("#searchInput");
+    if (input) input.placeholder = "Ej: neurocirugia, hemodinamia, endoscopia, urologia...";
+  }
+
+  function patchAll() {
+    addStyles();
+    patchCategoryButtons();
+    patchSpecialtyCards();
+    patchProtocolTitle();
+    patchEndoscopyDetail();
+    patchSearchPlaceholder();
+  }
+
+  function schedulePatch() {
+    renderDelays.forEach((delay) => window.setTimeout(patchAll, delay));
+  }
+
+  function watch() {
+    if (document.body.dataset.specialtiesSideLayoutWatch) return;
+    document.body.dataset.specialtiesSideLayoutWatch = "true";
+    const observer = new MutationObserver(() => window.setTimeout(patchAll, 0));
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  window.addEventListener("hashchange", schedulePatch);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      watch();
+      schedulePatch();
+    });
+  } else {
+    watch();
+    schedulePatch();
+  }
 })();
