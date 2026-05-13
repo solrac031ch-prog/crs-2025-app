@@ -17,6 +17,8 @@
     ["Sección", "▪️"]
   ]);
 
+  let polishQueued = false;
+
   function stripIcon(text) {
     return String(text || "")
       .replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "")
@@ -53,10 +55,11 @@
       #protocolDetail .detail-section,#protocolDetail .protocol-card,#protocolDetail .source-docs-panel,#protocolDetail .external-form-panel,#protocolDetail .priority-panel{border-radius:12px}
       #protocolDetail .route-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
       #protocolDetail .route-section-head strong,#protocolDetail .detail-label{letter-spacing:.01em}
-      #protocolDetail .flow{display:grid;gap:10px}
-      #protocolDetail .flow-step{display:grid;grid-template-columns:38px minmax(0,1fr);gap:11px;align-items:center;padding:11px 12px;background:#fbfffd;border:1px solid #e1e9e5;border-left:5px solid var(--blue);border-radius:12px;box-shadow:0 6px 14px rgba(16,18,20,.045)}
-      #protocolDetail .flow-step .step-number{width:38px;height:38px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--blue),#0f766e);border-radius:50%;font-size:.9rem;font-weight:950;box-shadow:0 6px 12px rgba(29,78,216,.18)}
-      #protocolDetail .flow-step p{margin:0;line-height:1.42;overflow-wrap:anywhere}
+      #protocolDetail .flow{display:grid;gap:10px;margin-top:4px}
+      #protocolDetail .flow-step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;padding:12px;background:#fbfffd;border:1px solid #e1e9e5;border-left:5px solid var(--blue);border-radius:12px;box-shadow:0 6px 14px rgba(16,18,20,.045)}
+      #protocolDetail .flow-step .step-number{width:34px;height:34px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--blue),#0f766e);border-radius:50%;font-size:.88rem;font-weight:950;line-height:1;box-shadow:0 6px 12px rgba(29,78,216,.18)}
+      #protocolDetail .flow-step p{margin:4px 0 0;line-height:1.42;overflow-wrap:anywhere}
+      #protocolDetail .flow-step p::before{content:none!important}
       #protocolDetail .moment-grid{gap:12px}
       #protocolDetail .moment-card{border-radius:12px;box-shadow:0 7px 16px rgba(16,18,20,.055)}
       #protocolDetail .moment-card h3{display:flex;align-items:center;gap:7px}
@@ -65,8 +68,8 @@
       #protocolDetail .moment-card li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:start;margin:0;line-height:1.36;overflow-wrap:anywhere}
       #protocolDetail .moment-card li::before{content:"✓";display:grid;place-items:center;width:22px;height:22px;color:#fff;background:var(--accent);border-radius:50%;font-size:.75rem;font-weight:950;line-height:1;margin-top:-1px}
       #protocolDetail .moment-alert,.warning{border-radius:10px}
-      #protocolDetail .warning::before{content:"⚠️ ";}
-      @media(max-width:560px){#protocolDetail .flow-step{grid-template-columns:34px minmax(0,1fr);padding:10px}#protocolDetail .flow-step .step-number{width:34px;height:34px}#protocolDetail .route-jump-nav{position:relative;overflow-x:auto;flex-wrap:nowrap}#protocolDetail .route-jump-nav button{white-space:nowrap}}
+      #protocolDetail .warning:not([data-polished-warning])::before{content:"⚠️ ";}
+      @media(max-width:560px){#protocolDetail .flow-step{grid-template-columns:36px minmax(0,1fr);gap:10px;padding:10px}#protocolDetail .flow-step .step-number{width:32px;height:32px}#protocolDetail .route-jump-nav{position:relative;overflow-x:auto;flex-wrap:nowrap}#protocolDetail .route-jump-nav button{white-space:nowrap}}
     `;
     document.head.append(style);
   }
@@ -85,7 +88,9 @@
     document.querySelectorAll("#protocolDetail .route-section-head strong").forEach((node) => {
       const clean = stripIcon(node.textContent);
       const label = displayLabel(clean);
-      if (node.textContent !== label) node.textContent = label;
+      if (node.dataset.polishedLabel === label) return;
+      node.textContent = label;
+      node.dataset.polishedLabel = label;
     });
   }
 
@@ -97,11 +102,42 @@
     document.querySelectorAll(".route-vital strong").forEach((node) => {
       if (node.textContent.trim() === "Libre") node.textContent = "Sin";
     });
+    document.querySelectorAll("#protocolDetail .warning").forEach((node) => {
+      node.dataset.polishedWarning = "true";
+    });
   }
 
-  const observer = new MutationObserver(() => window.setTimeout(polishProtocolDetail, 0));
-  if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-  window.addEventListener("hashchange", () => window.setTimeout(polishProtocolDetail, 180));
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", polishProtocolDetail);
-  else polishProtocolDetail();
+  function schedulePolish() {
+    if (polishQueued) return;
+    polishQueued = true;
+    window.requestAnimationFrame(() => {
+      polishQueued = false;
+      polishProtocolDetail();
+    });
+  }
+
+  const detail = () => document.querySelector("#protocolDetail");
+  const observer = new MutationObserver(schedulePolish);
+
+  function observeDetail() {
+    const node = detail();
+    if (!node || node.dataset.polishObserved) return;
+    node.dataset.polishObserved = "true";
+    observer.observe(node, { childList: true, subtree: true });
+  }
+
+  window.addEventListener("hashchange", () => window.setTimeout(() => {
+    observeDetail();
+    schedulePolish();
+  }, 180));
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      observeDetail();
+      schedulePolish();
+    });
+  } else {
+    observeDetail();
+    schedulePolish();
+  }
 })();
