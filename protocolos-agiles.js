@@ -167,6 +167,7 @@
 
 (function () {
   const specialtiesHash = "#/especialidades";
+  const protocolPrefix = "#/especialidad/";
   const categoryOrder = ["Flujo", "CRS", "Poli choque", "Hospitalizados", "Protocolo"];
   const categoryLabels = {
     Flujo: "Flujos",
@@ -187,11 +188,28 @@
     ["EDA", "Endoscopia de urgencias"],
     ["Hemorragia digestiva alta", "Endoscopia de urgencias"]
   ]);
+  const routeAliases = new Map([
+    ["endoscopia-de-urgencias", "eda"],
+    ["hemodinamia", "hemodinamia-2025"],
+    ["neurocirugia", "hemorragia-intracerebral"],
+    ["cirugia-de-columna", "patologia-aguda-de-columna"],
+    ["urgencias-urologicas", "patologia-urologia-de-urgencia-2025"],
+    ["radiologia-intervencional", "radiologia-intervencional-2025"]
+  ]);
   const hdaTitles = new Set(["EDA", "Hemorragia digestiva alta", "Endoscopia de urgencias"]);
-  const renderDelays = [0, 80, 220, 600, 1200];
+  const renderDelays = [0, 40, 120, 320, 800];
 
   function isSpecialtiesRoute() {
     return window.location.hash.startsWith(specialtiesHash);
+  }
+
+  function normalizeHashAlias() {
+    if (!window.location.hash.startsWith(protocolPrefix)) return false;
+    const slug = window.location.hash.slice(protocolPrefix.length).split("?")[0];
+    const target = routeAliases.get(decodeURIComponent(slug));
+    if (!target) return false;
+    window.location.replace(protocolPrefix + target);
+    return true;
   }
 
   function addStyles() {
@@ -213,24 +231,36 @@
     document.head.append(style);
   }
 
+  function ensureButton(quick, category) {
+    let button = quick.querySelector(`[data-category="${category}"]`);
+    if (!button) {
+      button = document.createElement("button");
+      button.className = "chip";
+      button.type = "button";
+      button.dataset.category = category;
+      quick.appendChild(button);
+    }
+    const label = categoryLabels[category];
+    if (button.textContent.trim() !== label) button.textContent = label;
+    return button;
+  }
+
   function patchCategoryButtons() {
     const quick = document.querySelector("#specialtiesPage .quick-actions");
     if (!quick) return;
 
     const todos = quick.querySelector('[data-category="Todos"]');
-    if (todos) todos.classList.remove("active");
+    if (todos) {
+      if (!todos.hidden) todos.hidden = true;
+      todos.classList.remove("active");
+    }
 
-    categoryOrder.forEach((category) => {
-      let button = quick.querySelector(`[data-category="${category}"]`);
-      if (!button) {
-        button = document.createElement("button");
-        button.className = "chip";
-        button.type = "button";
-        button.dataset.category = category;
-      }
-      button.textContent = categoryLabels[category];
-      quick.appendChild(button);
-    });
+    const desired = categoryOrder.map((category) => ensureButton(quick, category));
+    const current = Array.from(quick.children).filter((child) => desired.includes(child));
+    const alreadyOrdered = desired.every((button, index) => current[index] === button);
+    if (!alreadyOrdered) {
+      desired.forEach((button) => quick.appendChild(button));
+    }
 
     if (!quick.dataset.defaultedToFlows && isSpecialtiesRoute()) {
       quick.dataset.defaultedToFlows = "true";
@@ -246,11 +276,11 @@
       if (!strong) return;
       const current = strong.textContent.trim();
       if (current === "Hemorragia digestiva alta") {
-        link.hidden = true;
+        if (!link.hidden) link.hidden = true;
         return;
       }
       const replacement = renameMap.get(current);
-      if (replacement) strong.textContent = replacement;
+      if (replacement && current !== replacement) strong.textContent = replacement;
     });
   }
 
@@ -273,12 +303,13 @@
 
     const originalTitle = title.textContent.trim();
     const replacement = renameMap.get(originalTitle);
-    if (replacement) title.textContent = replacement;
+    if (replacement && originalTitle !== replacement) title.textContent = replacement;
 
     if (!hdaTitles.has(originalTitle) && title.textContent.trim() !== "Endoscopia de urgencias") return;
 
     const summary = detail.querySelector(".protocol-summary");
-    if (summary) summary.textContent = "Concentra EDA, hemorragia digestiva alta y criterios de endoscopia urgente.";
+    const summaryText = "Concentra EDA, hemorragia digestiva alta y criterios de endoscopia urgente.";
+    if (summary && summary.textContent !== summaryText) summary.textContent = summaryText;
 
     const grid = detail.querySelector(".detail-section .grid");
     if (!grid || grid.querySelector('[data-hda-upgrade="true"]')) return;
@@ -299,13 +330,15 @@
   function patchProtocolTitle() {
     const title = document.querySelector("#protocolTitle");
     if (!title) return;
-    const replacement = renameMap.get(title.textContent.trim());
-    if (replacement) title.textContent = replacement;
+    const current = title.textContent.trim();
+    const replacement = renameMap.get(current);
+    if (replacement && current !== replacement) title.textContent = replacement;
   }
 
   function patchSearchPlaceholder() {
     const input = document.querySelector("#searchInput");
-    if (input) input.placeholder = "Ej: neurocirugia, hemodinamia, endoscopia, urologia...";
+    const text = "Ej: neurocirugia, hemodinamia, endoscopia, urologia...";
+    if (input && input.placeholder !== text) input.placeholder = text;
   }
 
   function patchAll() {
@@ -318,6 +351,7 @@
   }
 
   function schedulePatch() {
+    if (normalizeHashAlias()) return;
     renderDelays.forEach((delay) => window.setTimeout(patchAll, delay));
   }
 
@@ -327,6 +361,14 @@
     const observer = new MutationObserver(() => window.setTimeout(patchAll, 0));
     observer.observe(document.body, { childList: true, subtree: true });
   }
+
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("#specialtiesPage [data-category]")) {
+      window.setTimeout(patchAll, 0);
+      window.setTimeout(patchAll, 40);
+      window.setTimeout(patchAll, 120);
+    }
+  });
 
   window.addEventListener("hashchange", schedulePatch);
   if (document.readyState === "loading") {
