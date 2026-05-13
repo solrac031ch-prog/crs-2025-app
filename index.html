@@ -15,7 +15,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-180.png" />
-    <link rel="stylesheet" href="./styles.css?v=38" />
+    <link rel="stylesheet" href="./styles.css?v=39" />
     <link rel="stylesheet" href="./protocolos-agiles.css?v=2" />
   </head>
   <body>
@@ -34,6 +34,7 @@
         <a href="#/telefonos" data-route-link="telefonos">Directorio telefónico</a>
         <a href="#/visita" data-route-link="visita">Visita</a>
         <a href="#/formularios" data-route-link="formularios">Formularios</a>
+        <a href="#/gestion" data-route-link="gestion">Gestión</a>
       </nav>
     </header>
 
@@ -100,7 +101,7 @@
               <span class="action-kicker">Gestion</span>
             </span>
             <strong>Casos prioritarios</strong>
-            <span>Registro local para seguimiento y checklist de jefatura.</span>
+            <span>Espacio médicos y jefatura para seguimiento ambulatorio.</span>
           </a>
         </div>
 
@@ -241,11 +242,33 @@
           <a class="back-link" href="#/inicio">Inicio</a>
           <div>
             <p class="eyebrow">Seguimiento local</p>
-            <h1 id="managementTitle">Casos con gestion prioritaria</h1>
+            <h1 id="managementTitle">Gestión de casos</h1>
           </div>
         </div>
 
         <div id="managementContent" aria-live="polite"></div>
+      </section>
+
+      <section id="doctorsPage" class="page" aria-labelledby="doctorsTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/gestion">Gestión</a>
+          <div>
+            <p class="eyebrow">Espacio médicos</p>
+            <h1 id="doctorsTitle">Lectura y operación clínica</h1>
+          </div>
+        </div>
+        <div id="doctorsContent" aria-live="polite"></div>
+      </section>
+
+      <section id="chiefPage" class="page" aria-labelledby="chiefTitle">
+        <div class="page-head">
+          <a class="back-link" href="#/gestion">Gestión</a>
+          <div>
+            <p class="eyebrow">Espacio jefatura</p>
+            <h1 id="chiefTitle">Panel restringido</h1>
+          </div>
+        </div>
+        <div id="chiefContent" aria-live="polite"></div>
       </section>
     </main>
 
@@ -257,11 +280,12 @@
     </template>
 
     <script src="./ley-urgencias-data.js?v=38"></script>
-    <script src="./app.js?v=38"></script>
+    <script src="./app.js?v=39"></script>
     <script src="./protocolos-agiles.js?v=5"></script>
     <script src="./especialidades-ui.js?v=2"></script>
     <script src="./especialidades-ui-fix.js?v=1"></script>
-    <script src="./protocolos-detalle-polish.js?v=1"></script>
+    <script src="./protocolos-detalle-polish.js?v=2"></script>
     <script src="./directorio-telefonico.js?v=2"></script>
+    <script src="./jefatura-gestion.js?v=1"></script>
   </body>
 </html>
