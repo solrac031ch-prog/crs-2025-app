@@ -32,16 +32,38 @@
     document.head.append(style);
   }
 
+  function syncEndoscopyAndCounts() {
+    const page = document.querySelector("#specialtiesPage.active");
+    if (!page) return;
+
+    page.querySelectorAll("#specialtyGroups .specialty-button").forEach((link) => {
+      const title = link.querySelector("strong")?.textContent.trim();
+      if (title === "Hemorragia digestiva alta") link.hidden = true;
+    });
+
+    const visibleCards = Array.from(page.querySelectorAll("#specialtyGroups .specialty-button"))
+      .filter((link) => !link.hidden);
+    const count = visibleCards.length;
+    const label = `${count} protocolo${count === 1 ? "" : "s"} disponible${count === 1 ? "" : "s"}`;
+    const meta = page.querySelector("#resultsMeta");
+    if (meta && meta.textContent.trim() !== label) meta.textContent = label;
+    page.querySelectorAll("[data-focus-count],[data-hub-count]").forEach((node) => {
+      const value = String(count);
+      if (node.textContent !== value) node.textContent = value;
+    });
+  }
+
   function patchShortcuts() {
     addStyle();
     const neuro = document.querySelector('[data-specialty-query="neurocirugia"]');
     if (neuro) neuro.dataset.specialtyQuery = "HIC";
     const endoscopy = document.querySelector('[data-specialty-query="endoscopia"]');
     if (endoscopy) endoscopy.dataset.specialtyQuery = "EDA";
+    syncEndoscopyAndCounts();
   }
 
   const observer = new MutationObserver(patchShortcuts);
-  if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+  if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", patchShortcuts);
   else patchShortcuts();
 })();
