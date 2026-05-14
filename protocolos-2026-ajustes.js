@@ -142,12 +142,30 @@
     tvp.warning = "Pendiente anexar el PDF Ecografia doppler extremidades 2026."
   }
 
-  if (!document.querySelector('script[src*="arsenal-terapeutico.js"]')) {
+  const loadScriptOnce = (src) => new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src*="${src.split("?")[0].replace("./", "")}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === "true") resolve();
+      else existing.addEventListener("load", resolve, { once: true });
+      return;
+    }
     const script = document.createElement("script");
-    script.src = "./arsenal-terapeutico.js?v=1";
+    script.src = src;
     script.defer = true;
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "true";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", reject, { once: true });
     document.body.append(script);
-  }
+  });
+
+  window.setTimeout(() => {
+    loadScriptOnce("./arsenal-terapeutico.js?v=2")
+      .then(() => loadScriptOnce("./arsenal-uso-ocasional-fix.js?v=1"))
+      .catch(() => {});
+    loadScriptOnce("./gestion-jefatura-v2.js?v=1").catch(() => {});
+  }, 0);
 
   if (typeof renderRoute === "function") renderRoute();
 })();
