@@ -1,5 +1,5 @@
-const CACHE_NAME = "crs-hph-2025-consultoria-2026-v48";
-const CONSULTORIA_SCRIPT = '<script src="./consultoria-llamado-2026.js?v=1"></script>';
+const CACHE_NAME = "crs-hph-2025-consultoria-flujos-2026-v49";
+const CONSULTORIA_SCRIPT = '<script src="./consultoria-llamado-2026.js?v=1"></script>\n<script src="./consultoria-flujos-2026.js?v=1"></script>';
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -27,7 +27,7 @@ async function fetchWithConsultoria(request) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
   let html = await response.text();
-  if (!html.includes("consultoria-llamado-2026.js")) {
+  if (!html.includes("consultoria-flujos-2026.js")) {
     html = html.replace("</body>", `${CONSULTORIA_SCRIPT}\n  </body>`);
   }
   return new Response(html, {
