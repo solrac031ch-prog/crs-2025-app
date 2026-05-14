@@ -7,6 +7,7 @@
     cote: "Dra Maria-Jose Marin - jefa de urgencia"
   };
 
+  const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
   const readJson = (key, fallback) => {
     try {
       return JSON.parse(localStorage.getItem(key) || "") || fallback;
@@ -29,7 +30,7 @@
 
   function isAdmin(session = activeSession()) {
     if (!session) return false;
-    return ["owner", "desarrollador"].includes(session.role) || Object.hasOwn(ADMIN_USERS, cleanUser(session.username));
+    return ["owner", "desarrollador"].includes(session.role) || hasOwn(ADMIN_USERS, cleanUser(session.username));
   }
 
   function operationalLinks() {
@@ -91,7 +92,7 @@
       <div class="rule-fields">
         ${users.map((user) => {
           const username = cleanUser(user.username);
-          const locked = Object.hasOwn(ADMIN_USERS, username);
+          const locked = hasOwn(ADMIN_USERS, username);
           return `<div class="rule-field"><strong>${escapeHtml(user.name || ADMIN_USERS[username] || user.username)}</strong><span>${escapeHtml(user.username)} · ${escapeHtml(user.role || "jefe")}</span>${locked ? "" : `<button class="document-button" type="button" data-chief-remove-user="${escapeHtml(user.username)}">Eliminar</button>`}</div>`;
         }).join("") || `<div class="rule-field"><strong>Sin usuarios</strong><span>Aun no hay usuarios registrados.</span></div>`}
       </div>
@@ -121,7 +122,7 @@
     const button = event.target.closest("[data-chief-remove-user]");
     if (!button || !isAdmin()) return;
     const username = cleanUser(button.dataset.chiefRemoveUser);
-    if (Object.hasOwn(ADMIN_USERS, username)) return;
+    if (hasOwn(ADMIN_USERS, username)) return;
     const next = readJson(USERS_KEY, []).filter((user) => cleanUser(user.username) !== username);
     writeJson(USERS_KEY, next);
     const panel = document.querySelector("[data-operational-admin-panel]");
