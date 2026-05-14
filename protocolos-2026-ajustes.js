@@ -24,14 +24,11 @@
   const removeProtocols = (...needles) => {
     for (let index = protocols.length - 1; index >= 0; index -= 1) {
       const haystack = allText(protocols[index]);
-      if (needles.every((needle) => haystack.includes(normalize(needle)))) {
-        protocols.splice(index, 1);
-      }
+      if (needles.every((needle) => haystack.includes(normalize(needle)))) protocols.splice(index, 1);
     }
   };
 
   const unique = (items) => Array.from(new Set((items || []).filter(Boolean)));
-
   const renameProtocol = (protocol, updates) => {
     if (!protocol) return null;
     Object.assign(protocol, updates);
@@ -39,48 +36,40 @@
     return protocol;
   };
 
-  const hemodinamia = findProtocol("hemodinamia") || findProtocol("hemodinamica");
-  renameProtocol(hemodinamia, {
+  renameProtocol(findProtocol("hemodinamia") || findProtocol("hemodinamica"), {
     title: "Hemodinamia de urgencias",
     category: "Flujo",
     page: "Doc. 2026",
     summary: "Acceso al flujo vigente de hemodinamia de urgencias 2026.",
     tags: ["Hemodinamia", "Urgencias", "Cardiologia", "2026"],
-    sourceDocs: [["Hemodinamia 2025 (pendiente reemplazo por PDF 2026)", "./protocol-docs/hemodinamia-2025.pdf"]],
-    warning: "Pendiente anexar el PDF Hemodinamica de urgencias 2026 para reemplazar el respaldo anterior."
+    warning: "Pendiente anexar PDF 2026 al repositorio."
   });
 
-  const urgenciaUrologica = findProtocol("urologia", "urgencia") || findProtocol("urologica", "urgencia");
-  renameProtocol(urgenciaUrologica, {
+  renameProtocol(findProtocol("urologia", "urgencia") || findProtocol("urologica", "urgencia"), {
     title: "Urgencia urologica",
     category: "Flujo",
     page: "Doc. 2026",
     summary: "Flujo HEDI 2026 para patologia urologica de urgencia.",
     tags: ["Urologia", "Urgencia", "HEDI", "2026"],
-    sourceDocs: [["Patologia urologia de urgencia 2025 (pendiente reemplazo por HEDI 2026)", "./protocol-docs/patologia-urologia-urgencia-2025.pdf"]],
-    warning: "Pendiente anexar el PDF Urologia de urgencias HEDI 2026 para reemplazar el respaldo anterior."
+    warning: "Pendiente anexar PDF Urologia de urgencias HEDI 2026."
   });
 
-  const radiologia = findProtocol("radiologia", "intervencional");
-  renameProtocol(radiologia, {
-    title: "Radiologia intervencional",
+  renameProtocol(findProtocol("radiologia", "intervencional"), {
+    title: "Neurologia",
     category: "Flujo",
     page: "Doc. 2026",
-    summary: "Acceso al flujo vigente de radiologia intervencional de urgencias 2026.",
-    tags: ["Radiologia intervencional", "Urgencias", "2026"],
-    sourceDocs: [["Radiologia intervencional 2025 (pendiente reemplazo por PDF 2026)", "./protocol-docs/radiologia-intervencional-2025.pdf"]],
-    warning: "Pendiente anexar el PDF Radiologia intervencional de urgencias 2026 para reemplazar el respaldo anterior."
+    summary: "Flujo de neurologia asociado a neuroradiologia intervencional de urgencias y evaluacion neurologica a distancia ACV.",
+    tags: ["Neurologia", "Neuroradiologia intervencional", "ACV", "2026"],
+    warning: "El boton antes llamado Radiologia intervencional ahora se muestra como Neurologia. Pendiente anexar PDF 2026 si corresponde."
   });
 
-  const columna = findProtocol("columna");
-  renameProtocol(columna, {
+  renameProtocol(findProtocol("columna"), {
     title: "Cirugia de columna",
     category: "Flujo",
     page: "Doc. 2026",
     summary: "Flujo 2026 para patologia aguda de columna y coordinacion con centro de referencia.",
     tags: ["Cirugia de columna", "Columna", "HDSR", "Neurocirugia", "2026"],
-    sourceDocs: [["Patologia aguda de columna 2025 (pendiente reemplazo por PDF 2026)", "./protocol-docs/patologia-aguda-columna-2025.pdf"]],
-    warning: "Pendiente anexar el PDF Patologia aguda de columna 2026 para reemplazar el respaldo anterior."
+    warning: "Pendiente anexar PDF Patologia aguda de columna 2026."
   });
 
   const neurologia = findProtocol("neurologia");
@@ -93,12 +82,8 @@
     neurologia.moments = (neurologia.moments || [])
       .filter((moment) => !normalize(moment.title).includes("donante"))
       .map((moment) => {
-        if (normalize(moment.title).includes("neurorradiologia")) {
-          return { ...moment, title: "1. Neuroradiologia intervencional de urgencias" };
-        }
-        if (normalize(moment.title).includes("distancia")) {
-          return { ...moment, title: "2. Evaluacion neurologica a distancia ACV" };
-        }
+        if (normalize(moment.title).includes("neurorradiologia")) return { ...moment, title: "1. Neuroradiologia intervencional de urgencias" };
+        if (normalize(moment.title).includes("distancia")) return { ...moment, title: "2. Evaluacion neurologica a distancia ACV" };
         return moment;
       });
     neurologia.flow = [
@@ -107,8 +92,6 @@
       "Coordinar Gestion de Camas CASR si requiere procedimiento, traslado, cama o retorno.",
       "Registrar indicaciones y comunicacion en la ficha clinica."
     ];
-    neurologia.sourceDocs = [["Flujos Neuro 2025 (pendiente reemplazo por documentos 2026)", "./protocol-docs/flujos-neuro-2025.pdf"]];
-    neurologia.warning = "Pendiente anexar PDFs 2026 de neuroradiologia intervencional de urgencias y evaluacion neurologica a distancia ACV."
   }
 
   removeProtocols("posible", "donante");
@@ -131,26 +114,21 @@
       "Coordinar ecografia de posible/potencial donante cuando corresponda.",
       "Registrar responsables, horarios y respuesta de la red."
     ],
-    sourceDocs: [["Flujos Neuro 2025 (pendiente reemplazo por protocolos de donante 2026)", "./protocol-docs/flujos-neuro-2025.pdf"]],
     warning: "Pendiente anexar PDFs 2026 de evaluacion neurologica y ecografia de posible/potencial donante."
   };
   const neurologiaIndex = protocols.indexOf(neurologia);
   protocols.splice(neurologiaIndex >= 0 ? neurologiaIndex + 1 : protocols.length, 0, posibleDonante);
 
   if (!findProtocol("cirugia vascular")) {
-    protocols.splice(protocols.findIndex((item) => item === columna) + 1 || protocols.length, 0, {
+    protocols.splice(protocols.findIndex((item) => item.title === "Cirugia de columna") + 1 || protocols.length, 0, {
       title: "Cirugia vascular",
       category: "Flujo",
       page: "Doc. 2026",
       summary: "Flujo de patologia arterial de urgencias 2026.",
       tags: ["Cirugia vascular", "Patologia arterial", "Urgencias", "2026"],
       hidePriority: true,
-      fields: [
-        ["Documento", "Patologia arterial de urgencias 2026."],
-        ["Conducta", "Anexar el documento fuente para revisar criterios, contactos y secuencia de activacion vigentes."],
-        ["Registro", "Registrar evaluacion, contacto con especialista y plan acordado."]
-      ],
-      warning: "Pendiente anexar el PDF Patologia arterial de urgencias 2026 al repositorio."
+      fields: [["Documento", "Patologia arterial de urgencias 2026."], ["Conducta", "Anexar documento fuente para revisar criterios y activacion."], ["Registro", "Registrar evaluacion, contacto y plan acordado."]],
+      warning: "Pendiente anexar el PDF Patologia arterial de urgencias 2026."
     });
   }
 
@@ -161,19 +139,14 @@
     tvp.page = "Doc. 2026";
     tvp.summary = "Flujo unico para TVP en horario inhabil, incluyendo ecografia doppler de extremidades 2026.";
     tvp.tags = unique([...(tvp.tags || []), "Ecografia doppler extremidades", "2026"]);
-    tvp.moments = tvp.moments || [];
-    if (!tvp.moments.some((moment) => normalize(moment.title).includes("doppler extremidades"))) {
-      tvp.moments.push({
-        title: "4. Ecografia doppler extremidades 2026",
-        text: "Solicitud y coordinacion de ecografia doppler de extremidades dentro del flujo TVP en horario inhabil.",
-        steps: [
-          "Confirmar sospecha clinica y horario de solicitud.",
-          "Seguir el conducto TVP horario inhabil vigente.",
-          "Registrar destino, hora y responsable de la coordinacion."
-        ]
-      });
-    }
-    tvp.warning = "Pendiente anexar el PDF Ecografia doppler extremidades 2026 al repositorio."
+    tvp.warning = "Pendiente anexar el PDF Ecografia doppler extremidades 2026."
+  }
+
+  if (!document.querySelector('script[src*="arsenal-terapeutico.js"]')) {
+    const script = document.createElement("script");
+    script.src = "./arsenal-terapeutico.js?v=1";
+    script.defer = true;
+    document.body.append(script);
   }
 
   if (typeof renderRoute === "function") renderRoute();
