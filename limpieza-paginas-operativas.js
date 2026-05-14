@@ -4,9 +4,26 @@
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
+  function ensureStyle() {
+    if (document.querySelector("#operational-cleanup-style")) return;
+    const style = document.createElement("style");
+    style.id = "operational-cleanup-style";
+    style.textContent = ".page:not(.active){display:none!important}#chiefPage:not(.active){display:none!important}#chiefPage>.page-head{display:none!important}";
+    document.head.append(style);
+  }
+
+  function loadAdminCenter() {
+    if (document.querySelector('script[src*="gestion-admin-contenidos.js"]')) return;
+    const script = document.createElement("script");
+    script.src = "./gestion-admin-contenidos.js?v=1";
+    script.defer = true;
+    document.body.append(script);
+  }
+
   function removeRestrictedText() {
+    ensureStyle();
     const chiefHead = document.querySelector("#chiefPage .page-head");
-    if (chiefHead) chiefHead.hidden = true;
+    if (chiefHead) chiefHead.remove();
 
     document.querySelectorAll("#callsPage .document-panel, #visitPage .document-panel, #formsPage .document-panel, #callsPage section").forEach((node) => {
       const text = norm(node.textContent);
@@ -34,6 +51,7 @@
   }
 
   function apply() {
+    loadAdminCenter();
     removeRestrictedText();
     cleanCallsPage();
     cleanVisitPage();
