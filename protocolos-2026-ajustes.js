@@ -46,7 +46,8 @@
     page: "Doc. 2026",
     summary: "Acceso al flujo vigente de hemodinamia de urgencias 2026.",
     tags: ["Hemodinamia", "Urgencias", "Cardiologia", "2026"],
-    sourceDocs: [["Hemodinamica de urgencias 2026", "./protocol-docs/hemodinamia-2025.pdf"]]
+    sourceDocs: [["Hemodinamia 2025 (pendiente reemplazo por PDF 2026)", "./protocol-docs/hemodinamia-2025.pdf"]],
+    warning: "Pendiente anexar el PDF Hemodinamica de urgencias 2026 para reemplazar el respaldo anterior."
   });
 
   const urgenciaUrologica = findProtocol("urologia", "urgencia") || findProtocol("urologica", "urgencia");
@@ -56,7 +57,8 @@
     page: "Doc. 2026",
     summary: "Flujo HEDI 2026 para patologia urologica de urgencia.",
     tags: ["Urologia", "Urgencia", "HEDI", "2026"],
-    sourceDocs: [["Urologia de urgencias HEDI 2026", "./protocol-docs/patologia-urologia-urgencia-2025.pdf"]]
+    sourceDocs: [["Patologia urologia de urgencia 2025 (pendiente reemplazo por HEDI 2026)", "./protocol-docs/patologia-urologia-urgencia-2025.pdf"]],
+    warning: "Pendiente anexar el PDF Urologia de urgencias HEDI 2026 para reemplazar el respaldo anterior."
   });
 
   const radiologia = findProtocol("radiologia", "intervencional");
@@ -66,7 +68,8 @@
     page: "Doc. 2026",
     summary: "Acceso al flujo vigente de radiologia intervencional de urgencias 2026.",
     tags: ["Radiologia intervencional", "Urgencias", "2026"],
-    sourceDocs: [["Radiologia intervencional de urgencias 2026", "./protocol-docs/radiologia-intervencional-2025.pdf"]]
+    sourceDocs: [["Radiologia intervencional 2025 (pendiente reemplazo por PDF 2026)", "./protocol-docs/radiologia-intervencional-2025.pdf"]],
+    warning: "Pendiente anexar el PDF Radiologia intervencional de urgencias 2026 para reemplazar el respaldo anterior."
   });
 
   const columna = findProtocol("columna");
@@ -76,7 +79,8 @@
     page: "Doc. 2026",
     summary: "Flujo 2026 para patologia aguda de columna y coordinacion con centro de referencia.",
     tags: ["Cirugia de columna", "Columna", "HDSR", "Neurocirugia", "2026"],
-    sourceDocs: [["Patologia aguda de columna 2026", "./protocol-docs/patologia-aguda-columna-2025.pdf"]]
+    sourceDocs: [["Patologia aguda de columna 2025 (pendiente reemplazo por PDF 2026)", "./protocol-docs/patologia-aguda-columna-2025.pdf"]],
+    warning: "Pendiente anexar el PDF Patologia aguda de columna 2026 para reemplazar el respaldo anterior."
   });
 
   const neurologia = findProtocol("neurologia");
@@ -103,7 +107,8 @@
       "Coordinar Gestion de Camas CASR si requiere procedimiento, traslado, cama o retorno.",
       "Registrar indicaciones y comunicacion en la ficha clinica."
     ];
-    neurologia.sourceDocs = [["Neuroradiologia intervencional de urgencias 2026 y evaluacion neurologica a distancia ACV", "./protocol-docs/flujos-neuro-2025.pdf"]];
+    neurologia.sourceDocs = [["Flujos Neuro 2025 (pendiente reemplazo por documentos 2026)", "./protocol-docs/flujos-neuro-2025.pdf"]];
+    neurologia.warning = "Pendiente anexar PDFs 2026 de neuroradiologia intervencional de urgencias y evaluacion neurologica a distancia ACV."
   }
 
   removeProtocols("posible", "donante");
@@ -126,7 +131,8 @@
       "Coordinar ecografia de posible/potencial donante cuando corresponda.",
       "Registrar responsables, horarios y respuesta de la red."
     ],
-    sourceDocs: [["Evaluacion neurologica posible donante 2026 / Ecografia de posible o potencial donante 2026", "./protocol-docs/flujos-neuro-2025.pdf"]]
+    sourceDocs: [["Flujos Neuro 2025 (pendiente reemplazo por protocolos de donante 2026)", "./protocol-docs/flujos-neuro-2025.pdf"]],
+    warning: "Pendiente anexar PDFs 2026 de evaluacion neurologica y ecografia de posible/potencial donante."
   };
   const neurologiaIndex = protocols.indexOf(neurologia);
   protocols.splice(neurologiaIndex >= 0 ? neurologiaIndex + 1 : protocols.length, 0, posibleDonante);
@@ -141,11 +147,10 @@
       hidePriority: true,
       fields: [
         ["Documento", "Patologia arterial de urgencias 2026."],
-        ["Conducta", "Abrir el documento fuente y seguir criterios, contactos y secuencia de activacion vigentes."],
+        ["Conducta", "Anexar el documento fuente para revisar criterios, contactos y secuencia de activacion vigentes."],
         ["Registro", "Registrar evaluacion, contacto con especialista y plan acordado."]
       ],
-      sourceDocs: [["Patologia arterial de urgencias 2026", "./protocol-docs/patologia-arterial-urgencias-2026.pdf"]],
-      warning: "Pendiente anexar el PDF 2026 al repositorio para abrir el documento fuente desde este boton."
+      warning: "Pendiente anexar el PDF Patologia arterial de urgencias 2026 al repositorio."
     });
   }
 
@@ -168,7 +173,7 @@
         ]
       });
     }
-    tvp.sourceDocs = unique([...(tvp.sourceDocs || []), ["Ecografia doppler extremidades 2026", "./protocol-docs/ecografia-doppler-extremidades-2026.pdf"]]);
+    tvp.warning = "Pendiente anexar el PDF Ecografia doppler extremidades 2026 al repositorio."
   }
 
   if (typeof renderRoute === "function") renderRoute();
