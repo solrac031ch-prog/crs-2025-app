@@ -102,18 +102,8 @@
     summary: "Protocolo unico para evaluacion neurologica y ecografia de posible o potencial donante 2026.",
     tags: ["Posible donante", "Potencial donante", "Evaluacion neurologica", "Ecografia", "2026"],
     hidePriority: true,
-    fields: [
-      ["Alcance", "Paciente posible o potencial donante que requiere coordinacion segun protocolo vigente."],
-      ["Evaluacion neurologica", "Activar evaluacion neurologica de posible donante 2026 segun disponibilidad y conducto local."],
-      ["Ecografia", "Coordinar ecografia de posible/potencial donante 2026 segun indicacion del equipo responsable."],
-      ["Registro", "Dejar trazabilidad de contactos, horarios e indicaciones en ficha clinica."]
-    ],
-    flow: [
-      "Confirmar que el paciente corresponde a posible o potencial donante.",
-      "Coordinar evaluacion neurologica segun protocolo 2026.",
-      "Coordinar ecografia de posible/potencial donante cuando corresponda.",
-      "Registrar responsables, horarios y respuesta de la red."
-    ],
+    fields: [["Alcance", "Paciente posible o potencial donante que requiere coordinacion segun protocolo vigente."], ["Evaluacion neurologica", "Activar evaluacion neurologica de posible donante 2026 segun disponibilidad y conducto local."], ["Ecografia", "Coordinar ecografia de posible/potencial donante 2026 segun indicacion del equipo responsable."], ["Registro", "Dejar trazabilidad de contactos, horarios e indicaciones en ficha clinica."]],
+    flow: ["Confirmar que el paciente corresponde a posible o potencial donante.", "Coordinar evaluacion neurologica segun protocolo 2026.", "Coordinar ecografia de posible/potencial donante cuando corresponda.", "Registrar responsables, horarios y respuesta de la red."],
     warning: "Pendiente anexar PDFs 2026 de evaluacion neurologica y ecografia de posible/potencial donante."
   };
   const neurologiaIndex = protocols.indexOf(neurologia);
@@ -143,7 +133,8 @@
   }
 
   const loadScriptOnce = (src) => new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src*="${src.split("?")[0].replace("./", "")}"]`);
+    const key = src.split("?")[0].replace("./", "");
+    const existing = document.querySelector(`script[src*="${key}"]`);
     if (existing) {
       if (existing.dataset.loaded === "true") resolve();
       else existing.addEventListener("load", resolve, { once: true });
@@ -152,10 +143,7 @@
     const script = document.createElement("script");
     script.src = src;
     script.defer = true;
-    script.addEventListener("load", () => {
-      script.dataset.loaded = "true";
-      resolve();
-    }, { once: true });
+    script.addEventListener("load", () => { script.dataset.loaded = "true"; resolve(); }, { once: true });
     script.addEventListener("error", reject, { once: true });
     document.body.append(script);
   });
@@ -164,11 +152,7 @@
     loadScriptOnce("./arsenal-terapeutico.js?v=2")
       .then(() => loadScriptOnce("./arsenal-uso-ocasional-fix.js?v=1"))
       .catch(() => {});
-    loadScriptOnce("./gestion-jefatura-v2.js?v=2")
-      .then(() => loadScriptOnce("./jefatura-panel-ajustes.js?v=1"))
-      .then(() => loadScriptOnce("./jefatura-presentacion-login.js?v=1"))
-      .catch(() => {});
-    loadScriptOnce("./limpieza-paginas-operativas.js?v=1").catch(() => {});
+    loadScriptOnce("./gestion-jefatura-estable.js?v=1").catch(() => {});
   }, 0);
 
   if (typeof renderRoute === "function") renderRoute();
