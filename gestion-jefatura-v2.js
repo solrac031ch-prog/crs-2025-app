@@ -9,33 +9,32 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const todayIso = () => new Date().toISOString().slice(0, 10);
   const cleanUser = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "");
-  const escapeHtml = (value) => String(value || "")
+  const esc = (value) => String(value || "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-  const readStore = (store, key, fallback) => {
+  const readJson = (store, key, fallback) => {
     try {
       return JSON.parse(store.getItem(key) || "") || fallback;
     } catch (error) {
       return fallback;
     }
   };
-  const writeLocal = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-  const users = () => readStore(localStorage, USERS_KEY, []);
-  const saveUsers = (value) => writeLocal(USERS_KEY, value);
-  const session = () => readStore(sessionStorage, SESSION_KEY, null);
+  const users = () => readJson(localStorage, USERS_KEY, []);
+  const saveUsers = (value) => localStorage.setItem(USERS_KEY, JSON.stringify(value));
+  const currentSession = () => readJson(sessionStorage, SESSION_KEY, null);
   const setSession = (user) => sessionStorage.setItem(SESSION_KEY, JSON.stringify({ username: user.username, name: user.name, role: user.role }));
   const clearSession = () => sessionStorage.removeItem(SESSION_KEY);
-  const period = () => readStore(localStorage, PERIOD_KEY, { period: "day", from: todayIso(), to: todayIso() });
-  const savePeriod = (value) => writeLocal(PERIOD_KEY, value);
+  const period = () => readJson(localStorage, PERIOD_KEY, { period: "day", from: todayIso(), to: todayIso() });
+  const savePeriod = (value) => localStorage.setItem(PERIOD_KEY, JSON.stringify(value));
 
   async function passwordHash(username, password) {
     const text = `${cleanUser(username)}::${String(password || "")}`;
-    if (crypto?.subtle && window.TextEncoder) {
-      const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+      const bytes = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
       return Array.from(new Uint8Array(bytes)).map((item) => item.toString(16).padStart(2, "0")).join("");
     }
     return btoa(unescape(encodeURIComponent(text)));
@@ -47,31 +46,21 @@
     $$("[data-route-link]").forEach((link) => link.classList.toggle("active", link.dataset.routeLink === route));
   }
 
-  function removeRestrictedCopies() {
-    const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  function cleanupTitles() {
     const chiefHead = $("#chiefPage .page-head");
-    if (chiefHead) chiefHead.style.display = "none";
+    if (chiefHead) chiefHead.hidden = true;
     const managementTitle = $("#managementTitle");
-    if (managementTitle) managementTitle.textContent = "Gestion";
-    $$(".document-panel, .form-card, .tool-card, .management-card").forEach((card) => {
-      const text = normalize(card.textContent);
-      if (text.includes("espacio jefatura") || text.includes("panel restringido")) card.remove();
-    });
+    if (managementTitle && managementTitle.textContent !== "Gestion") managementTitle.textContent = "Gestion";
   }
 
   function getCases() {
     try {
       if (typeof priorityCases === "function") return priorityCases();
     } catch (error) {}
-    return readStore(localStorage, "crsPriorityCases", []);
+    return readJson(localStorage, "crsPriorityCases", []);
   }
 
-  function caseDate(item) {
-    const date = new Date(item.createdAt || item.date || item.fecha || Date.now());
-    return Number.isNaN(date.getTime()) ? new Date() : date;
-  }
-
-  function periodRange(config) {
+  function rangeFor(config) {
     const start = new Date();
     const end = new Date();
     start.setHours(0, 0, 0, 0);
@@ -99,9 +88,9 @@
   }
 
   function filteredCases() {
-    const range = periodRange(period());
+    const range = rangeFor(period());
     return getCases().filter((item) => {
-      const date = caseDate(item);
+      const date = new Date(item.createdAt || item.date || item.fecha || Date.now());
       return date >= range.start && date <= range.end;
     });
   }
@@ -114,8 +103,7 @@
     const content = $("#managementContent");
     if (!content) return;
     activate("managementPage");
-    const title = $("#managementTitle");
-    if (title) title.textContent = "Gestion";
+    cleanupTitles();
     content.innerHTML = `
       <section class="law-hero-panel compact management-v2-home">
         <h2>Gestion</h2>
@@ -130,38 +118,35 @@
           <div class="rule-field"><strong>Exportacion</strong><span>Excel, Excel/Drive, PDF y Word</span></div>
         </div>
       </section>`;
-    removeRestrictedCopies();
-    scrollTo(0, 0);
+    window.scrollTo(0, 0);
   }
 
   function authView() {
-    const hasUsers = users().length > 0;
-    const ownerOptions = OWNERS.map((item) => `<option value="${item}">${item}</option>`).join("");
-    return `
-      ${nav()}
-      <section class="law-hero-panel compact chief-auth-panel">
-        <h2>Jefatura</h2>
-        <p>Guti, Cote y el desarrollador pueden iniciar el registro y otorgar accesos.</p>
-        <p data-chief-message aria-live="polite"></p>
-        ${!hasUsers ? `
-          <form class="law-search-form chief-form" data-chief-bootstrap>
-            <label>Usuario autorizado<select name="username" required>${ownerOptions}</select></label>
-            <label>Nombre<input name="name" type="text" required></label>
-            <label>Crear clave<input name="password" type="password" minlength="4" required></label>
-            <button class="document-button" type="submit">Crear primer acceso</button>
-          </form>` : `
-          <form class="law-search-form chief-form" data-chief-login>
-            <label>Usuario<input name="username" type="text" autocomplete="username" required></label>
-            <label>Clave<input name="password" type="password" autocomplete="current-password" required></label>
-            <button class="document-button" type="submit">Ingresar</button>
-          </form>
-          <form class="law-search-form chief-form" data-chief-create-password>
-            <label>Usuario autorizado<input name="username" type="text" required></label>
-            <label>Clave temporal<input name="temporaryPassword" type="password" required></label>
-            <label>Nueva clave<input name="password" type="password" minlength="4" required></label>
-            <button class="document-button" type="submit">Crear clave</button>
-          </form>`}
-      </section>`;
+    const firstAccess = users().length === 0;
+    const options = OWNERS.map((item) => `<option value="${item}">${item}</option>`).join("");
+    return `${nav()}<section class="law-hero-panel compact chief-auth-panel">
+      <h2>Jefatura</h2>
+      <p>Guti, Cote y el desarrollador pueden iniciar el registro y otorgar accesos.</p>
+      <p data-chief-message aria-live="polite"></p>
+      ${firstAccess ? `
+        <form class="law-search-form chief-form" data-chief-bootstrap>
+          <label>Usuario autorizado<select name="username" required>${options}</select></label>
+          <label>Nombre<input name="name" type="text" required></label>
+          <label>Crear clave<input name="password" type="password" minlength="4" required></label>
+          <button class="document-button" type="submit">Crear primer acceso</button>
+        </form>` : `
+        <form class="law-search-form chief-form" data-chief-login>
+          <label>Usuario<input name="username" type="text" autocomplete="username" required></label>
+          <label>Clave<input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="document-button" type="submit">Ingresar</button>
+        </form>
+        <form class="law-search-form chief-form" data-chief-create-password>
+          <label>Usuario autorizado<input name="username" type="text" required></label>
+          <label>Clave temporal<input name="temporaryPassword" type="password" required></label>
+          <label>Nueva clave<input name="password" type="password" minlength="4" required></label>
+          <button class="document-button" type="submit">Crear clave</button>
+        </form>`}
+    </section>`;
   }
 
   function setMessage(text, kind = "ok") {
@@ -172,58 +157,47 @@
   }
 
   function dashboardView(activeUser) {
-    const canGrant = ["owner", "desarrollador"].includes(activeUser.role);
     const config = period();
+    const canGrant = ["owner", "desarrollador"].includes(activeUser.role);
     const driveUrl = localStorage.getItem(DRIVE_KEY) || "";
-    const rows = filteredCases().map((item) => `
-      <tr>
-        <td>${escapeHtml(new Date(item.createdAt || Date.now()).toLocaleString("es-CL"))}</td>
-        <td>${escapeHtml(item.status || "Pendiente")}</td>
-        <td>${escapeHtml(item.flow || item.protocol || "")}</td>
-        <td>${escapeHtml(item.patientName || "")}<br>${escapeHtml(item.rut || "")}<br>${escapeHtml(item.phone || "")}</td>
-        <td>${escapeHtml(item.summary || "")}</td>
-        <td>${escapeHtml(item.need || "")}</td>
-      </tr>`).join("") || `<tr><td colspan="6">No hay casos en el periodo seleccionado.</td></tr>`;
+    const rows = filteredCases().map((item) => `<tr>
+      <td>${esc(new Date(item.createdAt || Date.now()).toLocaleString("es-CL"))}</td>
+      <td>${esc(item.status || "Pendiente")}</td>
+      <td>${esc(item.flow || item.protocol || "")}</td>
+      <td>${esc(item.patientName || "")}<br>${esc(item.rut || "")}<br>${esc(item.phone || "")}</td>
+      <td>${esc(item.summary || "")}</td>
+      <td>${esc(item.need || "")}</td>
+    </tr>`).join("") || `<tr><td colspan="6">No hay casos en el periodo seleccionado.</td></tr>`;
 
-    return `
-      ${nav()}
+    return `${nav()}
       <section class="law-hero-panel compact chief-dashboard">
         <h2>Jefatura</h2>
-        <p>Sesion: ${escapeHtml(activeUser.name || activeUser.username)} (${escapeHtml(activeUser.role)})</p>
+        <p>Sesion: ${esc(activeUser.name || activeUser.username)} (${esc(activeUser.role)})</p>
         <p data-chief-message aria-live="polite"></p>
         <div class="law-actions"><button class="document-button" type="button" data-chief-logout>Cerrar sesion</button><a class="document-button" href="#/inicio">Inicio</a></div>
       </section>
-      ${canGrant ? `
-        <section class="document-panel chief-admin-panel">
-          <h2>Usuarios autorizados</h2>
-          <p>Entrega una clave temporal para que cada jefe cree su clave final.</p>
-          <form class="law-search-form chief-form" data-chief-grant>
-            <label>Usuario<input name="username" type="text" required></label>
-            <label>Nombre<input name="name" type="text" required></label>
-            <label>Rol<select name="role"><option value="jefe">Jefe</option><option value="owner">Administrador</option><option value="desarrollador">Desarrollador</option></select></label>
-            <label>Clave temporal<input name="temporaryPassword" type="password" minlength="4" required></label>
-            <button class="document-button" type="submit">Otorgar permiso</button>
-          </form>
-          <div class="rule-fields">${users().map((user) => `<div class="rule-field"><strong>${escapeHtml(user.name || user.username)}</strong><span>${escapeHtml(user.username)} · ${escapeHtml(user.role)} · ${user.hash ? "clave creada" : "pendiente crear clave"}</span></div>`).join("")}</div>
-        </section>` : ""}
+      ${canGrant ? `<section class="document-panel chief-admin-panel">
+        <h2>Usuarios autorizados</h2>
+        <p>Entrega una clave temporal para que cada jefe cree su clave final.</p>
+        <form class="law-search-form chief-form" data-chief-grant>
+          <label>Usuario<input name="username" type="text" required></label>
+          <label>Nombre<input name="name" type="text" required></label>
+          <label>Rol<select name="role"><option value="jefe">Jefe</option><option value="owner">Administrador</option><option value="desarrollador">Desarrollador</option></select></label>
+          <label>Clave temporal<input name="temporaryPassword" type="password" minlength="4" required></label>
+          <button class="document-button" type="submit">Otorgar permiso</button>
+        </form>
+        <div class="rule-fields">${users().map((user) => `<div class="rule-field"><strong>${esc(user.name || user.username)}</strong><span>${esc(user.username)} · ${esc(user.role)} · ${user.hash ? "clave creada" : "pendiente crear clave"}</span></div>`).join("")}</div>
+      </section>` : ""}
       <section class="document-panel chief-export-panel">
         <h2>Casos para gestion</h2>
         <form class="law-search-form chief-form" data-chief-filter>
           <label>Periodo<select name="period"><option value="day">Diario</option><option value="week">Semanal</option><option value="month">Mensual</option><option value="custom">Desde - hasta</option></select></label>
-          <label>Desde<input name="from" type="date" value="${escapeHtml(config.from || todayIso())}"></label>
-          <label>Hasta<input name="to" type="date" value="${escapeHtml(config.to || todayIso())}"></label>
+          <label>Desde<input name="from" type="date" value="${esc(config.from || todayIso())}"></label>
+          <label>Hasta<input name="to" type="date" value="${esc(config.to || todayIso())}"></label>
           <button class="document-button" type="submit">Aplicar</button>
         </form>
-        <div class="law-actions">
-          <button class="document-button" type="button" data-chief-export="csv">Excel</button>
-          <button class="document-button" type="button" data-chief-export="drive">Excel Drive</button>
-          <button class="document-button" type="button" data-chief-export="pdf">PDF</button>
-          <button class="document-button" type="button" data-chief-export="word">Word</button>
-        </div>
-        <form class="law-search-form chief-form" data-chief-drive>
-          <label>Enlace Excel/Drive<input name="driveUrl" type="url" value="${escapeHtml(driveUrl)}" placeholder="https://docs.google.com/spreadsheets/..."></label>
-          <button class="document-button" type="submit">Guardar enlace</button>
-        </form>
+        <div class="law-actions"><button class="document-button" type="button" data-chief-export="csv">Excel</button><button class="document-button" type="button" data-chief-export="drive">Excel Drive</button><button class="document-button" type="button" data-chief-export="pdf">PDF</button><button class="document-button" type="button" data-chief-export="word">Word</button></div>
+        <form class="law-search-form chief-form" data-chief-drive><label>Enlace Excel/Drive<input name="driveUrl" type="url" value="${esc(driveUrl)}" placeholder="https://docs.google.com/spreadsheets/..."></label><button class="document-button" type="submit">Guardar enlace</button></form>
         <p class="law-note">La app abre la planilla Drive configurada y exporta los datos. Para escritura automatica en Google Drive se requiere Apps Script o backend institucional.</p>
         <div class="chief-table-wrap"><table class="chief-table"><thead><tr><th>Fecha</th><th>Estado</th><th>Flujo</th><th>Paciente</th><th>Resumen</th><th>Necesita</th></tr></thead><tbody>${rows}</tbody></table></div>
       </section>`;
@@ -233,11 +207,11 @@
     const content = $("#chiefContent");
     if (!content) return;
     activate("chiefPage");
-    content.innerHTML = session() ? dashboardView(session()) : authView();
+    cleanupTitles();
+    content.innerHTML = currentSession() ? dashboardView(currentSession()) : authView();
     const filter = $("[data-chief-filter]");
     if (filter) filter.period.value = period().period || "day";
-    removeRestrictedCopies();
-    scrollTo(0, 0);
+    window.scrollTo(0, 0);
   }
 
   function csvCell(value) {
@@ -257,30 +231,19 @@
   }
 
   function reportHtml(headers, rows) {
-    const body = rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="9">Sin casos para el periodo.</td></tr>`;
+    const body = rows.map((row) => `<tr>${row.map((cell) => `<td>${esc(cell)}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="9">Sin casos para el periodo.</td></tr>`;
     return `<!doctype html><html><head><meta charset="utf-8"><title>Casos gestion</title><style>body{font-family:Arial,sans-serif}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:8px;vertical-align:top}th{background:#eef4f3}</style></head><body><h1>Casos gestion</h1><table><thead><tr>${headers.map((item) => `<th>${item}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></body></html>`;
   }
 
   function exportCases(format) {
-    const driveUrl = localStorage.getItem(DRIVE_KEY);
     if (format === "drive") {
+      const driveUrl = localStorage.getItem(DRIVE_KEY);
       if (driveUrl) window.open(driveUrl, "_blank", "noopener,noreferrer");
       else setMessage("Primero guarda el enlace de la planilla Excel/Drive.", "error");
       return;
     }
-
     const headers = ["Fecha", "Estado", "Flujo", "Paciente", "RUN", "Telefono", "Resumen", "Necesita", "Enlace"];
-    const rows = filteredCases().map((item) => [
-      new Date(item.createdAt || Date.now()).toLocaleString("es-CL"),
-      item.status || "Pendiente",
-      item.flow || item.protocol || "",
-      item.patientName || "",
-      item.rut || "",
-      item.phone || "",
-      item.summary || "",
-      item.need || "",
-      item.route || ""
-    ]);
+    const rows = filteredCases().map((item) => [new Date(item.createdAt || Date.now()).toLocaleString("es-CL"), item.status || "Pendiente", item.flow || item.protocol || "", item.patientName || "", item.rut || "", item.phone || "", item.summary || "", item.need || "", item.route || ""]);
     const stamp = new Date().toISOString().slice(0, 10);
     if (format === "csv") {
       const csv = [headers, ...rows].map((row) => row.map(csvCell).join(";")).join("\n");
@@ -314,7 +277,6 @@
       renderChief();
       return;
     }
-
     if (form.matches("[data-chief-login]")) {
       const username = cleanUser(data.get("username"));
       const user = users().find((item) => item.username === username);
@@ -324,7 +286,6 @@
       renderChief();
       return;
     }
-
     if (form.matches("[data-chief-create-password]")) {
       const username = cleanUser(data.get("username"));
       const list = users();
@@ -338,9 +299,8 @@
       renderChief();
       return;
     }
-
     if (form.matches("[data-chief-grant]")) {
-      const active = session();
+      const active = currentSession();
       if (!["owner", "desarrollador"].includes(active?.role)) return;
       const username = cleanUser(data.get("username"));
       const list = users().filter((item) => item.username !== username);
@@ -349,13 +309,11 @@
       renderChief();
       return;
     }
-
     if (form.matches("[data-chief-filter]")) {
       savePeriod({ period: data.get("period"), from: data.get("from") || todayIso(), to: data.get("to") || todayIso() });
       renderChief();
       return;
     }
-
     if (form.matches("[data-chief-drive]")) {
       localStorage.setItem(DRIVE_KEY, String(data.get("driveUrl") || "").trim());
       setMessage("Enlace Drive guardado.");
@@ -376,14 +334,10 @@
     const route = (location.hash || "#/inicio").split("?")[0];
     if (route === "#/gestion") renderManagement();
     if (route === "#/jefatura") renderChief();
-    removeRestrictedCopies();
+    cleanupTitles();
   }
 
-  addEventListener("hashchange", () => {
-    setTimeout(renderRoute, 20);
-    setTimeout(renderRoute, 180);
-  });
-  new MutationObserver(removeRestrictedCopies).observe(document.body, { childList: true, subtree: true });
-  setTimeout(renderRoute, 80);
-  setTimeout(renderRoute, 300);
+  addEventListener("hashchange", () => setTimeout(renderRoute, 50));
+  setTimeout(renderRoute, 100);
+  setTimeout(renderRoute, 500);
 })();
