@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-2025-consultoria-flujos-2026-v55";
+const CACHE_NAME = "crs-hph-2025-consultoria-flujos-2026-v56";
 const CONSULTORIA_SCRIPT = '<script src="./consultoria-estabilidad-2026.js?v=1"></script>\n<script src="./consultoria-llamado-2026.js?v=2"></script>\n<script src="./consultoria-flujos-2026.js?v=1"></script>';
 
 self.addEventListener("install", (event) => {
