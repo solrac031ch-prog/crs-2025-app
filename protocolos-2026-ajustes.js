@@ -166,6 +166,7 @@
       .catch(() => {});
     loadScriptOnce("./gestion-jefatura-v2.js?v=2")
       .then(() => loadScriptOnce("./jefatura-panel-ajustes.js?v=1"))
+      .then(() => loadScriptOnce("./jefatura-presentacion-login.js?v=1"))
       .catch(() => {});
     loadScriptOnce("./limpieza-paginas-operativas.js?v=1").catch(() => {});
   }, 0);
