@@ -6,6 +6,7 @@ const CRS_CONFIG = {
   adminEmail: 'mdcarlosherrera@gmail.com',
   spreadsheetId: '',
   protocolFolderName: 'CRS HPH 2025 - Protocolos Jefatura',
+  contentFolderName: 'CRS HPH 2025 - Contenidos Jefatura',
   sheets: {
     usuarios: 'Usuarios',
     auditoria: 'Auditoria',
@@ -31,6 +32,11 @@ const PROTOCOL_HEADERS = [
   'file_size', 'creado_por', 'creado', 'activo', 'actualizado'
 ];
 
+const CONTENT_HEADERS = [
+  'id', 'tipo', 'titulo', 'descripcion', 'url', 'event_url', 'month', 'drive_file_id', 'drive_url',
+  'thumbnail_url', 'preview_url', 'file_name', 'file_type', 'file_size', 'publicado_por', 'fecha', 'activo', 'actualizado'
+];
+
 function ss_() {
   return CRS_CONFIG.spreadsheetId ? SpreadsheetApp.openById(CRS_CONFIG.spreadsheetId) : SpreadsheetApp.getActiveSpreadsheet();
 }
@@ -43,6 +49,15 @@ function sheet_(name, headers) {
   return sheet;
 }
 
+function ensureHeaders_(sheet, headers) {
+  if (!headers || !headers.length) return sheet;
+  if (sheet.getLastRow() === 0) { sheet.appendRow(headers); return sheet; }
+  const current = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), headers.length)).getValues()[0].map(String);
+  const missing = headers.some((header, i) => current[i] !== header);
+  if (missing) sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  return sheet;
+}
+
 function setup() {
   sheet_(CRS_CONFIG.sheets.usuarios, ['email', 'nombre', 'rol', 'activo', 'puede_editar', 'creado', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.auditoria, ['fecha', 'usuario', 'accion', 'detalle']);
@@ -51,7 +66,7 @@ function setup() {
   sheet_(CRS_CONFIG.sheets.planillas, ['clave', 'url', 'descripcion', 'actualizado_por', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.directorio, ['nombre', 'detalle', 'telefono', 'categoria', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.formularios, ['clave', 'url', 'descripcion', 'actualizado_por', 'actualizado']);
-  sheet_(CRS_CONFIG.sheets.contenidos, ['tipo', 'titulo', 'descripcion', 'url', 'publicado_por', 'fecha']);
+  ensureHeaders_(sheet_(CRS_CONFIG.sheets.contenidos, CONTENT_HEADERS), CONTENT_HEADERS);
   sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']);
   sheet_(CRS_CONFIG.sheets.protocolos, PROTOCOL_HEADERS);
 
@@ -60,6 +75,7 @@ function setup() {
   const exists = values.some(row => String(row[0]).toLowerCase() === CRS_CONFIG.adminEmail.toLowerCase());
   if (!exists) usuarios.appendRow([CRS_CONFIG.adminEmail, 'Dr Carlos Herrera', 'admin', 'SI', 'SI', new Date(), new Date()]);
   ensureProtocolFolder_();
+  ensureContentFolder_();
   audit_(CRS_CONFIG.adminEmail, 'setup', 'Inicialización backend CRS HPH');
 }
 
@@ -85,6 +101,9 @@ function doPost(e) {
     if (action === 'saveManagedProtocol') return json_(requireAdmin_(payload.email, () => saveManagedProtocol_(payload.protocol, payload.file, payload.email)));
     if (action === 'listManagedProtocols') return json_(listManagedProtocols_());
     if (action === 'deleteManagedProtocol') return json_(requireAdmin_(payload.email, () => deleteManagedProtocol_(payload.id, payload.email)));
+    if (action === 'saveManagedContent') return json_(requireAdmin_(payload.email, () => saveManagedContent_(payload.content, payload.file, payload.email)));
+    if (action === 'listManagedContent') return json_(listManagedContent_());
+    if (action === 'deleteManagedContent') return json_(requireAdmin_(payload.email, () => deleteManagedContent_(payload.id, payload.email)));
     if (action === 'audit') return json_(audit_(payload.email, payload.event, payload.detail));
     return json_({ ok: false, error: 'Acción no reconocida' });
   } catch (err) {
@@ -236,14 +255,7 @@ function deleteManagedProtocol_(id, actorEmail) {
 }
 
 function saveProtocolFile_(filePayload, id) {
-  const bytes = Utilities.base64Decode(String(filePayload.dataBase64 || ''));
-  const mimeType = filePayload.type || MimeType.PDF;
-  const safeName = String(filePayload.name || ('protocolo-' + id)).replace(/[\\/:*?"<>|]/g, '-');
-  const blob = Utilities.newBlob(bytes, mimeType, safeName);
-  const folder = ensureProtocolFolder_();
-  const file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return { fileId: file.getId(), url: file.getUrl(), name: safeName, type: mimeType, size: bytes.length };
+  return saveDriveFile_(filePayload, ensureProtocolFolder_(), id);
 }
 
 function ensureProtocolFolder_() {
@@ -268,6 +280,113 @@ function protocolRowToObject_(row) {
     createdBy: row.creado_por || '',
     createdAt: row.creado || '',
     remote: true
+  };
+}
+
+function saveManagedContent_(content, filePayload, actorEmail) {
+  if (!content || !content.title) return { ok: false, error: 'Contenido inválido' };
+  const now = new Date();
+  const id = content.id || Utilities.getUuid();
+  let drive = { fileId: '', url: '', name: '', type: '', size: '', thumbnailUrl: '', previewUrl: '' };
+  if (filePayload && filePayload.dataBase64 && filePayload.name) drive = saveDriveFile_(filePayload, ensureContentFolder_(), id);
+  const row = {
+    id,
+    tipo: content.type || content.kind || 'news',
+    titulo: content.title || '',
+    descripcion: content.description || '',
+    url: content.url || '',
+    event_url: content.eventUrl || '',
+    month: content.month || '',
+    drive_file_id: drive.fileId || '',
+    drive_url: drive.url || '',
+    thumbnail_url: drive.thumbnailUrl || '',
+    preview_url: drive.previewUrl || '',
+    file_name: drive.name || filePayload?.name || '',
+    file_type: drive.type || filePayload?.type || '',
+    file_size: drive.size || filePayload?.size || '',
+    publicado_por: actorEmail || '',
+    fecha: now,
+    activo: 'SI',
+    actualizado: now
+  };
+  const sheet = ensureHeaders_(sheet_(CRS_CONFIG.sheets.contenidos, CONTENT_HEADERS), CONTENT_HEADERS);
+  sheet.appendRow(CONTENT_HEADERS.map(header => row[header] || ''));
+  audit_(actorEmail, 'save_managed_content', row.tipo + ' ' + row.titulo);
+  return { ok: true, content: contentRowToObject_(row), spreadsheetUrl: ss_().getUrl() };
+}
+
+function listManagedContent_() {
+  const sheet = ensureHeaders_(sheet_(CRS_CONFIG.sheets.contenidos, CONTENT_HEADERS), CONTENT_HEADERS);
+  const rows = rowsAsObjects_(sheet);
+  const items = rows
+    .filter(row => String(row.activo || 'SI').toUpperCase() === 'SI')
+    .map(contentRowToObject_)
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  return { ok: true, items, spreadsheetUrl: ss_().getUrl() };
+}
+
+function deleteManagedContent_(id, actorEmail) {
+  if (!id) return { ok: false, error: 'ID vacío' };
+  const sheet = ensureHeaders_(sheet_(CRS_CONFIG.sheets.contenidos, CONTENT_HEADERS), CONTENT_HEADERS);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) {
+      setCellByHeader_(sheet, headers, i + 1, 'activo', 'NO');
+      setCellByHeader_(sheet, headers, i + 1, 'actualizado', new Date());
+      audit_(actorEmail, 'delete_managed_content', id);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Contenido no encontrado' };
+}
+
+function ensureContentFolder_() {
+  const folders = DriveApp.getFoldersByName(CRS_CONFIG.contentFolderName);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(CRS_CONFIG.contentFolderName);
+}
+
+function contentRowToObject_(row) {
+  const driveUrl = row.drive_url || '';
+  const externalUrl = row.url || '';
+  return {
+    id: row.id || '',
+    type: row.tipo || 'news',
+    title: row.titulo || '',
+    description: row.descripcion || '',
+    url: externalUrl || driveUrl || '',
+    eventUrl: row.event_url || '',
+    month: row.month || '',
+    driveUrl,
+    driveFileId: row.drive_file_id || '',
+    thumbnailUrl: row.thumbnail_url || '',
+    previewUrl: row.preview_url || '',
+    fileName: row.file_name || '',
+    fileType: row.file_type || '',
+    fileSize: row.file_size || '',
+    createdBy: row.publicado_por || '',
+    createdAt: row.fecha || '',
+    remote: true
+  };
+}
+
+function saveDriveFile_(filePayload, folder, id) {
+  const bytes = Utilities.base64Decode(String(filePayload.dataBase64 || ''));
+  const mimeType = filePayload.type || MimeType.PDF;
+  const safeName = String(filePayload.name || ('archivo-' + id)).replace(/[\\/:*?"<>|]/g, '-');
+  const blob = Utilities.newBlob(bytes, mimeType, safeName);
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  const fileId = file.getId();
+  return {
+    fileId,
+    url: file.getUrl(),
+    thumbnailUrl: 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1200',
+    previewUrl: 'https://drive.google.com/file/d/' + fileId + '/preview',
+    name: safeName,
+    type: mimeType,
+    size: bytes.length
   };
 }
 
