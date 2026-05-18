@@ -5,6 +5,7 @@
 const CRS_CONFIG = {
   adminEmail: 'mdcarlosherrera@gmail.com',
   spreadsheetId: '',
+  protocolFolderName: 'CRS HPH 2025 - Protocolos Jefatura',
   sheets: {
     usuarios: 'Usuarios',
     auditoria: 'Auditoria',
@@ -14,7 +15,8 @@ const CRS_CONFIG = {
     directorio: 'Directorio',
     formularios: 'Formularios',
     contenidos: 'Contenidos',
-    comentarios: 'Comentarios'
+    comentarios: 'Comentarios',
+    protocolos: 'Protocolos_jefatura'
   }
 };
 
@@ -22,6 +24,11 @@ const PATIENT_CASE_HEADERS = [
   'id', 'fecha_registro', 'registrado_por', 'paciente', 'run', 'edad', 'telefono', 'flujo', 'motivo',
   'resumen_clinico', 'gestion_solicitada', 'prioridad', 'origen', 'estado', 'resuelto', 'proximo_paso',
   'responsable', 'fecha_compromiso', 'fecha_resolucion', 'observaciones', 'actualizado'
+];
+
+const PROTOCOL_HEADERS = [
+  'id', 'titulo', 'categoria', 'resumen', 'url', 'drive_file_id', 'drive_url', 'file_name', 'file_type',
+  'file_size', 'creado_por', 'creado', 'activo', 'actualizado'
 ];
 
 function ss_() {
@@ -46,11 +53,13 @@ function setup() {
   sheet_(CRS_CONFIG.sheets.formularios, ['clave', 'url', 'descripcion', 'actualizado_por', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.contenidos, ['tipo', 'titulo', 'descripcion', 'url', 'publicado_por', 'fecha']);
   sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']);
+  sheet_(CRS_CONFIG.sheets.protocolos, PROTOCOL_HEADERS);
 
   const usuarios = sheet_(CRS_CONFIG.sheets.usuarios);
   const values = usuarios.getDataRange().getValues();
   const exists = values.some(row => String(row[0]).toLowerCase() === CRS_CONFIG.adminEmail.toLowerCase());
   if (!exists) usuarios.appendRow([CRS_CONFIG.adminEmail, 'Dr Carlos Herrera', 'admin', 'SI', 'SI', new Date(), new Date()]);
+  ensureProtocolFolder_();
   audit_(CRS_CONFIG.adminEmail, 'setup', 'Inicialización backend CRS HPH');
 }
 
@@ -73,6 +82,9 @@ function doPost(e) {
     if (action === 'addComment') return json_(addComment_(payload.comment, payload.email));
     if (action === 'listComments') return json_(listComments_(payload.itemType, payload.itemId));
     if (action === 'deleteComment') return json_(requireAdmin_(payload.email, () => deleteComment_(payload.commentId, payload.email)));
+    if (action === 'saveManagedProtocol') return json_(requireAdmin_(payload.email, () => saveManagedProtocol_(payload.protocol, payload.file, payload.email)));
+    if (action === 'listManagedProtocols') return json_(listManagedProtocols_());
+    if (action === 'deleteManagedProtocol') return json_(requireAdmin_(payload.email, () => deleteManagedProtocol_(payload.id, payload.email)));
     if (action === 'audit') return json_(audit_(payload.email, payload.event, payload.detail));
     return json_({ ok: false, error: 'Acción no reconocida' });
   } catch (err) {
@@ -169,6 +181,94 @@ function normalizePatientCase_(item, actorEmail) {
   row.resuelto = row.resuelto || 'Pendiente';
   row.actualizado = now;
   return row;
+}
+
+function saveManagedProtocol_(protocol, filePayload, actorEmail) {
+  if (!protocol || !protocol.title) return { ok: false, error: 'Protocolo inválido' };
+  const now = new Date();
+  const id = protocol.id || Utilities.getUuid();
+  let drive = { fileId: '', url: '', name: '', type: '', size: '' };
+  if (filePayload && filePayload.dataBase64 && filePayload.name) drive = saveProtocolFile_(filePayload, id);
+  const row = {
+    id,
+    titulo: protocol.title || '',
+    categoria: protocol.category || 'Protocolo',
+    resumen: protocol.summary || protocol.description || '',
+    url: protocol.url || '',
+    drive_file_id: drive.fileId || '',
+    drive_url: drive.url || '',
+    file_name: drive.name || filePayload?.name || '',
+    file_type: drive.type || filePayload?.type || '',
+    file_size: drive.size || filePayload?.size || '',
+    creado_por: actorEmail || '',
+    creado: now,
+    activo: 'SI',
+    actualizado: now
+  };
+  sheet_(CRS_CONFIG.sheets.protocolos, PROTOCOL_HEADERS).appendRow(PROTOCOL_HEADERS.map(header => row[header] || ''));
+  audit_(actorEmail, 'save_managed_protocol', row.categoria + ' ' + row.titulo);
+  return { ok: true, protocol: protocolRowToObject_(row), spreadsheetUrl: ss_().getUrl() };
+}
+
+function listManagedProtocols_() {
+  const rows = rowsAsObjects_(sheet_(CRS_CONFIG.sheets.protocolos, PROTOCOL_HEADERS));
+  const protocols = rows
+    .filter(row => String(row.activo || 'SI').toUpperCase() === 'SI')
+    .map(protocolRowToObject_)
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  return { ok: true, protocols, spreadsheetUrl: ss_().getUrl() };
+}
+
+function deleteManagedProtocol_(id, actorEmail) {
+  if (!id) return { ok: false, error: 'ID vacío' };
+  const sheet = sheet_(CRS_CONFIG.sheets.protocolos, PROTOCOL_HEADERS);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) {
+      setCellByHeader_(sheet, headers, i + 1, 'activo', 'NO');
+      setCellByHeader_(sheet, headers, i + 1, 'actualizado', new Date());
+      audit_(actorEmail, 'delete_managed_protocol', id);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Protocolo no encontrado' };
+}
+
+function saveProtocolFile_(filePayload, id) {
+  const bytes = Utilities.base64Decode(String(filePayload.dataBase64 || ''));
+  const mimeType = filePayload.type || MimeType.PDF;
+  const safeName = String(filePayload.name || ('protocolo-' + id)).replace(/[\\/:*?"<>|]/g, '-');
+  const blob = Utilities.newBlob(bytes, mimeType, safeName);
+  const folder = ensureProtocolFolder_();
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { fileId: file.getId(), url: file.getUrl(), name: safeName, type: mimeType, size: bytes.length };
+}
+
+function ensureProtocolFolder_() {
+  const folders = DriveApp.getFoldersByName(CRS_CONFIG.protocolFolderName);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(CRS_CONFIG.protocolFolderName);
+}
+
+function protocolRowToObject_(row) {
+  return {
+    id: row.id || '',
+    title: row.titulo || '',
+    category: row.categoria || 'Protocolo',
+    summary: row.resumen || '',
+    description: row.resumen || '',
+    url: row.url || row.drive_url || '',
+    driveUrl: row.drive_url || '',
+    driveFileId: row.drive_file_id || '',
+    fileName: row.file_name || '',
+    fileType: row.file_type || '',
+    fileSize: row.file_size || '',
+    createdBy: row.creado_por || '',
+    createdAt: row.creado || '',
+    remote: true
+  };
 }
 
 function addComment_(comment, actorEmail) {
