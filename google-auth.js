@@ -59,6 +59,14 @@
     }
   }
 
+  function addGoogleAccountUrl() {
+    return `https://accounts.google.com/AddSession?continue=${encodeURIComponent(location.href)}`;
+  }
+
+  function loginHelpHtml() {
+    return `<div data-google-login-help class="stable-note" style="margin-top:10px;line-height:1.35"><strong>¿No aparece el correo que quieres usar?</strong><br>Google solo muestra las cuentas abiertas en este navegador. Si quieres entrar con otro jefe, primero agrega o selecciona esa cuenta Google.<br><button class="document-button" type="button" data-google-add-account style="margin-top:8px">Usar otra cuenta Google</button></div>`;
+  }
+
   async function verifyWithAppsScript(email, credentialPayload = {}) {
     const scriptUrl = String(config.appsScriptUrl || "").trim();
     if (!scriptUrl) {
@@ -109,11 +117,11 @@
     if (!target || target.dataset.googleReady === "true") return;
     target.dataset.googleReady = "true";
     if (!config.googleClientId) {
-      target.innerHTML = `<div class="stable-note"><strong>Google Auth preparado.</strong><br>Falta pegar el Google Client ID o el Apps Script URL en <code>google-auth-config.js</code>.<br>Por ahora solo está autorizada la cuenta: <strong>${esc(config.defaultAdminEmail || "")}</strong>.</div>`;
+      target.innerHTML = `<div class="stable-note"><strong>Google Auth preparado.</strong><br>Falta pegar el Google Client ID o el Apps Script URL en <code>google-auth-config.js</code>.</div>${loginHelpHtml()}`;
       return;
     }
     if (!window.google?.accounts?.id) {
-      target.innerHTML = `<button class="document-button" type="button" data-google-retry>Reintentar carga Google</button>`;
+      target.innerHTML = `<button class="document-button" type="button" data-google-retry>Reintentar carga Google</button>${loginHelpHtml()}`;
       return;
     }
     window.google.accounts.id.initialize({
@@ -123,6 +131,7 @@
       cancel_on_tap_outside: false
     });
     window.google.accounts.id.renderButton(target, { theme: "outline", size: "large", text: "signin_with", shape: "pill" });
+    if (!target.querySelector("[data-google-login-help]")) target.insertAdjacentHTML("beforeend", loginHelpHtml());
   }
 
   function injectAuthBox() {
@@ -133,7 +142,7 @@
     const box = document.createElement("section");
     box.className = "stable-card blue";
     box.dataset.googleAuthBox = "true";
-    box.innerHTML = session ? `<strong>Cuenta Google conectada</strong><span>${esc(session.email)} · ${esc(session.role)}</span><button class="document-button" type="button" data-google-logout>Cerrar sesión Google</button>` : `<strong>Ingreso con Google</strong><span>Autorizado por backend Google</span><div id="googleSignInButton"></div><div data-google-auth-status class="stable-note"></div>`;
+    box.innerHTML = session ? `<strong>Cuenta Google conectada</strong><span>${esc(session.email)} · ${esc(session.role)}</span><button class="document-button" type="button" data-google-logout>Cerrar sesión Google</button>` : `<strong>Ingreso con Google</strong><span>Autorizado por backend Google. Agregar usuarios en Jefatura no los hace aparecer automáticamente en este navegador; cada jefe debe tener su cuenta Google abierta o agregarla.</span><div id="googleSignInButton"></div><div data-google-auth-status class="stable-note"></div>`;
     panel.prepend(box);
     setTimeout(initGoogleButton, 80);
   }
@@ -146,6 +155,11 @@
       location.reload();
     }
     if (event.target.closest("[data-google-retry]")) initGoogleButton();
+    if (event.target.closest("[data-google-add-account]")) {
+      clearSession();
+      if (window.google?.accounts?.id) window.google.accounts.id.disableAutoSelect();
+      location.href = addGoogleAccountUrl();
+    }
   }, true);
 
   window.CRS_GOOGLE_AUTH = {
