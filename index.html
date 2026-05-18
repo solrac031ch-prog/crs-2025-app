@@ -15,7 +15,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-180.png" />
-    <link rel="stylesheet" href="./styles.css?v=39" />
+    <link rel="stylesheet" href="./styles.css?v=40" />
     <link rel="stylesheet" href="./protocolos-agiles.css?v=2" />
   </head>
   <body>
@@ -47,245 +47,42 @@
         </div>
 
         <div class="home-actions" aria-label="Accesos principales">
-          <a class="action-card action-primary" href="#/especialidades">
-            <span class="action-top">
-              <span class="action-number">1</span>
-              <span class="action-kicker">Derivar</span>
-            </span>
-            <strong>Especialidades</strong>
-            <span>Antes de derivar, enlace y flujo por especialidad.</span>
-          </a>
-          <a class="action-card" href="#/llamados">
-            <span class="action-top">
-              <span class="action-number">2</span>
-              <span class="action-kicker">Llamar</span>
-            </span>
-            <strong>Especialista de llamado y UHD</strong>
-            <span>Especialistas y disponibilidad domiciliaria.</span>
-          </a>
-          <a class="action-card" href="#/visita">
-            <span class="action-top">
-              <span class="action-number">3</span>
-              <span class="action-kicker">Visita</span>
-            </span>
-            <strong>Visita diaria</strong>
-            <span>Planilla AM/PM compartida por jefatura.</span>
-          </a>
-          <a class="action-card" href="#/formularios">
-            <span class="action-top">
-              <span class="action-number">4</span>
-              <span class="action-kicker">Formularios</span>
-            </span>
-            <strong>Formularios de turno</strong>
-            <span>Antimicrobianos, Ley de Urgencias y notificaciones.</span>
-          </a>
-          <a class="action-card" href="#/telefonos">
-            <span class="action-top">
-              <span class="action-number">5</span>
-              <span class="action-kicker">Directorio</span>
-            </span>
-            <strong>Directorio telefónico</strong>
-            <span>Anexos y contactos frecuentes.</span>
-          </a>
-          <a class="action-card" href="#/educacion">
-            <span class="action-top">
-              <span class="action-number">6</span>
-              <span class="action-kicker">Docencia</span>
-            </span>
-            <strong>Educacion medica</strong>
-            <span>Canal de Urgencias HPH, podcasts y material docente.</span>
-          </a>
-          <a class="action-card" href="#/gestion">
-            <span class="action-top">
-              <span class="action-number">7</span>
-              <span class="action-kicker">Gestion</span>
-            </span>
-            <strong>Casos prioritarios</strong>
-            <span>Espacio médicos y jefatura para seguimiento ambulatorio.</span>
-          </a>
+          <a class="action-card action-primary" href="#/especialidades"><span class="action-top"><span class="action-number">1</span><span class="action-kicker">Derivar</span></span><strong>Especialidades</strong><span>Antes de derivar, enlace y flujo por especialidad.</span></a>
+          <a class="action-card" href="#/llamados"><span class="action-top"><span class="action-number">2</span><span class="action-kicker">Llamar</span></span><strong>Especialista de llamado y UHD</strong><span>Especialistas y disponibilidad domiciliaria.</span></a>
+          <a class="action-card" href="#/visita"><span class="action-top"><span class="action-number">3</span><span class="action-kicker">Visita</span></span><strong>Visita diaria</strong><span>Planilla AM/PM compartida por jefatura.</span></a>
+          <a class="action-card" href="#/formularios"><span class="action-top"><span class="action-number">4</span><span class="action-kicker">Formularios</span></span><strong>Formularios de turno</strong><span>Antimicrobianos, Ley de Urgencias y notificaciones.</span></a>
+          <a class="action-card" href="#/telefonos"><span class="action-top"><span class="action-number">5</span><span class="action-kicker">Directorio</span></span><strong>Directorio telefónico</strong><span>Anexos y contactos frecuentes.</span></a>
+          <a class="action-card" href="#/educacion"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Docencia</span></span><strong>Educacion medica</strong><span>Canal de Urgencias HPH, podcasts y material docente.</span></a>
+          <a class="action-card" href="#/gestion"><span class="action-top"><span class="action-number">7</span><span class="action-kicker">Gestion</span></span><strong>Casos prioritarios</strong><span>Espacio médicos y jefatura para seguimiento ambulatorio.</span></a>
         </div>
 
-        <section class="home-panel" aria-label="Regla general">
-          <strong>Recordatorio rápido</strong>
-          <p>Toda derivación se realiza por Pitágoras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p>
-        </section>
+        <section class="home-panel" aria-label="Regla general"><strong>Recordatorio rápido</strong><p>Toda derivación se realiza por Pitágoras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p></section>
       </section>
 
       <section id="specialtiesPage" class="page" aria-labelledby="specialtiesTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/inicio">Inicio</a>
-          <div>
-            <p class="eyebrow">Página 2</p>
-            <h1 id="specialtiesTitle">Especialidades y flujos</h1>
-          </div>
-        </div>
-
+        <div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Página 2</p><h1 id="specialtiesTitle">Especialidades y flujos</h1></div></div>
         <section id="rulesPreview" class="rules-preview" aria-label="Reglas antes de derivar"></section>
-
-        <section class="control-panel" aria-label="Buscador y filtros">
-          <label class="search">
-            <span>Buscar flujo, especialidad o contacto</span>
-            <input id="searchInput" type="search" placeholder="Ej: TVP, oftalmo, pulso, TACO..." autocomplete="off" />
-          </label>
-
-          <div class="shift-box">
-            <span class="label">Contexto de turno</span>
-            <div class="segmented" role="group" aria-label="Horario">
-              <button class="segment active" data-shift="all" type="button">Todos</button>
-              <button class="segment" data-shift="habil" type="button">Hábil</button>
-              <button class="segment" data-shift="inhabil" type="button">Inhábil</button>
-            </div>
-          </div>
-        </section>
-
-        <div class="quick-actions" aria-label="Categorías">
-          <button class="chip active" data-category="Todos" type="button">Todos</button>
-          <button class="chip" data-category="Flujo" type="button">Flujos</button>
-          <button class="chip" data-category="Poli choque" type="button">Especialidades</button>
-          <button class="chip" data-category="CRS" type="button">CRS</button>
-          <button class="chip" data-category="Hospitalizados" type="button">Hospitalizados</button>
-          <button class="chip" data-category="Protocolo" type="button">Protocolos</button>
-        </div>
-
-        <div id="resultsMeta" class="results-meta"></div>
-        <div id="specialtyGroups" class="specialty-groups" aria-live="polite"></div>
+        <section class="control-panel" aria-label="Buscador y filtros"><label class="search"><span>Buscar flujo, especialidad o contacto</span><input id="searchInput" type="search" placeholder="Ej: TVP, oftalmo, pulso, TACO..." autocomplete="off" /></label><div class="shift-box"><span class="label">Contexto de turno</span><div class="segmented" role="group" aria-label="Horario"><button class="segment active" data-shift="all" type="button">Todos</button><button class="segment" data-shift="habil" type="button">Hábil</button><button class="segment" data-shift="inhabil" type="button">Inhábil</button></div></div></section>
+        <div class="quick-actions" aria-label="Categorías"><button class="chip active" data-category="Todos" type="button">Todos</button><button class="chip" data-category="Flujo" type="button">Flujos</button><button class="chip" data-category="Poli choque" type="button">Especialidades</button><button class="chip" data-category="CRS" type="button">CRS</button><button class="chip" data-category="Hospitalizados" type="button">Hospitalizados</button><button class="chip" data-category="Protocolo" type="button">Protocolos</button></div>
+        <div id="resultsMeta" class="results-meta"></div><div id="specialtyGroups" class="specialty-groups" aria-live="polite"></div>
       </section>
 
-      <section id="protocolPage" class="page" aria-labelledby="protocolTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/especialidades">Especialidades</a>
-          <div>
-            <p id="protocolCategory" class="eyebrow"></p>
-            <h1 id="protocolTitle"></h1>
-          </div>
-        </div>
-
-        <div id="protocolDetail" class="protocol-detail"></div>
-      </section>
-
-      <section id="callsPage" class="page" aria-labelledby="callsTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/inicio">Inicio</a>
-          <div>
-            <p class="eyebrow">Documentos de turno</p>
-            <h1 id="callsTitle">Especialistas de llamado y UHD</h1>
-          </div>
-        </div>
-
-        <div class="document-panel">
-          <h2>Especialistas de llamado</h2>
-          <p>Consulta rapida por especialidad segun la fecha del dia. Por ahora solo muestra el nombre del medico disponible, sin telefonos.</p>
-          <div id="callsSearchPanel"></div>
-          <div id="callsDocumentAction"></div>
-        </div>
-
-        <div class="document-panel">
-          <h2>UHD - Unidad de Hospitalización Domiciliaria</h2>
-          <p>Disponibilidad de UHD y médico disponible. Este enlace quedará conectado a un documento de Drive editable por jefatura.</p>
-          <div id="uhdDocumentAction"></div>
-        </div>
-      </section>
-
-      <section id="visitPage" class="page" aria-labelledby="visitTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/inicio">Inicio</a>
-          <div>
-            <p class="eyebrow">Gestión diaria</p>
-            <h1 id="visitTitle">Visita diaria</h1>
-          </div>
-        </div>
-
-        <div class="document-panel">
-          <p>Planilla compartida para visita con jefe de servicio en la mañana y jefe de turno en la tarde.</p>
-          <div id="visitDocumentAction"></div>
-        </div>
-      </section>
-
-      <section id="formsPage" class="page" aria-labelledby="formsTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/inicio">Inicio</a>
-          <div>
-            <p class="eyebrow">Turno</p>
-            <h1 id="formsTitle">Formularios de turno</h1>
-          </div>
-        </div>
-
-        <div id="turnFormsList" class="document-list" aria-live="polite"></div>
-      </section>
-
-      <section id="phonesPage" class="page" aria-labelledby="phonesTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/inicio">Inicio</a>
-          <div>
-            <p class="eyebrow">Telefonos y anexos</p>
-            <h1 id="phonesTitle">Directorio telefónico</h1>
-          </div>
-        </div>
-
-        <div id="phonesContent" aria-live="polite"></div>
-      </section>
-
-      <section id="educationPage" class="page" aria-labelledby="educationTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/inicio">Inicio</a>
-          <div>
-            <p class="eyebrow">Educacion medica</p>
-            <h1 id="educationTitle">Urgencias HPH</h1>
-          </div>
-        </div>
-
-        <div id="educationContent" class="document-list"></div>
-      </section>
-
-      <section id="managementPage" class="page" aria-labelledby="managementTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/inicio">Inicio</a>
-          <div>
-            <p class="eyebrow">Seguimiento local</p>
-            <h1 id="managementTitle">Gestión de casos</h1>
-          </div>
-        </div>
-
-        <div id="managementContent" aria-live="polite"></div>
-      </section>
-
-      <section id="doctorsPage" class="page" aria-labelledby="doctorsTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/gestion">Gestión</a>
-          <div>
-            <p class="eyebrow">Espacio médicos</p>
-            <h1 id="doctorsTitle">Lectura y operación clínica</h1>
-          </div>
-        </div>
-        <div id="doctorsContent" aria-live="polite"></div>
-      </section>
-
-      <section id="chiefPage" class="page" aria-labelledby="chiefTitle">
-        <div class="page-head">
-          <a class="back-link" href="#/gestion">Gestión</a>
-          <div>
-            <p class="eyebrow">Espacio jefatura</p>
-            <h1 id="chiefTitle">Panel restringido</h1>
-          </div>
-        </div>
-        <div id="chiefContent" aria-live="polite"></div>
-      </section>
+      <section id="protocolPage" class="page" aria-labelledby="protocolTitle"><div class="page-head"><a class="back-link" href="#/especialidades">Especialidades</a><div><p id="protocolCategory" class="eyebrow"></p><h1 id="protocolTitle"></h1></div></div><div id="protocolDetail" class="protocol-detail"></div></section>
+      <section id="callsPage" class="page" aria-labelledby="callsTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Documentos de turno</p><h1 id="callsTitle">Especialistas de llamado y UHD</h1></div></div><div class="document-panel"><h2>Especialistas de llamado</h2><p>Consulta rapida por especialidad segun la fecha del dia. Por ahora solo muestra el nombre del medico disponible, sin telefonos.</p><div id="callsSearchPanel"></div><div id="callsDocumentAction"></div></div><div class="document-panel"><h2>UHD - Unidad de Hospitalización Domiciliaria</h2><p>Disponibilidad de UHD y médico disponible. Este enlace quedará conectado a un documento de Drive editable por jefatura.</p><div id="uhdDocumentAction"></div></div></section>
+      <section id="visitPage" class="page" aria-labelledby="visitTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Gestión diaria</p><h1 id="visitTitle">Visita diaria</h1></div></div><div class="document-panel"><p>Planilla compartida para visita con jefe de servicio en la mañana y jefe de turno en la tarde.</p><div id="visitDocumentAction"></div></div></section>
+      <section id="formsPage" class="page" aria-labelledby="formsTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Turno</p><h1 id="formsTitle">Formularios de turno</h1></div></div><div id="turnFormsList" class="document-list" aria-live="polite"></div></section>
+      <section id="phonesPage" class="page" aria-labelledby="phonesTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Telefonos y anexos</p><h1 id="phonesTitle">Directorio telefónico</h1></div></div><div id="phonesContent" aria-live="polite"></div></section>
+      <section id="educationPage" class="page" aria-labelledby="educationTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Educacion medica</p><h1 id="educationTitle">Urgencias HPH</h1></div></div><div id="educationContent" class="document-list"></div></section>
+      <section id="managementPage" class="page" aria-labelledby="managementTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Seguimiento local</p><h1 id="managementTitle">Gestión de casos</h1></div></div><div id="managementContent" aria-live="polite"></div></section>
+      <section id="doctorsPage" class="page" aria-labelledby="doctorsTitle"><div class="page-head"><a class="back-link" href="#/gestion">Gestión</a><div><p class="eyebrow">Espacio médicos</p><h1 id="doctorsTitle">Lectura y operación clínica</h1></div></div><div id="doctorsContent" aria-live="polite"></div></section>
+      <section id="chiefPage" class="page" aria-labelledby="chiefTitle"><div class="page-head"><a class="back-link" href="#/gestion">Gestión</a><div><p class="eyebrow">Espacio jefatura</p><h1 id="chiefTitle">Panel restringido</h1></div></div><div id="chiefContent" aria-live="polite"></div></section>
     </main>
 
-    <template id="specialtyButtonTemplate">
-      <a class="specialty-button">
-        <span class="specialty-sticker" aria-hidden="true"></span>
-        <strong></strong>
-      </a>
-    </template>
+    <template id="specialtyButtonTemplate"><a class="specialty-button"><span class="specialty-sticker" aria-hidden="true"></span><strong></strong></a></template>
 
     <script src="./ley-urgencias-data.js?v=38"></script>
-    <script src="./app.js?v=39"></script>
-    <script src="./protocolos-2026-ajustes.js?v=1"></script>
-    <script src="./consultoria-estabilidad-2026.js?v=2"></script>
-    <script src="./consultoria-llamado-2026.js?v=2"></script>
-    <script src="./consultoria-flujos-2026.js?v=2"></script>
-    <script src="./consultoria-nombres-operativos.js?v=1"></script>
+    <script src="./app.js?v=40"></script>
+    <script src="./protocolos-2026-ajustes.js?v=3"></script>
     <script src="./protocolos-agiles.js?v=5"></script>
     <script src="./especialidades-ui.js?v=2"></script>
     <script src="./especialidades-ui-fix.js?v=1"></script>
