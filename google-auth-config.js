@@ -6,7 +6,7 @@ window.CRS_GOOGLE_AUTH_CONFIG = {
   adminEmails: ["mdcarlosherrera@gmail.com"],
   defaultAdminEmail: "mdcarlosherrera@gmail.com",
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbxfahyEJq8CYnyUNG-PKKT8h0XmpTMILeSLziAxweFKmUwd11xNUFx-G_ACPg19b1Ox/exec",
-  googleClientId: "",
+  googleClientId: "193717075613-1ub2o75fs516unh7io1o13c9tohg18a4.apps.googleusercontent.com",
   sessionKey: "crsGoogleSessionV1",
   localSessionBridgeKey: "crsAuthSessionV3",
   notes: "Pegar appsScriptUrl despues de desplegar el Web App de Google Apps Script. Mientras este vacio, la app queda en modo preparado pero no valida contra Google."
