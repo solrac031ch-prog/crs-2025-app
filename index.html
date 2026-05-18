@@ -52,13 +52,24 @@
 
     <script src="./ley-urgencias-data.js?v=38"></script>
     <script src="./app.js?v=40"></script>
+    <script>
+      (() => {
+        try {
+          if (typeof pages === "undefined") return;
+          pages.urgencia = document.querySelector("#doctorsPage");
+          pages.medicos = document.querySelector("#doctorsPage");
+          pages["equipo-urgencia"] = document.querySelector("#doctorsPage");
+          pages.jefatura = document.querySelector("#chiefPage");
+        } catch (_) {}
+      })();
+    </script>
     <script src="./protocolos-2026-ajustes.js?v=3"></script>
     <script src="./protocolos-agiles.js?v=5"></script>
     <script src="./especialidades-ui.js?v=2"></script>
     <script src="./especialidades-ui-fix.js?v=1"></script>
     <script src="./protocolos-detalle-polish.js?v=2"></script>
     <script src="./directorio-telefonico.js?v=2"></script>
-    <script src="./gestion-jefatura-estable.js?v=3"></script>
+    <script src="./gestion-jefatura-estable.js?v=4"></script>
     <script src="./google-auth-config.js?v=1"></script>
     <script src="./google-auth.js?v=1"></script>
   </body>
