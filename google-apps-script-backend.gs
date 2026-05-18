@@ -1,20 +1,10 @@
 /**
  * CRS HPH 2025 - Backend Google Apps Script
- *
- * Uso:
- * 1. Crear una planilla Google Sheets llamada "CRS HPH 2025 - Backend".
- * 2. Extensiones > Apps Script.
- * 3. Pegar este archivo.
- * 4. Ejecutar setup() una vez.
- * 5. Implementar > Nueva implementación > Aplicación web.
- *    - Ejecutar como: tú
- *    - Quién tiene acceso: cualquier usuario con el enlace, o dentro de la organización si corresponde.
- * 6. Copiar la URL de la app web en google-auth-config.js como appsScriptUrl.
  */
 
 const CRS_CONFIG = {
   adminEmail: 'mdcarlosherrera@gmail.com',
-  spreadsheetId: '', // Opcional. Si queda vacío usa la planilla activa.
+  spreadsheetId: '',
   sheets: {
     usuarios: 'Usuarios',
     auditoria: 'Auditoria',
@@ -22,14 +12,13 @@ const CRS_CONFIG = {
     planillas: 'Planillas',
     directorio: 'Directorio',
     formularios: 'Formularios',
-    contenidos: 'Contenidos'
+    contenidos: 'Contenidos',
+    comentarios: 'Comentarios'
   }
 };
 
 function ss_() {
-  return CRS_CONFIG.spreadsheetId
-    ? SpreadsheetApp.openById(CRS_CONFIG.spreadsheetId)
-    : SpreadsheetApp.getActiveSpreadsheet();
+  return CRS_CONFIG.spreadsheetId ? SpreadsheetApp.openById(CRS_CONFIG.spreadsheetId) : SpreadsheetApp.getActiveSpreadsheet();
 }
 
 function sheet_(name, headers) {
@@ -48,13 +37,12 @@ function setup() {
   sheet_(CRS_CONFIG.sheets.directorio, ['nombre', 'detalle', 'telefono', 'categoria', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.formularios, ['clave', 'url', 'descripcion', 'actualizado_por', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.contenidos, ['tipo', 'titulo', 'descripcion', 'url', 'publicado_por', 'fecha']);
+  sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']);
 
   const usuarios = sheet_(CRS_CONFIG.sheets.usuarios);
   const values = usuarios.getDataRange().getValues();
   const exists = values.some(row => String(row[0]).toLowerCase() === CRS_CONFIG.adminEmail.toLowerCase());
-  if (!exists) {
-    usuarios.appendRow([CRS_CONFIG.adminEmail, 'Dr Carlos Herrera', 'admin', 'SI', 'SI', new Date(), new Date()]);
-  }
+  if (!exists) usuarios.appendRow([CRS_CONFIG.adminEmail, 'Dr Carlos Herrera', 'admin', 'SI', 'SI', new Date(), new Date()]);
   audit_(CRS_CONFIG.adminEmail, 'setup', 'Inicialización backend CRS HPH');
 }
 
@@ -71,6 +59,9 @@ function doPost(e) {
     if (action === 'createUser') return json_(requireAdmin_(payload.email, () => createUser_(payload.user, payload.email)));
     if (action === 'updateUser') return json_(requireAdmin_(payload.email, () => updateUser_(payload.user, payload.email)));
     if (action === 'disableUser') return json_(requireAdmin_(payload.email, () => disableUser_(payload.targetEmail, payload.email)));
+    if (action === 'addComment') return json_(addComment_(payload.comment, payload.email));
+    if (action === 'listComments') return json_(listComments_(payload.itemType, payload.itemId));
+    if (action === 'deleteComment') return json_(requireAdmin_(payload.email, () => deleteComment_(payload.commentId, payload.email)));
     if (action === 'audit') return json_(audit_(payload.email, payload.event, payload.detail));
     return json_({ ok: false, error: 'Acción no reconocida' });
   } catch (err) {
@@ -81,32 +72,15 @@ function doPost(e) {
 function loginUser_(email, profile) {
   email = normalizeEmail_(email);
   if (!email) return { ok: false, error: 'Email vacío' };
-
   const user = findUser_(email);
-  if (!user) {
-    audit_(email, 'login_denied', 'Usuario no registrado');
-    return { ok: false, error: 'Usuario no registrado', email };
-  }
-  if (String(user.activo).toUpperCase() !== 'SI') {
-    audit_(email, 'login_denied', 'Usuario inactivo');
-    return { ok: false, error: 'Usuario inactivo', email };
-  }
-
+  if (!user) { audit_(email, 'login_denied', 'Usuario no registrado'); return { ok: false, error: 'Usuario no registrado', email }; }
+  if (String(user.activo).toUpperCase() !== 'SI') { audit_(email, 'login_denied', 'Usuario inactivo'); return { ok: false, error: 'Usuario inactivo', email }; }
   audit_(email, 'login_ok', 'Ingreso autorizado');
-  return {
-    ok: true,
-    email,
-    name: user.nombre || profile.name || email,
-    picture: profile.picture || '',
-    role: user.rol || 'equipo',
-    canEdit: String(user.puede_editar).toUpperCase() === 'SI'
-  };
+  return { ok: true, email, name: user.nombre || profile.name || email, picture: profile.picture || '', role: user.rol || 'equipo', canEdit: String(user.puede_editar).toUpperCase() === 'SI' };
 }
 
 function listUsers_() {
-  const sheet = sheet_(CRS_CONFIG.sheets.usuarios);
-  const rows = rowsAsObjects_(sheet);
-  return { ok: true, users: rows };
+  return { ok: true, users: rowsAsObjects_(sheet_(CRS_CONFIG.sheets.usuarios)) };
 }
 
 function createUser_(user, actorEmail) {
@@ -114,16 +88,7 @@ function createUser_(user, actorEmail) {
   const email = normalizeEmail_(user.email);
   const existing = findUser_(email);
   if (existing) return updateUser_(user, actorEmail);
-  const sheet = sheet_(CRS_CONFIG.sheets.usuarios);
-  sheet.appendRow([
-    email,
-    user.nombre || user.name || email,
-    user.rol || user.role || 'equipo',
-    user.activo || 'SI',
-    user.puede_editar || user.canEdit || 'NO',
-    new Date(),
-    new Date()
-  ]);
+  sheet_(CRS_CONFIG.sheets.usuarios).appendRow([email, user.nombre || user.name || email, user.rol || user.role || 'equipo', user.activo || 'SI', user.puede_editar || user.canEdit || 'NO', new Date(), new Date()]);
   audit_(actorEmail, 'create_user', email);
   return { ok: true, email };
 }
@@ -151,10 +116,49 @@ function disableUser_(targetEmail, actorEmail) {
   return updateUser_({ email: targetEmail, activo: 'NO' }, actorEmail);
 }
 
+function addComment_(comment, actorEmail) {
+  if (!comment || !comment.itemType || !comment.itemId || !comment.text) return { ok: false, error: 'Comentario inválido' };
+  const id = comment.id || Utilities.getUuid();
+  sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']).appendRow([
+    id,
+    comment.itemType,
+    comment.itemId,
+    comment.name || actorEmail || 'Equipo Urgencia',
+    normalizeEmail_(comment.email || actorEmail),
+    comment.text,
+    comment.createdAt ? new Date(comment.createdAt) : new Date(),
+    'SI'
+  ]);
+  audit_(actorEmail, 'add_comment', comment.itemType + ':' + comment.itemId);
+  return { ok: true, id };
+}
+
+function listComments_(itemType, itemId) {
+  const rows = rowsAsObjects_(sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']));
+  const comments = rows
+    .filter(row => String(row.activo).toUpperCase() === 'SI')
+    .filter(row => String(row.itemType) === String(itemType) && String(row.itemId) === String(itemId))
+    .map(row => ({ id: row.id, itemType: row.itemType, itemId: row.itemId, name: row.nombre, email: row.email, text: row.comentario, createdAt: row.fecha }));
+  return { ok: true, comments };
+}
+
+function deleteComment_(commentId, actorEmail) {
+  const sheet = sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(commentId)) {
+      setCellByHeader_(sheet, headers, i + 1, 'activo', 'NO');
+      audit_(actorEmail, 'delete_comment', commentId);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'Comentario no encontrado' };
+}
+
 function findUser_(email) {
   email = normalizeEmail_(email);
-  const rows = rowsAsObjects_(sheet_(CRS_CONFIG.sheets.usuarios));
-  return rows.find(row => normalizeEmail_(row.email) === email);
+  return rowsAsObjects_(sheet_(CRS_CONFIG.sheets.usuarios)).find(row => normalizeEmail_(row.email) === email);
 }
 
 function requireAdmin_(email, fn) {
@@ -166,8 +170,7 @@ function requireAdmin_(email, fn) {
 }
 
 function audit_(usuario, accion, detalle) {
-  const sheet = sheet_(CRS_CONFIG.sheets.auditoria);
-  sheet.appendRow([new Date(), normalizeEmail_(usuario), accion || '', detalle || '']);
+  sheet_(CRS_CONFIG.sheets.auditoria).appendRow([new Date(), normalizeEmail_(usuario), accion || '', detalle || '']);
   return { ok: true };
 }
 
@@ -187,12 +190,5 @@ function setCellByHeader_(sheet, headers, row, header, value) {
   if (index >= 0) sheet.getRange(row, index + 1).setValue(value);
 }
 
-function normalizeEmail_(email) {
-  return String(email || '').trim().toLowerCase();
-}
-
-function json_(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+function normalizeEmail_(email) { return String(email || '').trim().toLowerCase(); }
+function json_(data) { return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON); }
