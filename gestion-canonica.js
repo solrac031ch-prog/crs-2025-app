@@ -4,6 +4,7 @@
   const CALLS_KEY = "crsGestionCallsV1";
   const FORMS_KEY = "crsGestionFormsV1";
   const FLOWS_KEY = "crsGestionFlowsV1";
+  const COMMENTS_KEY = "crsGestionCommentsV1";
   const DB_NAME = "crs-hph-files-v1";
   const STORE = "files";
 
@@ -17,16 +18,23 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const esc = (v) => String(v || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
   const clean = (v) => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const id = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const newId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || "") || fallback; } catch { return fallback; } };
   const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
   const session = () => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "") || null; } catch { return null; } };
-  const isChief = () => { const u = session(); const role = clean(u?.role); const email = clean(u?.email || u?.username); return Boolean(u && (["admin", "owner", "desarrollador", "jefatura", "jefe"].includes(role) || email === "mdcarlosherrera@gmail.com")); };
+  const isChief = () => {
+    const u = session();
+    const role = clean(u?.role);
+    const email = clean(u?.email || u?.username);
+    return Boolean(u && (["admin", "owner", "desarrollador", "jefatura", "jefe"].includes(role) || email === "mdcarlosherrera@gmail.com"));
+  };
 
   const content = () => read(CONTENT_KEY, { news: [], education: [], papers: [] });
   const calls = () => read(CALLS_KEY, []);
   const forms = () => read(FORMS_KEY, { base: {}, custom: [] });
   const flows = () => read(FLOWS_KEY, []);
+  const comments = () => read(COMMENTS_KEY, []);
+  const saveComments = (list) => write(COMMENTS_KEY, list.slice(-1000));
 
   let dbPromise = null;
   function db() {
@@ -40,8 +48,8 @@
     return dbPromise;
   }
   async function saveFile(file) {
-    if (!file) return null;
-    const fileId = id();
+    if (!file) return {};
+    const fileId = newId();
     const database = await db();
     await new Promise((resolve, reject) => {
       const tx = database.transaction(STORE, "readwrite");
@@ -72,12 +80,25 @@
     });
   }
 
+  async function apiPost(action, payload = {}) {
+    const url = window.CRS_GOOGLE_AUTH_CONFIG?.appsScriptUrl || "";
+    if (!url) return { ok: false, error: "Falta appsScriptUrl" };
+    const u = session();
+    const res = await fetch(url, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action, email: u?.email || u?.username || "", ...payload })
+    });
+    return res.json();
+  }
+
   function style() {
     if ($("#gestion-canonica-style")) return;
     const st = document.createElement("style");
     st.id = "gestion-canonica-style";
     st.textContent = `
-      .page:not(.active){display:none!important}.gestion-wrap{display:grid;gap:14px}.gestion-hero{display:grid;gap:12px;padding:clamp(20px,4vw,34px);border-radius:16px;background:linear-gradient(135deg,#0f172a,#14532d 55%,#0f766e);color:#fff;box-shadow:0 24px 60px rgba(15,23,42,.22)}.gestion-hero h2{margin:0;color:#fff;font-size:clamp(2rem,5vw,3.35rem);line-height:1}.gestion-hero p{margin:0;color:#def7ef;max-width:850px;line-height:1.45}.gestion-actions,.route-actions{display:flex;gap:10px;flex-wrap:wrap}.gestion-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.gestion-card,.poster-card,.paper-card,.admin-card{display:grid;gap:10px;padding:16px;border:1px solid #dfe8e4;border-left:6px solid #0f766e;border-radius:14px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.08)}.gestion-card.amber{border-left-color:#f59e0b}.gestion-card.blue{border-left-color:#2563eb}.gestion-card.purple{border-left-color:#7c3aed}.gestion-card.red{border-left-color:#dc2626}.gestion-card strong,.admin-card h3{color:#10201c;font-size:1.08rem}.gestion-card span,.admin-card p{color:#52615c;line-height:1.4;margin:0}.admin-card label{display:grid;gap:5px;font-weight:850;color:#24312d}.admin-card input,.admin-card select,.admin-card textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff;color:#10201c}.note{padding:12px;border:1px solid #f4d28a;border-radius:10px;background:#fff7e8;color:#664100;font-weight:750}.danger{border:1px solid #fecaca;background:#fff1f2;color:#7f1d1d}.delete-button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 12px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#991b1b;font-weight:900;cursor:pointer}.poster-card{position:relative;overflow:hidden;border-left-color:#f59e0b;background:linear-gradient(135deg,#fff,#fff7ed)}.poster-card:before{content:"";position:absolute;right:-70px;top:-70px;width:180px;height:180px;border-radius:50%;background:rgba(245,158,11,.16)}.poster-card h3{font-size:1.55rem;margin:0;color:#111827}.poster-media,.paper-preview{width:100%;max-width:560px;height:680px;border:1px solid #dfe8e4;border-radius:12px;background:#f8fafc}.poster-image{width:100%;max-height:460px;object-fit:contain;border-radius:12px;border:1px solid #e5ebe8;background:#fff}.content-list{display:grid;gap:14px}.paper-month{display:grid;gap:12px;padding:14px;border:1px solid #dfe8e4;border-radius:14px;background:#fbfdfc}.paper-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.paper-card h3{margin:0;font-size:1.25rem}.mini{font-size:.86rem;color:#64748b}.tag{display:inline-flex;border-radius:999px;background:#eef7f5;color:#0b4f49;padding:4px 8px;font-weight:850;font-size:.8rem}.search-box{display:grid;gap:8px;padding:12px;border:1px solid #dfe8e4;border-radius:12px;background:#fbfdfc;margin-top:10px}.result-row,.manage-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px;border:1px solid #e5ebe8;border-radius:10px;background:#fff}.table-wrap{overflow:auto;border:1px solid #dfe8e4;border-radius:10px}.backend-table{width:100%;border-collapse:collapse}.backend-table th,.backend-table td{padding:8px;border-bottom:1px solid #e5ebe8;text-align:left}.backend-table th{background:#f6f8f7;text-transform:uppercase;font-size:.78rem;color:#44504b}@media(max-width:680px){.gestion-actions,.route-actions{display:grid}.document-button,.delete-button,.back-link{width:100%;justify-content:center}.poster-media,.paper-preview{height:520px}.result-row,.manage-row{grid-template-columns:1fr}}
+      .page:not(.active){display:none!important}.gestion-wrap{display:grid;gap:14px}.gestion-hero{display:grid;gap:12px;padding:clamp(20px,4vw,34px);border-radius:16px;background:linear-gradient(135deg,#0f172a,#14532d 55%,#0f766e);color:#fff;box-shadow:0 24px 60px rgba(15,23,42,.22)}.gestion-hero h2{margin:0;color:#fff;font-size:clamp(2rem,5vw,3.35rem);line-height:1}.gestion-hero p{margin:0;color:#def7ef;max-width:850px;line-height:1.45}.gestion-actions,.route-actions{display:flex;gap:10px;flex-wrap:wrap}.gestion-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.gestion-card,.poster-card,.paper-card,.admin-card{display:grid;gap:10px;padding:16px;border:1px solid #dfe8e4;border-left:6px solid #0f766e;border-radius:14px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.08)}.gestion-card.amber{border-left-color:#f59e0b}.gestion-card.blue{border-left-color:#2563eb}.gestion-card.purple{border-left-color:#7c3aed}.gestion-card.red{border-left-color:#dc2626}.gestion-card strong,.admin-card h3{color:#10201c;font-size:1.08rem}.gestion-card span,.admin-card p{color:#52615c;line-height:1.4;margin:0}.admin-card label{display:grid;gap:5px;font-weight:850;color:#24312d}.admin-card input,.admin-card select,.admin-card textarea,.comment-form input,.comment-form textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff;color:#10201c}.note{padding:12px;border:1px solid #f4d28a;border-radius:10px;background:#fff7e8;color:#664100;font-weight:750}.danger{border:1px solid #fecaca;background:#fff1f2;color:#7f1d1d}.delete-button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 12px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#991b1b;font-weight:900;cursor:pointer}.poster-card{position:relative;overflow:hidden;border-left-color:#f59e0b;background:linear-gradient(135deg,#fff,#fff7ed)}.poster-card:before{content:"";position:absolute;right:-70px;top:-70px;width:180px;height:180px;border-radius:50%;background:rgba(245,158,11,.16)}.poster-card>*{position:relative}.poster-card h3{font-size:1.55rem;margin:0;color:#111827}.poster-media,.paper-preview{width:100%;max-width:560px;height:680px;border:1px solid #dfe8e4;border-radius:12px;background:#f8fafc}.poster-image{width:100%;max-height:460px;object-fit:contain;border-radius:12px;border:1px solid #e5ebe8;background:#fff}.content-list{display:grid;gap:14px}.paper-month{display:grid;gap:12px;padding:14px;border:1px solid #dfe8e4;border-radius:14px;background:#fbfdfc}.paper-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.paper-card h3{margin:0;font-size:1.25rem}.mini{font-size:.86rem;color:#64748b}.tag{display:inline-flex;border-radius:999px;background:#eef7f5;color:#0b4f49;padding:4px 8px;font-weight:850;font-size:.8rem}.search-box{display:grid;gap:8px;padding:12px;border:1px solid #dfe8e4;border-radius:12px;background:#fbfdfc;margin-top:10px}.result-row,.manage-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px;border:1px solid #e5ebe8;border-radius:10px;background:#fff}.table-wrap{overflow:auto;border:1px solid #dfe8e4;border-radius:10px}.backend-table{width:100%;border-collapse:collapse}.backend-table th,.backend-table td{padding:8px;border-bottom:1px solid #e5ebe8;text-align:left}.backend-table th{background:#f6f8f7;text-transform:uppercase;font-size:.78rem;color:#44504b}.comments-box{display:grid;gap:10px;margin-top:8px;padding:12px;border:1px solid #dfe8e4;border-radius:12px;background:#fbfdfc}.comments-list{display:grid;gap:8px}.comment-item{display:grid;gap:4px;padding:10px;border:1px solid #e5ebe8;border-radius:10px;background:#fff}.comment-item strong{color:#10201c}.comment-form{display:grid;gap:8px}.comment-form textarea{min-height:80px}.comment-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}@media(max-width:680px){.gestion-actions,.route-actions,.comment-actions{display:grid}.document-button,.delete-button,.back-link{width:100%;justify-content:center}.poster-media,.paper-preview{height:520px}.result-row,.manage-row{grid-template-columns:1fr}}
     `;
     document.head.append(st);
   }
@@ -101,6 +122,40 @@
       if (item.type?.startsWith("image/")) el.outerHTML = `<img class="poster-image" src="${url}" alt="Vista previa">`;
       else if (item.type === "application/pdf") el.outerHTML = `<iframe class="${el.dataset.previewKind === "paper" ? "paper-preview" : "poster-media"}" src="${url}#page=1"></iframe>`;
       else el.textContent = `Archivo: ${item.name}`;
+    }
+  }
+
+  function commentsFor(itemType, itemId) {
+    return comments().filter(c => c.itemType === itemType && c.itemId === itemId).sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+  }
+  function commentListHtml(itemType, itemId) {
+    const list = commentsFor(itemType, itemId);
+    if (!list.length) return `<div class="mini">Aún no hay comentarios ni dudas.</div>`;
+    return list.map(c => `<article class="comment-item"><strong>${esc(c.name || c.email || "Equipo Urgencia")}</strong><span class="mini">${esc(new Date(c.createdAt || Date.now()).toLocaleString("es-CL"))}</span><p>${esc(c.text)}</p>${isChief() ? `<button class="delete-button" type="button" data-delete-comment="${esc(c.id)}">Eliminar comentario</button>` : ""}</article>`).join("");
+  }
+  function commentsBox(itemType, itemId) {
+    const u = session();
+    const knownName = u?.name || u?.email || u?.username || "";
+    return `<section class="comments-box" data-comments-box="${esc(itemType)}:${esc(itemId)}"><strong>Comentarios y dudas del equipo</strong><div class="comments-list" data-comments-list="${esc(itemType)}:${esc(itemId)}">${commentListHtml(itemType, itemId)}</div><form class="comment-form" data-comment-form data-item-type="${esc(itemType)}" data-item-id="${esc(itemId)}">${knownName ? `<input name="name" type="hidden" value="${esc(knownName)}"><div class="mini">Comentando como: ${esc(knownName)}</div>` : `<label>Nombre<input name="name" required placeholder="Tu nombre"></label>`}<label>Duda o comentario<textarea name="text" required placeholder="Escribe una duda, comentario o sugerencia..."></textarea></label><div class="comment-actions"><button class="document-button" type="submit">Enviar comentario</button><span class="mini">Se guarda en este navegador y, si el backend está actualizado, también en Google Sheets.</span></div></form></section>`;
+  }
+  function mergeComments(remote) {
+    if (!Array.isArray(remote) || !remote.length) return;
+    const local = comments();
+    const seen = new Set(local.map(c => c.id));
+    remote.forEach(c => { if (c.id && !seen.has(c.id)) local.push(c); });
+    saveComments(local);
+  }
+  async function hydrateComments(root = document) {
+    for (const el of $$('[data-comments-list]', root)) {
+      const [itemType, itemId] = String(el.dataset.commentsList || "").split(":");
+      if (!itemType || !itemId) continue;
+      try {
+        const result = await apiPost("listComments", { itemType, itemId });
+        if (result.ok) {
+          mergeComments(result.comments || []);
+          el.innerHTML = commentListHtml(itemType, itemId);
+        }
+      } catch (_) {}
     }
   }
 
@@ -129,13 +184,13 @@
     const data = new FormData(form);
     const file = form.file?.files?.[0] || null;
     const saved = await saveFile(file);
-    return { id: id(), title: data.get("title") || "Sin título", description: data.get("description") || data.get("summary") || "", url: data.get("url") || "", eventUrl: data.get("eventUrl") || "", month: data.get("month") || "", category: data.get("category") || "", createdAt: new Date().toISOString(), ...saved };
+    return { id: newId(), title: data.get("title") || "Sin título", description: data.get("description") || data.get("summary") || "", url: data.get("url") || "", eventUrl: data.get("eventUrl") || "", month: data.get("month") || "", category: data.get("category") || "", createdAt: new Date().toISOString(), ...saved };
   }
 
   function renderGestion() {
     activate("managementPage");
     $("#managementTitle").textContent = "Gestión";
-    $("#managementContent").innerHTML = `<div class="gestion-wrap"><section class="gestion-hero"><h2>Gestión de Urgencia</h2><p>Repositorio operativo, publicaciones y administración de jefatura en una sola versión estable.</p><div class="gestion-actions"><a class="document-button" href="#/urgencia">Módulo Equipo Urgencia</a><a class="document-button" href="#/jefatura">Módulo Jefatura</a><a class="document-button" href="#/gestion/noticias">Noticias</a><a class="document-button" href="#/gestion/educacion">Educación</a><a class="document-button" href="#/gestion/paper">Paper del mes</a></div></section><section class="gestion-grid"><a class="gestion-card blue" href="#/gestion/noticias"><strong>📰 Noticias</strong><span>Posters, eventos, cursos y enlaces de inscripción.</span></a><a class="gestion-card purple" href="#/gestion/educacion"><strong>🎓 Educación</strong><span>Material docente y recursos para el equipo.</span></a><a class="gestion-card amber" href="#/gestion/paper"><strong>📄 Paper del mes</strong><span>Repositorio histórico de papers por mes.</span></a></section></div>`;
+    $("#managementContent").innerHTML = `<div class="gestion-wrap"><section class="gestion-hero"><h2>Gestión de Urgencia</h2><p>Repositorio operativo, publicaciones y administración de jefatura en una sola versión estable.</p><div class="gestion-actions"><a class="document-button" href="#/urgencia">Módulo Equipo Urgencia</a><a class="document-button" href="#/jefatura">Módulo Jefatura</a><a class="document-button" href="#/gestion/noticias">Noticias</a><a class="document-button" href="#/gestion/educacion">Educación</a><a class="document-button" href="#/gestion/paper">Paper del mes</a></div></section><section class="gestion-grid"><a class="gestion-card blue" href="#/gestion/noticias"><strong>📰 Noticias</strong><span>Posters, eventos, cursos y enlaces de inscripción. Puede haber múltiples noticias activas.</span></a><a class="gestion-card purple" href="#/gestion/educacion"><strong>🎓 Educación</strong><span>Material docente y recursos para el equipo.</span></a><a class="gestion-card amber" href="#/gestion/paper"><strong>📄 Paper del mes</strong><span>Repositorio histórico de papers por mes con comentarios.</span></a></section></div>`;
   }
 
   function renderUrgencia() {
@@ -145,7 +200,10 @@
 
   function baseFormUpdateList() {
     const fs = forms();
-    return BASE_FORMS.map(f => { const saved = fs.base?.[f.key] || {}; return `<div class="admin-card"><h3>${esc(f.title)}</h3><p>${esc(f.description)}</p><form data-form-base data-form-key="${f.key}"><label>Nuevo link<input name="url" type="url" value="${esc(saved.url)}"></label><label>Archivo<input name="file" type="file"></label><button class="document-button">Actualizar</button>${saved.url || saved.fileId ? `<button class="delete-button" type="button" data-delete-base-form="${f.key}">Quitar actualización</button>` : ""}</form></div>`; }).join("");
+    return BASE_FORMS.map(f => {
+      const saved = fs.base?.[f.key] || {};
+      return `<div class="admin-card"><h3>${esc(f.title)}</h3><p>${esc(f.description)}</p><form data-form-base data-form-key="${f.key}"><label>Nuevo link<input name="url" type="url" value="${esc(saved.url)}"></label><label>Archivo<input name="file" type="file"></label><button class="document-button">Actualizar</button>${saved.url || saved.fileId ? `<button class="delete-button" type="button" data-delete-base-form="${f.key}">Quitar actualización</button>` : ""}</form></div>`;
+    }).join("");
   }
 
   function manageList() {
@@ -173,72 +231,177 @@
     $("#chiefContent").innerHTML = `${nav()}<section class="gestion-hero"><h2>Publicaciones y documentos de jefatura</h2><p>Sesión: ${esc(u.name || u.email || u.username)}. Todo lo nuevo queda administrable y eliminable desde aquí.</p><div class="gestion-actions"><button class="document-button" data-google-logout>Cerrar sesión</button></div></section><section class="gestion-grid"><article class="admin-card"><h3>Especialistas de llamado</h3><form data-upload-call data-call-type="especialistas"><label>Título<input name="title" required></label><label>Archivo CSV/TXT o documento<input name="file" type="file"></label><label>Link Drive opcional<input name="url" type="url"></label><button class="document-button">Subir / actualizar</button></form></article><article class="admin-card"><h3>UHD - Unidad de Hospitalización Domiciliaria</h3><form data-upload-call data-call-type="uhd"><label>Título<input name="title" required></label><label>Archivo CSV/TXT o documento<input name="file" type="file"></label><label>Link Drive opcional<input name="url" type="url"></label><button class="document-button">Subir / actualizar</button></form></article>${baseFormUpdateList()}<article class="admin-card"><h3>Agregar nuevo formulario</h3><form data-new-form><label>Título<input name="title" required></label><label>Descripción<textarea name="description"></textarea></label><label>Archivo<input name="file" type="file"></label><label>Link<input name="url" type="url"></label><button class="document-button">Agregar formulario</button></form></article><article class="admin-card"><h3>Nuevo flujo / CRS / Poli choque / Hospitalizado / Protocolo</h3><form data-new-flow><label>Tipo<select name="category"><option>Flujo</option><option>CRS</option><option>Poli choque</option><option>Hospitalizados</option><option>Protocolo</option></select></label><label>Título<input name="title" required></label><label>Resumen<textarea name="summary"></textarea></label><label>Archivo<input name="file" type="file"></label><label>Link<input name="url" type="url"></label><button class="document-button">Guardar</button></form></article><article class="admin-card"><h3>Paper del mes</h3><form data-content="paper"><label>Mes<input name="month" type="month" required></label><label>Título<input name="title" required></label><label>Comentario<textarea name="description"></textarea></label><label>PDF / archivo<input name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"></label><label>Link<input name="url" type="url"></label><button class="document-button">Publicar paper</button></form></article><article class="admin-card"><h3>Noticias / Educación</h3><form data-content="mixed"><label>Tipo<select name="kind"><option value="news">Noticia</option><option value="education">Educación</option></select></label><label>Título<input name="title" required></label><label>Texto / publicidad<textarea name="description"></textarea></label><label>Enlace inscripción / publicidad<input name="eventUrl" type="url"></label><label>Archivo/poster<input name="file" type="file"></label><label>Link material<input name="url" type="url"></label><button class="document-button">Publicar</button></form></article><article class="admin-card"><h3>Eliminar documentos locales</h3><div class="manage-list">${manageList()}</div></article><article class="admin-card"><h3>Usuarios CRS HPH 2025 - Backend</h3><form data-backend-user><label>Correo<input name="email" type="email" required></label><label>Nombre<input name="nombre" required></label><label>Rol<select name="rol"><option value="equipo">Equipo</option><option value="jefe_turno">Jefe de turno</option><option value="jefatura">Jefatura</option><option value="admin">Admin</option></select></label><label>Puede editar<select name="puede_editar"><option>NO</option><option>SI</option></select></label><button class="document-button">Agregar / actualizar usuario</button></form><button class="document-button" data-backend-list>Actualizar lista</button><div data-backend-status></div></article></section>`;
   }
 
-  function monthLabel(item) { const v = item.month || (item.createdAt || "").slice(0,7); const [y,m] = v.split("-"); return m && y ? `${m}/${y}` : "Sin mes"; }
+  function monthLabel(item) {
+    const v = item.month || (item.createdAt || "").slice(0, 7);
+    const [y, m] = v.split("-");
+    return m && y ? `${m}/${y}` : "Sin mes";
+  }
   function renderContent(type) {
     activate("managementPage");
     const labels = { news: "Noticias", education: "Educación", paper: "Paper del mes" };
     $("#managementTitle").textContent = labels[type];
     const c = content();
     if (type === "paper") {
-      const groups = (c.papers || []).reduce((a, x) => { const k = x.month || (x.createdAt || "").slice(0,7) || "sin-mes"; (a[k] ||= []).push(x); return a; }, {});
-      const html = Object.keys(groups).sort().reverse().map(k => `<section class="paper-month"><h2>${esc(monthLabel(groups[k][0]))}</h2><div class="paper-grid">${groups[k].map(p => `<article class="paper-card"><span class="tag">Paper del mes</span><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p>${p.fileId ? `<div data-file-preview="${p.fileId}" data-preview-kind="paper" class="note">Cargando primera página...</div>` : ""}<div class="gestion-actions">${fileAction(p, "Abrir paper")}${isChief() ? `<button class="delete-button" data-delete-kind="paper" data-delete-id="${p.id}">Eliminar</button>` : ""}</div></article>`).join("")}</div></section>`).join("") || `<div class="note">Aún no hay papers publicados.</div>`;
-      $("#managementContent").innerHTML = `${nav()}<section class="gestion-hero"><h2>Paper del mes</h2><p>Repositorio permanente por mes. Puede guardar más de un paper por mes.</p></section><div class="content-list">${html}</div>`;
+      const groups = (c.papers || []).reduce((a, x) => { const k = x.month || (x.createdAt || "").slice(0, 7) || "sin-mes"; (a[k] ||= []).push(x); return a; }, {});
+      const html = Object.keys(groups).sort().reverse().map(k => `<section class="paper-month"><h2>${esc(monthLabel(groups[k][0]))}</h2><div class="paper-grid">${groups[k].map(p => `<article class="paper-card"><span class="tag">Paper del mes</span><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p>${p.fileId ? `<div data-file-preview="${p.fileId}" data-preview-kind="paper" class="note">Cargando primera página...</div>` : ""}<div class="gestion-actions">${fileAction(p, "Abrir paper")}${isChief() ? `<button class="delete-button" data-delete-kind="paper" data-delete-id="${p.id}">Eliminar</button>` : ""}</div>${commentsBox("paper", p.id)}</article>`).join("")}</div></section>`).join("") || `<div class="note">Aún no hay papers publicados.</div>`;
+      $("#managementContent").innerHTML = `${nav()}<section class="gestion-hero"><h2>Paper del mes</h2><p>Repositorio permanente por mes. Puede guardar más de un paper por mes y recibir comentarios/dudas.</p></section><div class="content-list">${html}</div>`;
       hydrateFiles($("#managementContent"));
+      hydrateComments($("#managementContent"));
       return;
     }
     const list = c[type] || [];
-    $("#managementContent").innerHTML = `${nav()}<section class="gestion-hero"><h2>${labels[type]}</h2><p>${type === "news" ? "Posters, eventos y publicaciones llamativas." : "Material docente para el equipo."}</p></section><div class="content-list">${list.length ? list.map(n => `<article class="poster-card"><span class="tag">${type === "news" ? "Noticia" : "Educación"}</span><h3>${type === "news" ? "📣 " : "🎓 "}${esc(n.title)}</h3><p>${esc(n.description)}</p>${n.fileId ? `<div data-file-preview="${n.fileId}" class="note">Cargando poster...</div>` : ""}<div class="gestion-actions">${n.eventUrl ? `<a class="event-link" href="${esc(n.eventUrl)}" target="_blank" rel="noopener">Inscripción / publicidad</a>` : ""}${fileAction(n, "Abrir material")}${isChief() ? `<button class="delete-button" data-delete-kind="${type}" data-delete-id="${n.id}">Eliminar</button>` : ""}</div></article>`).join("") : `<div class="note">Aún no hay publicaciones.</div>`}</div>`;
+    $("#managementContent").innerHTML = `${nav()}<section class="gestion-hero"><h2>${labels[type]}</h2><p>${type === "news" ? "Puede haber múltiples noticias activas: posters, eventos y publicaciones llamativas." : "Material docente para el equipo."}</p></section><div class="content-list">${list.length ? list.map(n => `<article class="poster-card"><span class="tag">${type === "news" ? "Noticia" : "Educación"}</span><h3>${type === "news" ? "📣 " : "🎓 "}${esc(n.title)}</h3><p>${esc(n.description)}</p>${n.fileId ? `<div data-file-preview="${n.fileId}" class="note">Cargando poster...</div>` : ""}<div class="gestion-actions">${n.eventUrl ? `<a class="event-link" href="${esc(n.eventUrl)}" target="_blank" rel="noopener">Inscripción / publicidad</a>` : ""}${fileAction(n, "Abrir material")}${isChief() ? `<button class="delete-button" data-delete-kind="${type}" data-delete-id="${n.id}">Eliminar</button>` : ""}</div>${commentsBox(type, n.id)}</article>`).join("") : `<div class="note">Aún no hay publicaciones.</div>`}</div>`;
     hydrateFiles($("#managementContent"));
+    hydrateComments($("#managementContent"));
   }
 
   function patchForms() {
-    const page = $("#formsPage.active"), list = $("#turnFormsList"); if (!page || !list || list.dataset.gestionCanonica === "true") return;
-    const fs = forms(); list.dataset.gestionCanonica = "true";
+    const page = $("#formsPage.active"), list = $("#turnFormsList");
+    if (!page || !list || list.dataset.gestionCanonica === "true") return;
+    const fs = forms();
+    list.dataset.gestionCanonica = "true";
     BASE_FORMS.forEach(f => { const item = fs.base?.[f.key]; if (item?.url || item?.fileId) list.insertAdjacentHTML("beforeend", `<section class="document-panel"><h2>${esc(f.title)} actualizado por jefatura</h2><p>${esc(f.description)}</p>${fileAction(item, "Abrir versión actualizada")}</section>`); });
     (fs.custom || []).forEach(item => list.insertAdjacentHTML("beforeend", `<section class="document-panel"><h2>${esc(item.title)}</h2><p>${esc(item.description)}</p>${fileAction(item, "Abrir formulario")}</section>`));
   }
   function patchCalls() {
-    const page = $("#callsPage.active"); if (!page || page.dataset.gestionCanonica === "true") return; page.dataset.gestionCanonica = "true";
+    const page = $("#callsPage.active");
+    if (!page || page.dataset.gestionCanonica === "true") return;
+    page.dataset.gestionCanonica = "true";
     $$(".document-panel", page).forEach((panel, i) => { const type = i === 0 ? "especialistas" : "uhd"; panel.insertAdjacentHTML("beforeend", `<div class="search-box"><strong>Buscar documentos subidos por jefatura</strong><input data-call-search="${type}" type="search" placeholder="Buscar..."><div data-call-results="${type}"></div></div>`); });
   }
   function renderCallResults(type, q) {
-    const box = $(`[data-call-results="${type}"]`); if (!box) return; const query = clean(q);
+    const box = $(`[data-call-results="${type}"]`);
+    if (!box) return;
+    const query = clean(q);
     const items = calls().filter(d => d.type === type).flatMap(d => (d.entries || []).map(e => ({ ...e, title: d.title, fileId: d.fileId, url: d.url })));
-    const matches = items.filter(x => !query || clean([x.specialty,x.day,x.doctor,x.title].join(" ")).includes(query)).slice(0,30);
+    const matches = items.filter(x => !query || clean([x.specialty, x.day, x.doctor, x.title].join(" ")).includes(query)).slice(0, 30);
     box.innerHTML = matches.length ? matches.map(x => `<div class="result-row"><span><strong>${esc(x.specialty)} ${x.day ? `· ${esc(x.day)}` : ""}</strong><br>${esc(x.doctor)}<br><span class="mini">${esc(x.title)}</span></span>${fileAction(x, "Abrir")}</div>`).join("") : `<div class="mini">Sin resultados.</div>`;
   }
 
-  async function apiPost(action, payload = {}) { const url = window.CRS_GOOGLE_AUTH_CONFIG?.appsScriptUrl || ""; const u = session(); if (!url) return { ok:false, error:"Falta appsScriptUrl" }; const res = await fetch(url, { method:"POST", redirect:"follow", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({ action, email:u?.email || u?.username, ...payload }) }); return res.json(); }
-  async function listBackendUsers() { const box = $("[data-backend-status]"); if (!box) return; box.innerHTML = `<div class="note">Consultando...</div>`; const r = await apiPost("listUsers"); if (!r.ok) { box.innerHTML = `<div class="note danger">${esc(r.error || "Error")}</div>`; return; } box.innerHTML = `<div class="table-wrap"><table class="backend-table"><thead><tr><th>Email</th><th>Nombre</th><th>Rol</th><th>Activo</th><th></th></tr></thead><tbody>${(r.users||[]).map(u => `<tr><td>${esc(u.email)}</td><td>${esc(u.nombre)}</td><td>${esc(u.rol)}</td><td>${esc(u.activo)}</td><td><button class="delete-button" data-backend-disable="${esc(u.email)}">Desactivar</button></td></tr>`).join("")}</tbody></table></div>`; }
+  async function listBackendUsers() {
+    const box = $("[data-backend-status]");
+    if (!box) return;
+    box.innerHTML = `<div class="note">Consultando...</div>`;
+    const r = await apiPost("listUsers");
+    if (!r.ok) { box.innerHTML = `<div class="note danger">${esc(r.error || "Error")}</div>`; return; }
+    box.innerHTML = `<div class="table-wrap"><table class="backend-table"><thead><tr><th>Email</th><th>Nombre</th><th>Rol</th><th>Activo</th><th></th></tr></thead><tbody>${(r.users || []).map(u => `<tr><td>${esc(u.email)}</td><td>${esc(u.nombre)}</td><td>${esc(u.rol)}</td><td>${esc(u.activo)}</td><td><button class="delete-button" data-backend-disable="${esc(u.email)}">Desactivar</button></td></tr>`).join("")}</tbody></table></div>`;
+  }
 
   document.addEventListener("submit", async ev => {
     const f = ev.target;
+    if (f.matches("[data-comment-form]")) {
+      ev.preventDefault();
+      const d = new FormData(f);
+      const u = session();
+      const comment = { id: newId(), itemType: f.dataset.itemType, itemId: f.dataset.itemId, name: d.get("name") || u?.name || u?.email || "Equipo Urgencia", email: u?.email || u?.username || "", text: d.get("text"), createdAt: new Date().toISOString() };
+      if (!comment.text) return;
+      const list = comments();
+      list.push(comment);
+      saveComments(list);
+      try { await apiPost("addComment", { comment }); } catch (_) {}
+      f.reset();
+      route();
+      return;
+    }
     if (!f.closest("[data-upload-call],[data-form-base],[data-new-form],[data-new-flow],[data-content],[data-backend-user]")) return;
-    ev.preventDefault(); if (!isChief()) return alert("Requiere jefatura.");
-    if (f.matches("[data-upload-call]")) { const item = await uploadItem(f); item.type = f.dataset.callType; item.entries = parseCalls(await extractRows(f.file?.files?.[0]), item.type); const list = calls().filter(x => !(x.type === item.type && x.title === item.title)); list.unshift(item); write(CALLS_KEY, list.slice(0,40)); alert("Documento guardado."); f.reset(); renderJefatura(); return; }
-    if (f.matches("[data-form-base]")) { const item = await uploadItem(f); const fs = forms(); fs.base ||= {}; fs.base[f.dataset.formKey] = item; write(FORMS_KEY, fs); alert("Formulario actualizado."); f.reset(); renderJefatura(); return; }
-    if (f.matches("[data-new-form]")) { const item = await uploadItem(f); const fs = forms(); fs.custom ||= []; fs.custom.unshift(item); write(FORMS_KEY, fs); alert("Formulario agregado."); f.reset(); renderJefatura(); return; }
-    if (f.matches("[data-new-flow]")) { const item = await uploadItem(f); const list = flows(); list.unshift(item); write(FLOWS_KEY, list); alert("Elemento guardado."); f.reset(); renderJefatura(); return; }
-    if (f.matches("[data-content]")) { const kind = f.dataset.content === "paper" ? "papers" : new FormData(f).get("kind"); const item = await uploadItem(f); const c = content(); c[kind] ||= []; c[kind].unshift(item); write(CONTENT_KEY, c); alert("Publicado."); f.reset(); renderJefatura(); return; }
-    if (f.matches("[data-backend-user]")) { const d = new FormData(f); const r = await apiPost("createUser", { user:{ email:d.get("email"), nombre:d.get("nombre"), rol:d.get("rol"), activo:"SI", puede_editar:d.get("puede_editar") } }); if (!r.ok) alert(r.error || "Error"); else { alert("Usuario guardado."); f.reset(); listBackendUsers(); } }
+    ev.preventDefault();
+    if (!isChief()) return alert("Requiere jefatura.");
+    if (f.matches("[data-upload-call]")) {
+      const item = await uploadItem(f);
+      item.type = f.dataset.callType;
+      item.entries = parseCalls(await extractRows(f.file?.files?.[0]), item.type);
+      const list = calls().filter(x => !(x.type === item.type && x.title === item.title));
+      list.unshift(item);
+      write(CALLS_KEY, list.slice(0, 40));
+      alert("Documento guardado.");
+      f.reset();
+      renderJefatura();
+      return;
+    }
+    if (f.matches("[data-form-base]")) {
+      const item = await uploadItem(f);
+      const fs = forms();
+      fs.base ||= {};
+      fs.base[f.dataset.formKey] = item;
+      write(FORMS_KEY, fs);
+      alert("Formulario actualizado.");
+      f.reset();
+      renderJefatura();
+      return;
+    }
+    if (f.matches("[data-new-form]")) {
+      const item = await uploadItem(f);
+      const fs = forms();
+      fs.custom ||= [];
+      fs.custom.unshift(item);
+      write(FORMS_KEY, fs);
+      alert("Formulario agregado.");
+      f.reset();
+      renderJefatura();
+      return;
+    }
+    if (f.matches("[data-new-flow]")) {
+      const item = await uploadItem(f);
+      const list = flows();
+      list.unshift(item);
+      write(FLOWS_KEY, list);
+      alert("Elemento guardado.");
+      f.reset();
+      renderJefatura();
+      return;
+    }
+    if (f.matches("[data-content]")) {
+      const kind = f.dataset.content === "paper" ? "papers" : new FormData(f).get("kind");
+      const item = await uploadItem(f);
+      const c = content();
+      c[kind] ||= [];
+      c[kind].unshift(item);
+      write(CONTENT_KEY, c);
+      alert("Publicado.");
+      f.reset();
+      renderJefatura();
+      return;
+    }
+    if (f.matches("[data-backend-user]")) {
+      const d = new FormData(f);
+      const r = await apiPost("createUser", { user: { email: d.get("email"), nombre: d.get("nombre"), rol: d.get("rol"), activo: "SI", puede_editar: d.get("puede_editar") } });
+      if (!r.ok) alert(r.error || "Error"); else { alert("Usuario guardado."); f.reset(); listBackendUsers(); }
+    }
   }, true);
 
   async function deleteMeta(kind, deleteId) {
     if (!confirm("¿Eliminar este elemento?")) return;
-    if (kind === "news" || kind === "education" || kind === "paper") { const c = content(); const key = kind === "paper" ? "papers" : kind; const item = (c[key] || []).find(x => x.id === deleteId); if (item?.fileId) await deleteFile(item.fileId); c[key] = (c[key] || []).filter(x => x.id !== deleteId); write(CONTENT_KEY, c); }
+    if (kind === "news" || kind === "education" || kind === "paper") {
+      const c = content();
+      const key = kind === "paper" ? "papers" : kind;
+      const item = (c[key] || []).find(x => x.id === deleteId);
+      if (item?.fileId) await deleteFile(item.fileId);
+      c[key] = (c[key] || []).filter(x => x.id !== deleteId);
+      saveComments(comments().filter(cm => !(cm.itemType === kind && cm.itemId === deleteId)));
+      write(CONTENT_KEY, c);
+    }
     if (kind === "call") { const item = calls().find(x => x.id === deleteId); if (item?.fileId) await deleteFile(item.fileId); write(CALLS_KEY, calls().filter(x => x.id !== deleteId)); }
     if (kind === "form") { const fs = forms(); const item = (fs.custom || []).find(x => x.id === deleteId); if (item?.fileId) await deleteFile(item.fileId); fs.custom = (fs.custom || []).filter(x => x.id !== deleteId); write(FORMS_KEY, fs); }
     if (kind === "flow") { const item = flows().find(x => x.id === deleteId); if (item?.fileId) await deleteFile(item.fileId); write(FLOWS_KEY, flows().filter(x => x.id !== deleteId)); }
     route();
   }
+
   document.addEventListener("click", async ev => {
-    const open = ev.target.closest("[data-file-open]"); if (open) { ev.preventDefault(); const file = await getFile(open.dataset.fileOpen); if (file) window.open(URL.createObjectURL(file.blob), "_blank"); return; }
-    const down = ev.target.closest("[data-file-download]"); if (down) { ev.preventDefault(); const file = await getFile(down.dataset.fileDownload); if (file) { const a = document.createElement("a"); a.href = URL.createObjectURL(file.blob); a.download = file.name || "documento"; document.body.append(a); a.click(); a.remove(); } return; }
-    const del = ev.target.closest("[data-delete-kind]"); if (del) { await deleteMeta(del.dataset.deleteKind, del.dataset.deleteId); return; }
-    const base = ev.target.closest("[data-delete-base-form]"); if (base && confirm("¿Quitar actualización?")) { const fs = forms(); const item = fs.base?.[base.dataset.deleteBaseForm]; if (item?.fileId) await deleteFile(item.fileId); delete fs.base[base.dataset.deleteBaseForm]; write(FORMS_KEY, fs); renderJefatura(); return; }
+    const open = ev.target.closest("[data-file-open]");
+    if (open) { ev.preventDefault(); const file = await getFile(open.dataset.fileOpen); if (file) window.open(URL.createObjectURL(file.blob), "_blank"); return; }
+    const down = ev.target.closest("[data-file-download]");
+    if (down) { ev.preventDefault(); const file = await getFile(down.dataset.fileDownload); if (file) { const a = document.createElement("a"); a.href = URL.createObjectURL(file.blob); a.download = file.name || "documento"; document.body.append(a); a.click(); a.remove(); } return; }
+    const del = ev.target.closest("[data-delete-kind]");
+    if (del) { await deleteMeta(del.dataset.deleteKind, del.dataset.deleteId); return; }
+    const delComment = ev.target.closest("[data-delete-comment]");
+    if (delComment && isChief() && confirm("¿Eliminar comentario?")) { saveComments(comments().filter(c => c.id !== delComment.dataset.deleteComment)); try { await apiPost("deleteComment", { commentId: delComment.dataset.deleteComment }); } catch (_) {} route(); return; }
+    const base = ev.target.closest("[data-delete-base-form]");
+    if (base && confirm("¿Quitar actualización?")) { const fs = forms(); const item = fs.base?.[base.dataset.deleteBaseForm]; if (item?.fileId) await deleteFile(item.fileId); delete fs.base[base.dataset.deleteBaseForm]; write(FORMS_KEY, fs); renderJefatura(); return; }
     if (ev.target.closest("[data-backend-list]")) listBackendUsers();
-    const dis = ev.target.closest("[data-backend-disable]"); if (dis && confirm("¿Desactivar usuario?")) { const r = await apiPost("disableUser", { targetEmail: dis.dataset.backendDisable }); if (!r.ok) alert(r.error || "Error"); listBackendUsers(); }
+    const dis = ev.target.closest("[data-backend-disable]");
+    if (dis && confirm("¿Desactivar usuario?")) { const r = await apiPost("disableUser", { targetEmail: dis.dataset.backendDisable }); if (!r.ok) alert(r.error || "Error"); listBackendUsers(); }
   }, true);
+
   document.addEventListener("input", ev => { const input = ev.target.closest("[data-call-search]"); if (input) renderCallResults(input.dataset.callSearch, input.value); }, true);
 
   function route() {
@@ -250,9 +413,12 @@
     if (hash === "#/gestion/noticias") return renderContent("news");
     if (hash === "#/gestion/educacion") return renderContent("education");
     if (hash === "#/gestion/paper") return renderContent("paper");
-    $("#doctorsPage")?.classList.remove("active"); $("#chiefPage")?.classList.remove("active");
-    patchCalls(); patchForms();
+    $("#doctorsPage")?.classList.remove("active");
+    $("#chiefPage")?.classList.remove("active");
+    patchCalls();
+    patchForms();
   }
+
   window.addEventListener("hashchange", route);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", route); else route();
 })();
