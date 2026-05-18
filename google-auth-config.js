@@ -5,7 +5,7 @@ window.CRS_GOOGLE_AUTH_CONFIG = {
   allowedEmails: ["mdcarlosherrera@gmail.com"],
   adminEmails: ["mdcarlosherrera@gmail.com"],
   defaultAdminEmail: "mdcarlosherrera@gmail.com",
-  appsScriptUrl: "",
+  appsScriptUrl: "https://script.google.com/macros/s/AKfycbxfahyEJq8CYnyUNG-PKKT8h0XmpTMILeSLziAxweFKmUwd11xNUFx-G_ACPg19b1Ox/exec",
   googleClientId: "",
   sessionKey: "crsGoogleSessionV1",
   localSessionBridgeKey: "crsAuthSessionV3",
