@@ -20,20 +20,9 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#/inicio" aria-label="Volver al inicio">
-        <img class="brand-logo" src="./logo-urgencia-hph.svg" alt="Urgencia Hospital Padre Hurtado" />
-        <span><span class="eyebrow">Urgencia Adulto HPH</span><span class="brand-title">Derivaciones CRS 2025</span></span>
-      </a>
-      <nav class="topnav" aria-label="Navegación principal">
-        <a href="#/especialidades" data-route-link="especialidades">Especialidades</a>
-        <a href="#/llamados" data-route-link="llamados">Llamados</a>
-        <a href="#/telefonos" data-route-link="telefonos">Directorio telefónico</a>
-        <a href="#/visita" data-route-link="visita">Visita</a>
-        <a href="#/formularios" data-route-link="formularios">Formularios</a>
-        <a href="#/gestion" data-route-link="gestion">Gestión</a>
-      </nav>
+      <a class="brand" href="#/inicio" aria-label="Volver al inicio"><img class="brand-logo" src="./logo-urgencia-hph.svg" alt="Urgencia Hospital Padre Hurtado" /><span><span class="eyebrow">Urgencia Adulto HPH</span><span class="brand-title">Derivaciones CRS 2025</span></span></a>
+      <nav class="topnav" aria-label="Navegación principal"><a href="#/especialidades" data-route-link="especialidades">Especialidades</a><a href="#/llamados" data-route-link="llamados">Llamados</a><a href="#/telefonos" data-route-link="telefonos">Directorio telefónico</a><a href="#/visita" data-route-link="visita">Visita</a><a href="#/formularios" data-route-link="formularios">Formularios</a><a href="#/gestion" data-route-link="gestion">Gestión</a></nav>
     </header>
-
     <main class="layout">
       <section id="homePage" class="page page-home" aria-labelledby="homeTitle"><div class="hero"><p class="eyebrow">CRS HPH 2025</p><h1 id="homeTitle">Derivaciones y coordinación de turno</h1><p id="todayLabel" class="today-label"></p></div><div class="home-actions" aria-label="Accesos principales"><a class="action-card action-primary" href="#/especialidades"><span class="action-top"><span class="action-number">1</span><span class="action-kicker">Derivar</span></span><strong>Especialidades</strong><span>Antes de derivar, enlace y flujo por especialidad.</span></a><a class="action-card" href="#/llamados"><span class="action-top"><span class="action-number">2</span><span class="action-kicker">Llamar</span></span><strong>Especialista de llamado y UHD</strong><span>Especialistas y disponibilidad domiciliaria.</span></a><a class="action-card" href="#/visita"><span class="action-top"><span class="action-number">3</span><span class="action-kicker">Visita</span></span><strong>Visita diaria</strong><span>Planilla AM/PM compartida por jefatura.</span></a><a class="action-card" href="#/formularios"><span class="action-top"><span class="action-number">4</span><span class="action-kicker">Formularios</span></span><strong>Formularios de turno</strong><span>Antimicrobianos, Ley de Urgencias y notificaciones.</span></a><a class="action-card" href="#/telefonos"><span class="action-top"><span class="action-number">5</span><span class="action-kicker">Directorio</span></span><strong>Directorio telefónico</strong><span>Anexos y contactos frecuentes.</span></a><a class="action-card" href="#/educacion"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Docencia</span></span><strong>Educacion medica</strong><span>Canal de Urgencias HPH, podcasts y material docente.</span></a><a class="action-card" href="#/gestion"><span class="action-top"><span class="action-number">7</span><span class="action-kicker">Gestion</span></span><strong>Casos prioritarios</strong><span>Equipo Urgencia y Jefatura para seguimiento ambulatorio.</span></a></div><section class="home-panel" aria-label="Regla general"><strong>Recordatorio rápido</strong><p>Toda derivación se realiza por Pitágoras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p></section></section>
       <section id="specialtiesPage" class="page" aria-labelledby="specialtiesTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Página 2</p><h1 id="specialtiesTitle">Especialidades y flujos</h1></div></div><section id="rulesPreview" class="rules-preview" aria-label="Reglas antes de derivar"></section><section class="control-panel" aria-label="Buscador y filtros"><label class="search"><span>Buscar flujo, especialidad o contacto</span><input id="searchInput" type="search" placeholder="Ej: TVP, oftalmo, pulso, TACO..." autocomplete="off" /></label><div class="shift-box"><span class="label">Contexto de turno</span><div class="segmented" role="group" aria-label="Horario"><button class="segment active" data-shift="all" type="button">Todos</button><button class="segment" data-shift="habil" type="button">Hábil</button><button class="segment" data-shift="inhabil" type="button">Inhábil</button></div></div></section><div class="quick-actions" aria-label="Categorías"><button class="chip active" data-category="Todos" type="button">Todos</button><button class="chip" data-category="Flujo" type="button">Flujos</button><button class="chip" data-category="Poli choque" type="button">Especialidades</button><button class="chip" data-category="CRS" type="button">CRS</button><button class="chip" data-category="Hospitalizados" type="button">Hospitalizados</button><button class="chip" data-category="Protocolo" type="button">Protocolos</button></div><div id="resultsMeta" class="results-meta"></div><div id="specialtyGroups" class="specialty-groups" aria-live="polite"></div></section>
@@ -47,29 +36,15 @@
       <section id="doctorsPage" class="page" aria-labelledby="doctorsTitle"><div class="page-head"><a class="back-link" href="#/gestion">Gestión</a><div><p class="eyebrow">Equipo Urgencia</p><h1 id="doctorsTitle">Módulo operativo</h1></div></div><div id="doctorsContent" aria-live="polite"></div></section>
       <section id="chiefPage" class="page" aria-labelledby="chiefTitle"><div class="page-head"><a class="back-link" href="#/gestion">Gestión</a><div><p class="eyebrow">Espacio jefatura</p><h1 id="chiefTitle">Panel restringido</h1></div></div><div id="chiefContent" aria-live="polite"></div></section>
     </main>
-
     <template id="specialtyButtonTemplate"><a class="specialty-button"><span class="specialty-sticker" aria-hidden="true"></span><strong></strong></a></template>
-
     <script src="./ley-urgencias-data.js?v=38"></script>
     <script src="./app.js?v=40"></script>
-    <script>
-      (() => {
-        try {
-          if (typeof pages === "undefined") return;
-          pages.urgencia = document.querySelector("#doctorsPage");
-          pages.medicos = document.querySelector("#doctorsPage");
-          pages["equipo-urgencia"] = document.querySelector("#doctorsPage");
-          pages.jefatura = document.querySelector("#chiefPage");
-        } catch (_) {}
-      })();
-    </script>
+    <script>try{if(typeof pages!=="undefined"){pages.urgencia=document.querySelector("#doctorsPage");pages.medicos=document.querySelector("#doctorsPage");pages["equipo-urgencia"]=document.querySelector("#doctorsPage");pages.jefatura=document.querySelector("#chiefPage");}}catch(_){}</script>
     <script src="./protocolos-2026-ajustes.js?v=3"></script>
     <script src="./protocolos-agiles.js?v=5"></script>
     <script src="./especialidades-ui.js?v=2"></script>
     <script src="./directorio-telefonico.js?v=2"></script>
-    <script src="./gestion-jefatura-estable.js?v=4"></script>
-    <script src="./gestion-contenidos.js?v=1"></script>
-    <script src="./gestion-eliminaciones.js?v=1"></script>
+    <script src="./gestion-canonica.js?v=1"></script>
     <script src="./google-auth-config.js?v=1"></script>
     <script src="./google-auth.js?v=1"></script>
   </body>
