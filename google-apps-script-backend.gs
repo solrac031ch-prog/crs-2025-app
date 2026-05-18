@@ -9,6 +9,7 @@ const CRS_CONFIG = {
     usuarios: 'Usuarios',
     auditoria: 'Auditoria',
     casos: 'Casos_prioritarios',
+    pacientes: 'Gestion_pacientes',
     planillas: 'Planillas',
     directorio: 'Directorio',
     formularios: 'Formularios',
@@ -16,6 +17,12 @@ const CRS_CONFIG = {
     comentarios: 'Comentarios'
   }
 };
+
+const PATIENT_CASE_HEADERS = [
+  'id', 'fecha_registro', 'registrado_por', 'paciente', 'run', 'edad', 'telefono', 'flujo', 'motivo',
+  'resumen_clinico', 'gestion_solicitada', 'prioridad', 'origen', 'estado', 'resuelto', 'proximo_paso',
+  'responsable', 'fecha_compromiso', 'fecha_resolucion', 'observaciones', 'actualizado'
+];
 
 function ss_() {
   return CRS_CONFIG.spreadsheetId ? SpreadsheetApp.openById(CRS_CONFIG.spreadsheetId) : SpreadsheetApp.getActiveSpreadsheet();
@@ -33,6 +40,7 @@ function setup() {
   sheet_(CRS_CONFIG.sheets.usuarios, ['email', 'nombre', 'rol', 'activo', 'puede_editar', 'creado', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.auditoria, ['fecha', 'usuario', 'accion', 'detalle']);
   sheet_(CRS_CONFIG.sheets.casos, ['fecha', 'usuario', 'paciente', 'run', 'telefono', 'flujo', 'resumen', 'necesidad', 'estado']);
+  sheet_(CRS_CONFIG.sheets.pacientes, PATIENT_CASE_HEADERS);
   sheet_(CRS_CONFIG.sheets.planillas, ['clave', 'url', 'descripcion', 'actualizado_por', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.directorio, ['nombre', 'detalle', 'telefono', 'categoria', 'actualizado']);
   sheet_(CRS_CONFIG.sheets.formularios, ['clave', 'url', 'descripcion', 'actualizado_por', 'actualizado']);
@@ -47,7 +55,7 @@ function setup() {
 }
 
 function doGet(e) {
-  return json_({ ok: true, app: 'CRS HPH 2025 Backend', status: 'online' });
+  return json_({ ok: true, app: 'CRS HPH 2025 Backend', status: 'online', spreadsheetUrl: ss_().getUrl() });
 }
 
 function doPost(e) {
@@ -59,6 +67,9 @@ function doPost(e) {
     if (action === 'createUser') return json_(requireAdmin_(payload.email, () => createUser_(payload.user, payload.email)));
     if (action === 'updateUser') return json_(requireAdmin_(payload.email, () => updateUser_(payload.user, payload.email)));
     if (action === 'disableUser') return json_(requireAdmin_(payload.email, () => disableUser_(payload.targetEmail, payload.email)));
+    if (action === 'savePatientCase') return json_(savePatientCase_(payload.case, payload.email));
+    if (action === 'listPatientCases') return json_(listPatientCases_(payload.email));
+    if (action === 'updatePatientCase') return json_(updatePatientCase_(payload.id, payload.patch, payload.email));
     if (action === 'addComment') return json_(addComment_(payload.comment, payload.email));
     if (action === 'listComments') return json_(listComments_(payload.itemType, payload.itemId));
     if (action === 'deleteComment') return json_(requireAdmin_(payload.email, () => deleteComment_(payload.commentId, payload.email)));
@@ -116,18 +127,55 @@ function disableUser_(targetEmail, actorEmail) {
   return updateUser_({ email: targetEmail, activo: 'NO' }, actorEmail);
 }
 
+function savePatientCase_(item, actorEmail) {
+  if (!item) return { ok: false, error: 'Caso vacío' };
+  const sheet = sheet_(CRS_CONFIG.sheets.pacientes, PATIENT_CASE_HEADERS);
+  const row = normalizePatientCase_(item, actorEmail);
+  sheet.appendRow(PATIENT_CASE_HEADERS.map(header => row[header] || ''));
+  audit_(actorEmail, 'save_patient_case', row.id + ' ' + row.paciente);
+  return { ok: true, id: row.id, spreadsheetUrl: ss_().getUrl() };
+}
+
+function listPatientCases_(actorEmail) {
+  const sheet = sheet_(CRS_CONFIG.sheets.pacientes, PATIENT_CASE_HEADERS);
+  return { ok: true, cases: rowsAsObjects_(sheet), spreadsheetUrl: ss_().getUrl() };
+}
+
+function updatePatientCase_(id, patch, actorEmail) {
+  if (!id) return { ok: false, error: 'ID vacío' };
+  const sheet = sheet_(CRS_CONFIG.sheets.pacientes, PATIENT_CASE_HEADERS);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) {
+      Object.keys(patch || {}).forEach(key => setCellByHeader_(sheet, headers, i + 1, key, patch[key]));
+      setCellByHeader_(sheet, headers, i + 1, 'actualizado', new Date());
+      audit_(actorEmail, 'update_patient_case', id);
+      return { ok: true, id, spreadsheetUrl: ss_().getUrl() };
+    }
+  }
+  return { ok: false, error: 'Caso no encontrado' };
+}
+
+function normalizePatientCase_(item, actorEmail) {
+  const now = new Date();
+  const row = {};
+  PATIENT_CASE_HEADERS.forEach(header => row[header] = item[header] || '');
+  row.id = row.id || Utilities.getUuid();
+  row.fecha_registro = row.fecha_registro || now;
+  row.registrado_por = row.registrado_por || actorEmail || '';
+  row.origen = row.origen || 'Urgencia Adulto HPH';
+  row.estado = row.estado || 'Pendiente';
+  row.resuelto = row.resuelto || 'Pendiente';
+  row.actualizado = now;
+  return row;
+}
+
 function addComment_(comment, actorEmail) {
   if (!comment || !comment.itemType || !comment.itemId || !comment.text) return { ok: false, error: 'Comentario inválido' };
   const id = comment.id || Utilities.getUuid();
   sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']).appendRow([
-    id,
-    comment.itemType,
-    comment.itemId,
-    comment.name || actorEmail || 'Equipo Urgencia',
-    normalizeEmail_(comment.email || actorEmail),
-    comment.text,
-    comment.createdAt ? new Date(comment.createdAt) : new Date(),
-    'SI'
+    id, comment.itemType, comment.itemId, comment.name || actorEmail || 'Equipo Urgencia', normalizeEmail_(comment.email || actorEmail), comment.text, comment.createdAt ? new Date(comment.createdAt) : new Date(), 'SI'
   ]);
   audit_(actorEmail, 'add_comment', comment.itemType + ':' + comment.itemId);
   return { ok: true, id };
@@ -135,10 +183,7 @@ function addComment_(comment, actorEmail) {
 
 function listComments_(itemType, itemId) {
   const rows = rowsAsObjects_(sheet_(CRS_CONFIG.sheets.comentarios, ['id', 'itemType', 'itemId', 'nombre', 'email', 'comentario', 'fecha', 'activo']));
-  const comments = rows
-    .filter(row => String(row.activo).toUpperCase() === 'SI')
-    .filter(row => String(row.itemType) === String(itemType) && String(row.itemId) === String(itemId))
-    .map(row => ({ id: row.id, itemType: row.itemType, itemId: row.itemId, name: row.nombre, email: row.email, text: row.comentario, createdAt: row.fecha }));
+  const comments = rows.filter(row => String(row.activo).toUpperCase() === 'SI').filter(row => String(row.itemType) === String(itemType) && String(row.itemId) === String(itemId)).map(row => ({ id: row.id, itemType: row.itemType, itemId: row.itemId, name: row.nombre, email: row.email, text: row.comentario, createdAt: row.fecha }));
   return { ok: true, comments };
 }
 
