@@ -17,8 +17,16 @@
     }
   }
 
-  window.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-google-add-account]");
+  function prepareSwitchButtons(root = document) {
+    root.querySelectorAll("[data-google-add-account]").forEach((button) => {
+      button.removeAttribute("data-google-add-account");
+      button.setAttribute("data-google-account-switch", "true");
+      button.textContent = "Agregar / cambiar cuenta Google";
+    });
+  }
+
+  function switchAccount(event) {
+    const button = event.target.closest("[data-google-account-switch]");
     if (!button) return;
     event.preventDefault();
     event.stopPropagation();
@@ -26,9 +34,14 @@
     SESSION_KEYS.forEach((key) => sessionStorage.removeItem(key));
     if (window.google?.accounts?.id) window.google.accounts.id.disableAutoSelect();
     location.href = accountChooserUrl();
-  }, true);
+  }
 
+  const observer = new MutationObserver(() => prepareSwitchButtons());
+  if (document.documentElement) observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  window.addEventListener("click", switchAccount, true);
   restoreReturnHash();
   window.addEventListener("pageshow", restoreReturnHash);
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", restoreReturnHash);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => { restoreReturnHash(); prepareSwitchButtons(); });
+  else prepareSwitchButtons();
 })();
