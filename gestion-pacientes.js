@@ -2,6 +2,9 @@
   const SESSION_KEY = "crsAuthSessionV3";
   const LOCAL_KEY = "crsGestionPacientesLocalV1";
   const SHEET_LABEL = "Gestion_pacientes";
+  const PROCEDURES_CONTENT_KEY = "crsGestionContentV2";
+  const PROCEDURES_DB_NAME = "crs-hph-files-v2";
+  const PROCEDURES_STORE = "files";
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -11,14 +14,22 @@
   const uid = () => `caso-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]") || []; } catch { return []; } };
   const writeLocal = (rows) => localStorage.setItem(LOCAL_KEY, JSON.stringify(rows));
+  const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || "") || fallback; } catch { return fallback; } };
   const session = () => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "") || null; } catch { return null; } };
+
+  function isChief() {
+    const user = session();
+    const role = clean(user?.role);
+    const email = clean(user?.email || user?.username);
+    return Boolean(user && (["admin", "owner", "desarrollador", "jefatura", "jefe", "jefe_turno"].includes(role) || email === "mdcarlosherrera@gmail.com"));
+  }
 
   function addStyle() {
     if ($("#gestion-pacientes-style")) return;
     const style = document.createElement("style");
     style.id = "gestion-pacientes-style";
     style.textContent = `
-      .patient-chip{border-left-color:#0891b2!important}.patient-shell{display:grid;gap:14px}.patient-hero{display:grid;gap:12px;padding:clamp(20px,4vw,34px);border-radius:16px;background:linear-gradient(135deg,#0f172a,#075985 54%,#0f766e);color:#fff;box-shadow:0 24px 60px rgba(15,23,42,.22)}.patient-hero h2{margin:0;color:#fff;font-size:clamp(2rem,5vw,3.3rem);line-height:1}.patient-hero p{margin:0;color:#dff7ff;max-width:900px;line-height:1.45}.patient-actions,.patient-row-actions{display:flex;gap:10px;flex-wrap:wrap}.patient-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}.patient-card{display:grid;gap:10px;padding:16px;border:1px solid #dfe8e4;border-left:6px solid #0891b2;border-radius:14px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.08)}.patient-card h3{margin:0;color:#10201c}.patient-card p{margin:0;color:#52615c;line-height:1.4}.patient-form{display:grid;gap:12px}.patient-form label{display:grid;gap:5px;font-weight:850;color:#24312d}.patient-form input,.patient-form select,.patient-form textarea,.case-update-form input,.case-update-form select,.case-update-form textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff;color:#10201c}.patient-form textarea,.case-update-form textarea{min-height:82px}.patient-table-wrap{overflow:auto;border:1px solid #dfe8e4;border-radius:12px;background:#fff}.patient-table{width:100%;border-collapse:collapse;min-width:1180px}.patient-table th,.patient-table td{padding:9px 10px;border-bottom:1px solid #e5ebe8;text-align:left;vertical-align:top}.patient-table th{background:#f6f8f7;color:#44504b;text-transform:uppercase;font-size:.76rem}.patient-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-weight:900;font-size:.78rem}.patient-status.pendiente{background:#fff7ed;color:#9a3412}.patient-status.gestion{background:#eff6ff;color:#1d4ed8}.patient-status.resuelto{background:#ecfdf5;color:#047857}.patient-status.noresuelto{background:#fff1f2;color:#be123c}.patient-note{padding:12px;border:1px solid #bae6fd;border-radius:10px;background:#f0f9ff;color:#075985;font-weight:750}.patient-warn{padding:12px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#7f1d1d;font-weight:750}.case-update-form{display:grid;gap:8px;min-width:280px}.patient-small{font-size:.86rem;color:#64748b;line-height:1.32}.patient-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end}.patient-filter label{display:grid;gap:5px;font-weight:850;color:#24312d}.patient-filter input,.patient-filter select{min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff}.patient-kpi{font-size:1.9rem;font-weight:950;color:#10201c}@media(max-width:700px){.patient-actions,.patient-row-actions{display:grid}.document-button,.back-link{width:100%;justify-content:center}.patient-table{min-width:980px}}
+      .patient-chip{border-left-color:#0891b2!important}.patient-shell{display:grid;gap:14px}.patient-hero{display:grid;gap:12px;padding:clamp(20px,4vw,34px);border-radius:16px;background:linear-gradient(135deg,#0f172a,#075985 54%,#0f766e);color:#fff;box-shadow:0 24px 60px rgba(15,23,42,.22)}.patient-hero h2{margin:0;color:#fff;font-size:clamp(2rem,5vw,3.3rem);line-height:1}.patient-hero p{margin:0;color:#dff7ff;max-width:900px;line-height:1.45}.patient-actions,.patient-row-actions{display:flex;gap:10px;flex-wrap:wrap}.patient-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}.patient-card{display:grid;gap:10px;padding:16px;border:1px solid #dfe8e4;border-left:6px solid #0891b2;border-radius:14px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.08)}.patient-card h3{margin:0;color:#10201c}.patient-card p{margin:0;color:#52615c;line-height:1.4}.patient-form{display:grid;gap:12px}.patient-form label{display:grid;gap:5px;font-weight:850;color:#24312d}.patient-form input,.patient-form select,.patient-form textarea,.case-update-form input,.case-update-form select,.case-update-form textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff;color:#10201c}.patient-form textarea,.case-update-form textarea{min-height:82px}.patient-table-wrap{overflow:auto;border:1px solid #dfe8e4;border-radius:12px;background:#fff}.patient-table{width:100%;border-collapse:collapse;min-width:1180px}.patient-table th,.patient-table td{padding:9px 10px;border-bottom:1px solid #e5ebe8;text-align:left;vertical-align:top}.patient-table th{background:#f6f8f7;color:#44504b;text-transform:uppercase;font-size:.76rem}.patient-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-weight:900;font-size:.78rem}.patient-status.pendiente{background:#fff7ed;color:#9a3412}.patient-status.gestion{background:#eff6ff;color:#1d4ed8}.patient-status.resuelto{background:#ecfdf5;color:#047857}.patient-status.noresuelto{background:#fff1f2;color:#be123c}.patient-note{padding:12px;border:1px solid #bae6fd;border-radius:10px;background:#f0f9ff;color:#075985;font-weight:750}.patient-warn{padding:12px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#7f1d1d;font-weight:750}.case-update-form{display:grid;gap:8px;min-width:280px}.patient-small{font-size:.86rem;color:#64748b;line-height:1.32}.patient-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end}.patient-filter label{display:grid;gap:5px;font-weight:850;color:#24312d}.patient-filter input,.patient-filter select{min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff}.patient-kpi{font-size:1.9rem;font-weight:950;color:#10201c}.procedure-list{display:grid;gap:12px}.procedure-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px;border:1px solid #dfe8e4;border-left:6px solid #7c3aed;border-radius:14px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.08)}.procedure-row h3{margin:0;color:#10201c}.procedure-row p{margin:4px 0;color:#52615c;line-height:1.35}.procedure-thumb{width:150px;max-height:95px;object-fit:cover;border-radius:10px;border:1px solid #e5ebe8;background:#f8fafc}.procedure-link-icon{width:72px;height:72px;border-radius:18px;background:#ede9fe;color:#5b21b6;display:grid;place-items:center;font-size:2rem;font-weight:900}@media(max-width:700px){.patient-actions,.patient-row-actions{display:grid}.document-button,.back-link{width:100%;justify-content:center}.patient-table{min-width:980px}.procedure-row{grid-template-columns:1fr}.procedure-thumb,.procedure-link-icon{width:100%;height:auto;max-height:220px}}
     `;
     document.head.append(style);
   }
@@ -58,11 +69,11 @@
       edad: raw.edad || "",
       telefono: raw.telefono || raw.phone || "",
       flujo: raw.flujo || raw.flow || raw.protocol || "",
-      motivo: raw.motivo || raw.diagnostico || "",
+      motivo: raw.motivo || raw.diagnostico || "Gestión prioritaria desde cierre de derivación",
       resumen_clinico: raw.resumen_clinico || raw.resumen || raw.summary || "",
       gestion_solicitada: raw.gestion_solicitada || raw.necesidad || raw.need || "",
       prioridad: raw.prioridad || "Alta",
-      origen: raw.origen || "Urgencia Adulto HPH",
+      origen: raw.origen || "Cierre de derivación CRS HPH",
       estado: raw.estado || raw.status || "Pendiente",
       resuelto: raw.resuelto || "Pendiente",
       proximo_paso: raw.proximo_paso || raw.nextStep || "",
@@ -148,26 +159,22 @@
   }
 
   function patientHomeButton() {
-    return `<a class="gestion-card patient-chip" href="#/gestion/pacientes"><strong>🧭 Gestión pacientes</strong><span>Planilla Drive para casos con gestión prioritaria, resolución y próximo paso.</span></a>`;
+    return `<a class="gestion-card patient-chip" href="#/gestion/pacientes"><strong>🧭 Gestión pacientes</strong><span>Solo jefatura: casos registrados desde “Cierre de derivación”.</span></a>`;
   }
 
   function injectHomeButton() {
+    if (!isChief()) return;
     if (!location.hash.startsWith("#/gestion") || location.hash !== "#/gestion") return;
     const grid = $("#managementContent .gestion-grid");
     if (!grid || grid.querySelector(".patient-chip")) return;
     grid.insertAdjacentHTML("beforeend", patientHomeButton());
   }
 
-  function formHtml() {
-    const user = activeUser();
-    return `<section class="patient-card"><h3>Registrar solicitud de gestión prioritaria</h3><p>Usa estos campos para dejar trazabilidad del caso desde Urgencia hacia jefatura/gestión ambulatoria.</p><form class="patient-form" data-patient-case-form><div class="patient-grid"><label>Fecha de solicitud<input name="fecha_registro" type="date" value="${today()}" required></label><label>Médico / usuario solicitante<input name="registrado_por" value="${esc(user.email || user.name)}" required></label><label>Nombre paciente<input name="paciente" required></label><label>RUN<input name="run" placeholder="12.345.678-9"></label><label>Edad<input name="edad" inputmode="numeric"></label><label>Teléfono contacto<input name="telefono" inputmode="tel"></label><label>Flujo / especialidad<input name="flujo" placeholder="Ej: TVP, Hemodinamia, CRS..."></label><label>Prioridad<select name="prioridad"><option>Alta</option><option>Media</option><option>Baja</option></select></label></div><label>Motivo / diagnóstico<input name="motivo" placeholder="Motivo principal de la gestión"></label><label>Resumen clínico<textarea name="resumen_clinico" placeholder="Datos clínicos clave, exámenes, DAU, hallazgos importantes"></textarea></label><label>Gestión solicitada<textarea name="gestion_solicitada" placeholder="Qué se requiere gestionar: hora, contacto, examen, control, coordinación, rescate, etc."></textarea></label><div class="patient-grid"><label>Estado inicial<select name="estado"><option>Pendiente</option><option>En gestión</option><option>Resuelto</option><option>No resuelto</option></select></label><label>¿Resuelto?<select name="resuelto"><option>Pendiente</option><option>NO</option><option>SI</option></select></label><label>Responsable<input name="responsable" placeholder="Jefatura / gestor / equipo"></label><label>Fecha compromiso<input name="fecha_compromiso" type="date"></label></div><label>Qué se hará a continuación<textarea name="proximo_paso" placeholder="Próximo paso acordado"></textarea></label><label>Observaciones<textarea name="observaciones" placeholder="Comentarios adicionales"></textarea></label><button class="document-button" type="submit">Guardar en planilla de gestión</button><div data-patient-save-status></div></form></section>`;
-  }
-
   function filtersHtml(meta) {
     const sourceMsg = meta.source === "drive"
       ? `Conectado a Google Sheets: ${SHEET_LABEL}`
       : `Modo local por ahora: ${esc(meta.error || "sin conexión al backend")}`;
-    return `<section class="patient-card"><h3>Seguimiento y descarga</h3><div class="patient-note">${sourceMsg}</div>${meta.spreadsheetUrl ? `<div class="patient-actions"><a class="document-button" href="${esc(meta.spreadsheetUrl)}" target="_blank" rel="noopener">Abrir planilla Drive</a></div>` : ""}<div class="patient-filter"><label>Buscar<input data-patient-filter="query" type="search" placeholder="RUN, paciente, flujo, motivo..."></label><label>Estado<select data-patient-filter="estado"><option value="todos">Todos</option><option>Pendiente</option><option>En gestión</option><option>Resuelto</option><option>No resuelto</option></select></label><label>Periodo<select data-patient-filter="periodo"><option value="todos">Todos</option><option value="dia">Hoy</option><option value="semana">Últimos 7 días</option><option value="mes">Mes actual</option></select></label></div><div class="patient-actions"><button class="document-button" data-export-patients="dia">Descargar día</button><button class="document-button" data-export-patients="semana">Descargar semana</button><button class="document-button" data-export-patients="mes">Descargar mes</button><button class="document-button" data-refresh-patients>Actualizar desde Drive</button></div></section>`;
+    return `<section class="patient-card"><h3>Seguimiento y descarga</h3><div class="patient-note">${sourceMsg}</div><div class="patient-note">Los casos entran desde Página 2 → Especialidades y flujos → Cierre de derivación → “¿Requiere gestión prioritaria?”.</div>${meta.spreadsheetUrl ? `<div class="patient-actions"><a class="document-button" href="${esc(meta.spreadsheetUrl)}" target="_blank" rel="noopener">Abrir planilla Drive</a></div>` : ""}<div class="patient-filter"><label>Buscar<input data-patient-filter="query" type="search" placeholder="RUN, paciente, flujo, motivo..."></label><label>Estado<select data-patient-filter="estado"><option value="todos">Todos</option><option>Pendiente</option><option>En gestión</option><option>Resuelto</option><option>No resuelto</option></select></label><label>Periodo<select data-patient-filter="periodo"><option value="todos">Todos</option><option value="dia">Hoy</option><option value="semana">Últimos 7 días</option><option value="mes">Mes actual</option></select></label></div><div class="patient-actions"><button class="document-button" data-export-patients="dia">Descargar día</button><button class="document-button" data-export-patients="semana">Descargar semana</button><button class="document-button" data-export-patients="mes">Descargar mes</button><button class="document-button" data-refresh-patients>Actualizar desde Drive</button></div></section>`;
   }
 
   function updateForm(row) {
@@ -202,28 +209,106 @@
     const content = $("#managementContent");
     if (title) title.textContent = "Gestión de pacientes";
     if (!content) return;
-    content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>Registro conectado al Drive actual mediante Apps Script. Más adelante puedes compartir la misma planilla con jefatura o cambiar el backend a otro Drive.</p></section><div id="patientFormMount">${formHtml()}</div><div id="patientFiltersMount"><section class="patient-card"><h3>Cargando planilla...</h3></section></div><div id="patientCasesTable"></div></div>`;
+    if (!isChief()) {
+      content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>Acceso restringido a jefatura.</p></section><div class="patient-warn">Esta planilla solo puede ser vista por jefes/jefatura. Los médicos registran el caso desde el cierre de derivación de cada flujo.</div></div>`;
+      return;
+    }
+    content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>Vista restringida a jefatura. Los casos se alimentan desde “¿Requiere gestión prioritaria?” en cada flujo CRS.</p></section><div id="patientFiltersMount"><section class="patient-card"><h3>Cargando planilla...</h3></section></div><div id="patientCasesTable"></div></div>`;
     const meta = await loadCases();
     $("#patientFiltersMount").innerHTML = filtersHtml(meta);
     applyFilters();
   }
 
-  document.addEventListener("submit", async (event) => {
-    const form = event.target;
-    if (form.matches("[data-patient-case-form]")) {
-      event.preventDefault();
-      const status = form.querySelector("[data-patient-save-status]");
-      if (status) status.innerHTML = `<div class="patient-note">Guardando...</div>`;
-      const payload = Object.fromEntries(new FormData(form).entries());
-      const result = await saveCase(payload);
-      if (status) status.innerHTML = result.localOnly ? `<div class="patient-warn">Guardado local. No se pudo escribir en Drive: ${esc(result.error || "")}</div>` : `<div class="patient-note">Caso guardado en la planilla Drive.</div>`;
-      form.reset();
-      form.fecha_registro.value = today();
-      form.registrado_por.value = activeUser().email || activeUser().name;
-      await loadCases();
-      applyFilters();
-      return;
+  async function savePriorityFromFlow(form) {
+    const slug = form.dataset.priorityForm || "";
+    const protocol = typeof findProtocolBySlug === "function" ? findProtocolBySlug(slug) : null;
+    const data = new FormData(form);
+    const payload = {
+      fecha_registro: today(),
+      registrado_por: activeUser().email || activeUser().name || "Equipo Urgencia",
+      paciente: String(data.get("patientName") || "").trim(),
+      run: String(data.get("rut") || "").trim(),
+      telefono: String(data.get("phone") || "").trim(),
+      flujo: protocol?.title || slug,
+      motivo: "Gestión prioritaria solicitada desde cierre de derivación",
+      resumen_clinico: String(data.get("summary") || "").trim(),
+      gestion_solicitada: String(data.get("need") || "").trim(),
+      prioridad: "Alta",
+      origen: `${location.origin}${location.pathname}#/especialidad/${slug}`,
+      estado: "Pendiente",
+      resuelto: "Pendiente",
+      proximo_paso: "Pendiente de revisión por jefatura",
+      responsable: "Jefatura",
+      observaciones: "Registro automático desde Página 2 Especialidades y flujos → Cierre de derivación."
+    };
+    if (!payload.paciente && !payload.run && !payload.resumen_clinico && !payload.gestion_solicitada) return;
+    const result = await saveCase(payload);
+    const status = form.closest(".priority-panel")?.querySelector(".priority-status");
+    if (status) {
+      status.textContent = result.localOnly
+        ? "Caso guardado localmente. No se pudo escribir en Drive."
+        : "Caso guardado en planilla Drive de gestión prioritaria.";
     }
+  }
+
+  let proceduresDbPromise = null;
+  function proceduresDb() {
+    if (proceduresDbPromise) return proceduresDbPromise;
+    proceduresDbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(PROCEDURES_DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(PROCEDURES_STORE, { keyPath: "id" });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return proceduresDbPromise;
+  }
+  async function getProcedureFile(fileId) {
+    if (!fileId) return null;
+    const database = await proceduresDb();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(PROCEDURES_STORE, "readonly");
+      const req = tx.objectStore(PROCEDURES_STORE).get(fileId);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  function procedures() {
+    const state = readJson(PROCEDURES_CONTENT_KEY, { procedures: [] });
+    return Array.isArray(state.procedures) ? state.procedures : [];
+  }
+  async function renderProcedureThumbs(root = document) {
+    for (const target of $$('[data-procedure-thumb]', root)) {
+      const item = await getProcedureFile(target.dataset.procedureThumb);
+      if (!item) continue;
+      const url = URL.createObjectURL(item.blob);
+      if (item.type?.startsWith("video/")) target.outerHTML = `<video class="procedure-thumb" src="${url}" controls preload="metadata"></video>`;
+      else if (item.type?.startsWith("image/")) target.outerHTML = `<img class="procedure-thumb" src="${url}" alt="Procedimiento">`;
+      else target.outerHTML = `<span class="procedure-link-icon">▣</span>`;
+    }
+  }
+  function procedureActions(item) {
+    if (item.url) return `<a class="document-button" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Abrir link/video</a>`;
+    if (item.fileId) return `<a class="document-button" href="#" data-file-open="${esc(item.fileId)}">Ver video/archivo</a><a class="document-button" href="#" data-file-download="${esc(item.fileId)}">Descargar</a>`;
+    return `<span class="patient-small">Sin archivo o link asociado.</span>`;
+  }
+  function renderProceduresList() {
+    addStyle();
+    if (location.hash !== "#/gestion/procedimientos") return;
+    $$(".page").forEach((page) => page.classList.toggle("active", page.id === "managementPage"));
+    const title = $("#managementTitle");
+    const content = $("#managementContent");
+    if (title) title.textContent = "Procedimientos médicos";
+    if (!content) return;
+    const list = procedures().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion/educacion">Volver a Educación</a><a class="back-link" href="#/gestion">Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Procedimientos médicos</h2><p>Lista de videos, archivos o links subidos por jefatura. Los procedimientos cargados previamente se mantienen porque se usan las mismas llaves de almacenamiento de la web.</p></section><section class="procedure-list">${list.length ? list.map((item) => `<article class="procedure-row"><div><span class="tag">Procedimiento</span><h3>${esc(item.title)}</h3><p>${esc(item.description)}</p><span class="patient-small">${esc(new Date(item.createdAt || Date.now()).toLocaleString("es-CL"))}</span><div class="patient-actions">${procedureActions(item)}</div></div>${item.fileId ? `<div data-procedure-thumb="${esc(item.fileId)}"><span class="procedure-link-icon">▶</span></div>` : `<span class="procedure-link-icon">🔗</span>`}</article>`).join("") : `<div class="patient-note">Aún no hay procedimientos subidos. Desde Módulo Jefatura puedes agregar videos o links uno a uno.</div>`}</section></div>`;
+    renderProcedureThumbs(content);
+  }
+
+  document.addEventListener("submit", async (event) => {
+    const priorityForm = event.target.closest("[data-priority-form]");
+    if (priorityForm) savePriorityFromFlow(priorityForm);
+
+    const form = event.target;
     if (form.matches("[data-case-update]")) {
       event.preventDefault();
       const id = form.dataset.caseUpdate;
@@ -255,8 +340,9 @@
 
   function route() {
     addStyle();
-    if (location.hash === "#/gestion") setTimeout(injectHomeButton, 80);
+    if (location.hash === "#/gestion") setTimeout(injectHomeButton, 120);
     if (location.hash === "#/gestion/pacientes") renderPatientsPage();
+    if (location.hash === "#/gestion/procedimientos") setTimeout(renderProceduresList, 0);
   }
 
   window.addEventListener("hashchange", route);
