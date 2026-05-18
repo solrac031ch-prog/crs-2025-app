@@ -14,15 +14,23 @@
     catch { return fallback; }
   };
 
+  function normalizedRole(profile, email) {
+    const backendRole = String(profile.role || profile.rol || "").trim().toLowerCase();
+    if (backendRole) return backendRole;
+    if (adminEmails.has(email)) return "desarrollador";
+    return "equipo";
+  }
+
   function writeSession(profile) {
     const email = String(profile.email || "").trim().toLowerCase();
-    const role = adminEmails.has(email) ? "desarrollador" : "equipo";
+    const role = normalizedRole(profile, email);
     const localSession = {
       username: email,
       email,
-      name: profile.name || email,
+      name: profile.name || profile.nombre || email,
       picture: profile.picture || "",
       role,
+      canEdit: profile.canEdit ?? profile.puede_editar ?? false,
       status: "active",
       provider: "google",
       loginAt: new Date().toISOString()
@@ -88,8 +96,8 @@
         if (status) status.textContent = `Correo no autorizado: ${email}`;
         return;
       }
-      writeSession({ ...payload, ...result, email });
-      if (status) status.textContent = `Sesión Google iniciada: ${email}`;
+      const stored = writeSession({ ...payload, ...result, email });
+      if (status) status.textContent = `Sesión Google iniciada: ${email} · rol: ${stored.role}`;
       setTimeout(() => { location.hash = "#/jefatura"; location.reload(); }, 350);
     } catch (error) {
       if (status) status.textContent = "Error validando con Google/Apps Script.";
@@ -125,7 +133,7 @@
     const box = document.createElement("section");
     box.className = "stable-card blue";
     box.dataset.googleAuthBox = "true";
-    box.innerHTML = session ? `<strong>Cuenta Google conectada</strong><span>${esc(session.email)} · ${esc(session.role)}</span><button class="document-button" type="button" data-google-logout>Cerrar sesión Google</button>` : `<strong>Ingreso con Google</strong><span>Autorizado por ahora: ${esc(config.defaultAdminEmail || "mdcarlosherrera@gmail.com")}</span><div id="googleSignInButton"></div><div data-google-auth-status class="stable-note"></div>`;
+    box.innerHTML = session ? `<strong>Cuenta Google conectada</strong><span>${esc(session.email)} · ${esc(session.role)}</span><button class="document-button" type="button" data-google-logout>Cerrar sesión Google</button>` : `<strong>Ingreso con Google</strong><span>Autorizado por backend Google</span><div id="googleSignInButton"></div><div data-google-auth-status class="stable-note"></div>`;
     panel.prepend(box);
     setTimeout(initGoogleButton, 80);
   }
