@@ -7,6 +7,12 @@
 
   if (typeof protocols === "undefined" || !Array.isArray(protocols)) return;
 
+  const ARTICULADOR = "+569 9253 7195";
+  const COORD_RED = "+569 4402 0756";
+  const COORD_HSR = "+569 9998 0214";
+  const HSR_PHONE = "UEH Adultos HSR: estación enfermería 225762662 / 225762363; reanimador 225762353; coordinador médico UEH +569 9998 0214.";
+  const BASE_2026_TAGS = ["Manual SSMSO 2026", "Consultoría de llamada", "2026"];
+
   const allText = (protocol) => normalize([
     protocol.title,
     protocol.category,
@@ -21,7 +27,7 @@
     return needles.every((needle) => haystack.includes(normalize(needle)));
   });
 
-  const removeProtocols = (...needles) => {
+  const removeMatching = (...needles) => {
     for (let index = protocols.length - 1; index >= 0; index -= 1) {
       const haystack = allText(protocols[index]);
       if (needles.every((needle) => haystack.includes(normalize(needle)))) protocols.splice(index, 1);
@@ -29,61 +35,311 @@
   };
 
   const unique = (items) => Array.from(new Set((items || []).filter(Boolean)));
-  const renameProtocol = (protocol, updates) => {
-    if (!protocol) return null;
-    Object.assign(protocol, updates);
-    protocol.tags = unique(updates.tags || protocol.tags);
+  const withTags = (...tags) => unique([...BASE_2026_TAGS, ...tags]);
+  const upsertByTitle = (title, data, insertAfterTitle = null) => {
+    const current = protocols.find((item) => normalize(item.title) === normalize(title));
+    if (current) {
+      Object.assign(current, data, { title });
+      current.tags = unique(current.tags || data.tags || []);
+      return current;
+    }
+    const protocol = { title, ...data };
+    const afterIndex = insertAfterTitle ? protocols.findIndex((item) => normalize(item.title) === normalize(insertAfterTitle)) : -1;
+    protocols.splice(afterIndex >= 0 ? afterIndex + 1 : protocols.length, 0, protocol);
     return protocol;
   };
 
-  renameProtocol(findProtocol("hemodinamia") || findProtocol("hemodinamica"), { title: "Hemodinamia de urgencias", category: "Flujo", page: "Doc. 2026", summary: "Acceso al flujo vigente de hemodinamia de urgencias 2026.", tags: ["Hemodinamia", "Urgencias", "Cardiologia", "2026"], warning: "Pendiente anexar PDF 2026 al repositorio." });
-  renameProtocol(findProtocol("urologia", "urgencia") || findProtocol("urologica", "urgencia"), { title: "Urgencia urologica", category: "Flujo", page: "Doc. 2026", summary: "Flujo HEDI 2026 para patologia urologica de urgencia.", tags: ["Urologia", "Urgencia", "HEDI", "2026"], warning: "Pendiente anexar PDF Urologia de urgencias HEDI 2026." });
-  renameProtocol(findProtocol("radiologia", "intervencional"), { title: "Neurologia", category: "Flujo", page: "Doc. 2026", summary: "Flujo de neurologia asociado a neuroradiologia intervencional de urgencias y evaluacion neurologica a distancia ACV.", tags: ["Neurologia", "Neuroradiologia intervencional", "ACV", "2026"], warning: "El boton antes llamado Radiologia intervencional ahora se muestra como Neurologia. Pendiente anexar PDF 2026 si corresponde." });
-  renameProtocol(findProtocol("columna"), { title: "Cirugia de columna", category: "Flujo", page: "Doc. 2026", summary: "Flujo 2026 para patologia aguda de columna y coordinacion con centro de referencia.", tags: ["Cirugia de columna", "Columna", "HDSR", "Neurocirugia", "2026"], warning: "Pendiente anexar PDF Patologia aguda de columna 2026." });
+  const replaceProtocol = (matchers, title, data, insertAfterTitle = null) => {
+    let target = null;
+    for (const matcher of matchers) {
+      target = findProtocol(...matcher);
+      if (target) break;
+    }
+    if (target) {
+      Object.assign(target, data, { title });
+      target.tags = unique(data.tags || target.tags || []);
+      return target;
+    }
+    return upsertByTitle(title, data, insertAfterTitle);
+  };
 
-  const neurologia = findProtocol("neurologia");
-  if (neurologia) {
-    neurologia.title = "Neurologia";
-    neurologia.category = "Flujo";
-    neurologia.page = "Doc. 2026";
-    neurologia.summary = "Flujo unico para neuroradiologia intervencional de urgencias 2026 y evaluacion neurologica a distancia en ACV.";
-    neurologia.tags = unique(["Neurologia", "Neuroradiologia intervencional", "ACV", "Trombolisis", "Trombectomia", "2026"]);
-    neurologia.moments = (neurologia.moments || []).filter((moment) => !normalize(moment.title).includes("donante")).map((moment) => {
-      if (normalize(moment.title).includes("neurorradiologia")) return { ...moment, title: "1. Neuroradiologia intervencional de urgencias" };
-      if (normalize(moment.title).includes("distancia")) return { ...moment, title: "2. Evaluacion neurologica a distancia ACV" };
-      return moment;
-    });
-    neurologia.flow = ["Identificar si corresponde neuroradiologia intervencional o evaluacion neurologica a distancia por ACV.", "Contactar al referente indicado segun el flujo vigente.", "Coordinar Gestion de Camas CASR si requiere procedimiento, traslado, cama o retorno.", "Registrar indicaciones y comunicacion en la ficha clinica."];
-  }
+  // Elimina residuos de parches intermedios si quedaron persistidos en el arreglo.
+  removeMatching("hemodinamia de urgencia 2026");
+  removeMatching("radiologia intervencional de urgencia 2026");
+  removeMatching("patologia aguda de columna 2026");
+  removeMatching("urologia de urgencia hsr 2026");
+  removeMatching("urologia de urgencia hedi 2026");
+  removeMatching("ecografia doppler extremidades 2026");
+  removeMatching("patologia arterial de urgencia 2026");
+  removeMatching("evaluacion neurologica posible donante 2026");
+  removeMatching("ecocardiografia posible potencial donante 2026");
+  removeMatching("neurorradiologia intervencional de urgencia 2026");
+  removeMatching("evaluacion neurologica a distancia acv 2026");
+  removeMatching("neurologia integrada 2026");
+  removeMatching("posible donante 2026");
 
-  removeProtocols("posible", "donante");
-  protocols.splice(protocols.indexOf(neurologia) >= 0 ? protocols.indexOf(neurologia) + 1 : protocols.length, 0, {
-    title: "Posible donante", category: "Protocolo", page: "Doc. 2026", summary: "Protocolo unico para evaluacion neurologica y ecografia de posible o potencial donante 2026.", tags: ["Posible donante", "Potencial donante", "Evaluacion neurologica", "Ecografia", "2026"], hidePriority: true,
-    fields: [["Alcance", "Paciente posible o potencial donante que requiere coordinacion segun protocolo vigente."], ["Evaluacion neurologica", "Activar evaluacion neurologica de posible donante 2026 segun disponibilidad y conducto local."], ["Ecografia", "Coordinar ecografia de posible/potencial donante 2026 segun indicacion del equipo responsable."], ["Registro", "Dejar trazabilidad de contactos, horarios e indicaciones en ficha clinica."]],
-    flow: ["Confirmar que el paciente corresponde a posible o potencial donante.", "Coordinar evaluacion neurologica segun protocolo 2026.", "Coordinar ecografia de posible/potencial donante cuando corresponda.", "Registrar responsables, horarios y respuesta de la red."], warning: "Pendiente anexar PDFs 2026 de evaluacion neurologica y ecografia de posible/potencial donante."
+  replaceProtocol([["hemodinamia"]], "Hemodinamia de urgencia", {
+    category: "Flujo",
+    page: "Manual SSMSO 2026 · p. 12-14",
+    summary: "Flujo vigente para activación de hemodinamia de urgencia en HSR.",
+    tags: withTags("Hemodinamia", "IAM SDST", "Shock cardiogénico", "UCO HSR"),
+    fields: [
+      ["Responsable", "Hemodinamia HSR."],
+      ["Centro", "Hospital Dr. Sótero del Río."],
+      ["Activación final", "Residente UCO HSR activa al hemodinamista."],
+      ["Coordinación", `Avisar a Coordinador Médico UEH HSR ${COORD_HSR} y llamar Articulador SSMSO ${ARTICULADOR}.`],
+      ["Teléfonos", HSR_PHONE]
+    ],
+    pathologies: [["Criterios de llamado", [
+      "IAM con SDST",
+      "Shock cardiogénico",
+      "Angina post PTCA reciente",
+      "Sospecha de complicación mecánica del IAM",
+      "IAM SSDST con angina refractaria o compromiso hemodinámico",
+      "Angina post infarto reciente",
+      "BCRI con angina",
+      "Tormenta eléctrica en SCA",
+      "Drenaje pericárdico de urgencia",
+      "Trombolisis pulmonar mecánica por TEP masivo"
+    ]]],
+    flow: [
+      "Confirmar criterio de hemodinamia de urgencia.",
+      `Avisar a Coordinador Médico UEH HSR ${COORD_HSR} y llamar Articulador SSMSO ${ARTICULADOR}.",
+      "Trasladar a UEH Adultos HSR si corresponde.",
+      "UEH HSR presenta a residente UCO; UCO define pertinencia y activa hemodinamista.",
+      "Coordinar con Gestión de Camas retorno o cama según condición."
+    ],
+    warning: "IAM SDST desde APS debe ir directo a UEH HSR; no demorar en hospital base."
   });
 
-  if (!findProtocol("cirugia vascular")) protocols.splice(protocols.findIndex((item) => item.title === "Cirugia de columna") + 1 || protocols.length, 0, { title: "Cirugia vascular", category: "Flujo", page: "Doc. 2026", summary: "Flujo de patologia arterial de urgencias 2026.", tags: ["Cirugia vascular", "Patologia arterial", "Urgencias", "2026"], hidePriority: true, fields: [["Documento", "Patologia arterial de urgencias 2026."], ["Conducta", "Anexar documento fuente para revisar criterios y activacion."], ["Registro", "Registrar evaluacion, contacto y plan acordado."]], warning: "Pendiente anexar el PDF Patologia arterial de urgencias 2026." });
-
-  const tvp = findProtocol("tvp") || findProtocol("doppler", "inhabil");
-  if (tvp) { tvp.title = "TVP horario inhabil"; tvp.category = "Flujo"; tvp.page = "Doc. 2026"; tvp.summary = "Flujo unico para TVP en horario inhabil, incluyendo ecografia doppler de extremidades 2026."; tvp.tags = unique([...(tvp.tags || []), "Ecografia doppler extremidades", "2026"]); tvp.warning = "Pendiente anexar el PDF Ecografia doppler extremidades 2026."; }
-
-  const loadScriptOnce = (src) => new Promise((resolve, reject) => {
-    const key = src.split("?")[0].replace("./", "");
-    const existing = document.querySelector(`script[src*="${key}"]`);
-    if (existing) { existing.addEventListener("load", resolve, { once: true }); return; }
-    const script = document.createElement("script");
-    script.src = src;
-    script.defer = true;
-    script.addEventListener("load", resolve, { once: true });
-    script.addEventListener("error", reject, { once: true });
-    document.body.append(script);
+  replaceProtocol([["urgencias", "urologicas"], ["urologia", "urgencia"], ["urologica", "urgencia"]], "Urgencia urológica", {
+    category: "Flujo",
+    page: "Manual SSMSO 2026 · p. 24-25",
+    summary: "Flujo HEDI 2026 para patología urológica de urgencia; confirmar rotativa y centro receptor según jefatura.",
+    tags: withTags("Urología", "HEDI", "Fournier", "Testículo agudo", "Urolitiasis"),
+    fields: [
+      ["Centro operativo", "HEDI para el flujo principal solicitado; HPH puede requerir HEDI o HSR según rotativa/pertinencia."],
+      ["Activación", "Médico jefe de turno de cirugía UEH Adultos HEDI."],
+      ["Articulador", ARTICULADOR],
+      ["Plazos", "Respuesta de pertinencia ≤2 horas; prestación dentro de 24 horas si cumple criterio."]
+    ],
+    pathologies: [["Criterios de llamado", [
+      "Fournier escrotal-perineal",
+      "Urolitiasis obstructiva unilateral o bilateral",
+      "Testículo agudo",
+      "Nefrectomía por cuadro séptico o hemorrágico",
+      "Nefrostomía por cuadro obstructivo",
+      "Priapismo",
+      "Trauma de pene, escroto o uretra",
+      "Lesión de uréter y/o vejiga",
+      "Trauma complejo de vejiga",
+      "Colecciones o abscesos retroperitoneales",
+      "Hemovejiga"
+    ]]],
+    flow: [
+      "Confirmar criterio urológico urgente.",
+      `Llamar Articulador SSMSO ${ARTICULADOR}.",
+      "Presentar a cirujano de turno UEH Adultos HEDI.",
+      "Cirugía HEDI define pertinencia y contacta al urólogo de llamada.",
+      "Coordinar Gestión de Camas, traslado, procedimiento o retorno."
+    ],
+    warning: "Confirmar rotativa antes de derivar: HPH puede ir a HEDI o HSR según disponibilidad y pertinencia."
   });
 
-  window.setTimeout(() => {
-    loadScriptOnce("./arsenal-terapeutico.js?v=2").then(() => loadScriptOnce("./arsenal-uso-ocasional-fix.js?v=1")).catch(() => {});
-    loadScriptOnce("./gestion-jefatura-estable.js?v=2").catch(() => {});
-  }, 0);
+  replaceProtocol([["radiologia", "intervencional"]], "Radiología intervencional", {
+    category: "Flujo",
+    page: "Manual SSMSO 2026 · p. 18-19",
+    summary: "Flujo 2026 para embolización terapéutica en sangrado activo traumático o no traumático.",
+    tags: withTags("Radiología intervencional", "Embolización", "AngioTAC", "Sangrado activo", "HSR"),
+    fields: [
+      ["Responsable", "Imagenología HSR."],
+      ["Prestación", "Embolización terapéutica."],
+      ["Requisito", "Paciente hemodinámicamente estable y AngioTAC <24 horas con sangrado activo."],
+      ["Activación", "Jefe turno cirugía UEH HSR, Coordinador Medicina Urgencia o Coordinador UTU HSR."],
+      ["Articulador", ARTICULADOR]
+    ],
+    pathologies: [["Criterios de llamado", [
+      "Hemorragia aguda traumática o no traumática en tórax, abdomen, pelvis o extremidades",
+      "Sangrado susceptible de tratamiento endovascular",
+      "Cirugía no resuelve o aumenta morbimortalidad",
+      "AngioTAC <24 h con sangrado activo",
+      "Si hay inestabilidad: cirugía de control de daños antes de activar RI"
+    ]]],
+    flow: [
+      "Confirmar sangrado activo, estabilidad y AngioTAC <24 horas.",
+      "Solicitar evaluación por jefe de turno de cirugía del hospital derivador.",
+      "Presentar a cirugía UEH HSR, Coordinador Medicina Urgencia o UTU según contexto.",
+      `Llamar Articulador SSMSO ${ARTICULADOR}.",
+      "Coordinar traslado, procedimiento y retorno/cama con Gestión de Camas."
+    ],
+    warning: "No activar radiología intervencional en paciente inestable sin control de daños previo."
+  });
 
+  replaceProtocol([["columna"]], "Cirugía de columna", {
+    category: "Flujo",
+    page: "Manual SSMSO 2026 · p. 20-21",
+    summary: "Flujo 2026 para patología aguda de columna y coordinación con HSR.",
+    tags: withTags("Cirugía de columna", "TRM", "Compresión medular", "Absceso peridural", "HSR"),
+    fields: [
+      ["Condición", "Paciente hemodinámicamente estable."],
+      ["Activación", "Traumatólogo de turno UEH HSR o cirujano de turno HSR."],
+      ["Articulador", ARTICULADOR],
+      ["Plazos", "Respuesta de pertinencia ≤2 horas; prestación dentro de 24 horas si corresponde."]
+    ],
+    pathologies: [["Criterios de llamado", [
+      "TRM con compromiso neurológico observado: paraplejia o tetraplejia",
+      "Compresión medular",
+      "Mielitis transversa infecciosa o absceso peridural con compromiso neurológico",
+      "Inestabilidad de columna por trauma sin compromiso neurológico"
+    ]]],
+    flow: [
+      "Confirmar estabilidad hemodinámica y criterio de columna aguda.",
+      `Llamar Articulador SSMSO ${ARTICULADOR}.",
+      "Presentar caso a traumatólogo o jefe de turno UEH HSR.",
+      "HSR define pertinencia y activa especialista de columna.",
+      "Coordinar RNM, traslado, pabellón, cama o retorno según indicación."
+    ],
+    warning: "APS deriva a hospital base; HSR recibe derivación hospitalaria."
+  });
+
+  const neurologia = replaceProtocol([["neurologia"]], "Neurología", {
+    category: "Flujo",
+    page: "Manual SSMSO 2026 · p. 15-17 y 32-33",
+    summary: "Flujo único para neurorradiología intervencional y evaluación neurológica a distancia en ACV/status epiléptico.",
+    tags: withTags("Neurología", "Neurorradiología", "ACV", "Trombectomía", "Trombólisis", "Telemedicina"),
+    fields: [
+      ["Neurorradiología intervencional", "Angiografía cerebral, trombectomía mecánica y embolización."],
+      ["ACV a distancia", "Teleconsulta para ACV isquémico en ventana y status epiléptico refractario."],
+      ["Articulador", ARTICULADOR],
+      ["CUD", "telemedicina.ssmso.cl"],
+      ["Correo HPH", "teleconsultaacv@hurtadohosp.cl"]
+    ],
+    moments: [
+      {
+        title: "1. Neurorradiología intervencional",
+        text: "Para oclusión aguda cerebral, HSA por aneurisma roto, vasoespasmo en HSA, MAV rota u otra hemorragia cerebral.",
+        steps: [
+          "Isquémico: neurólogo HSR/HPH/HEDI llama directamente al neurointervencionista.",
+          `Llamar en paralelo al Articulador SSMSO ${ARTICULADOR}.",
+          "Hemorrágico: solicitar evaluación por neurocirujano HSR; si cumple pertinencia, derivar a UEH HSR."
+        ]
+      },
+      {
+        title: "2. Evaluación neurológica a distancia ACV",
+        text: "Para ACV isquémico en ventana o status epiléptico refractario.",
+        steps: [
+          "Criterios ACV: >18 años, déficit focal <4,5 h, NIHSS ≥4 o déficit discapacitante, MRS ≤3, glicemia 50-400 y TAC sin hemorragia.",
+          `Activar mediante Articulador SSMSO ${ARTICULADOR}.",
+          "Neurólogo abre episodio en CUD y envía enlace de videollamada al correo del hospital."
+        ]
+      }
+    ],
+    flow: [
+      "Definir si corresponde neurointervención, ACV para teleconsulta o status epiléptico.",
+      "Si es neurointervención, contactar neurólogo/neurocirujano según tipo de lesión y llamar Articulador.",
+      "Si es ACV telemático, llamar Articulador para validación y contacto con neurólogo.",
+      "Coordinar Gestión de Camas, traslado, procedimiento o retorno según indicación del especialista."
+    ],
+    warning: "Neurología agrupa neurorradiología intervencional y evaluación neurológica a distancia ACV; no deben mostrarse como botones separados."
+  });
+
+  upsertByTitle("Posible donante", {
+    category: "Protocolo",
+    page: "Manual SSMSO 2026 · p. 26 y 31",
+    summary: "Protocolo único para posible/potencial donante: evaluación neurológica y ecocardiografía.",
+    tags: withTags("Posible donante", "Potencial donante", "Evaluación neurológica", "EEG", "Ecocardiografía", "Procuramiento"),
+    hidePriority: true,
+    fields: [
+      ["Posible donante", "Daño neurológico severo con Glasgow ≤7."],
+      ["Potencial donante", "Muerte encefálica certificada."],
+      ["Evaluación neurológica", "Apoyo para certificación de muerte encefálica e interpretación EEG."],
+      ["Ecocardiografía", "Cardiólogo ecografista para realización e informe si no hay especialista disponible."],
+      ["Activación", "Coordinador Local de Procuramiento activa según rotativa y completa encuesta del proyecto."]
+    ],
+    flow: [
+      "Identificar posible o potencial donante.",
+      "CLP confirma necesidad de evaluación neurológica, EEG o ecocardiografía.",
+      "CLP activa especialista según rotativa y completa encuesta.",
+      "Especialista realiza evaluación/informe.",
+      "Registrar todo en ficha clínica."
+    ],
+    warning: "Este protocolo lo activa el Coordinador Local de Procuramiento, no el médico de urgencia directamente."
+  }, neurologia ? neurologia.title : null);
+
+  upsertByTitle("Cirugía vascular", {
+    category: "Flujo",
+    page: "Manual SSMSO 2026 · p. 27-28",
+    summary: "Flujo 2026 para patología arterial de urgencia con resolución quirúrgica o endovascular en HSR.",
+    tags: withTags("Cirugía vascular", "Patología arterial", "Isquemia", "Aneurisma roto", "Disección aórtica", "HSR"),
+    hidePriority: true,
+    fields: [
+      ["Centro", "HSR."],
+      ["Activación", "Jefe turno cirugía UEH HSR y/o Coordinador UTU HSR."],
+      ["Articulador", ARTICULADOR],
+      ["Destino", "Trauma: unidad indicada por UTU. No traumático: UEH HSR. APS deriva a hospital base."]
+    ],
+    pathologies: [["Criterios de llamado", [
+      "Disección aórtica tipo B complicada",
+      "Aneurisma roto",
+      "Reconstrucción arterial compleja",
+      "Isquemia aguda Rutherford 2b",
+      "Isquemia mesentérica aguda",
+      "Isquemia territorio esplácnico",
+      "Flegmasia"
+    ]]],
+    flow: [
+      "Confirmar criterio vascular arterial.",
+      `Llamar Articulador SSMSO ${ARTICULADOR}.",
+      "Presentar a cirugía/UTU HSR.",
+      "HSR define pertinencia y activa cirugía vascular.",
+      "Coordinar traslado, procedimiento, cama HSR o retorno según condición."
+    ],
+    warning: "El documento tiene una errata donde menciona urólogo; por contexto corresponde cirugía vascular."
+  }, "Cirugía de columna");
+
+  const tvp = replaceProtocol([["tvp"], ["doppler", "inhabil"]], "TVP horario inhábil", {
+    category: "Flujo",
+    page: "Manual SSMSO 2026 · p. 29-30",
+    summary: "Flujo 2026 para sospecha de TVP en horario inhábil con ecografía Doppler de extremidades en HSR.",
+    tags: withTags("TVP", "Doppler", "Horario inhábil", "Imagenología HSR", "Sala 9"),
+    hidePriority: true,
+    fields: [
+      ["Horario", "Sábados, domingos y festivos de 09:00 a 12:00."],
+      ["Población", "Mayores de 15 años, ambulatorios en UEH, con sospecha de TVP de extremidades superiores o inferiores."],
+      ["Cupos", "5 cupos diarios HPH/HEDI/CHSJM: 09:20, 09:50, 10:20, 10:50 y 11:20."],
+      ["Coordinación", `Hábil: Coordinador Red Urgencia ${COORD_RED}. Inhábil: Articuladora SSMSO ${ARTICULADOR}.`],
+      ["Destino", "Sala de ecografía N°9, Block Central HSR. No pasar por UEH HSR."]
+    ],
+    flow: [
+      "Confirmar sospecha de TVP en paciente ambulatorio UEH >15 años.",
+      "Confirmar que sea sábado, domingo o festivo entre 09:00 y 12:00.",
+      "Llamar para asignación de hora antes de completar formulario.",
+      "Enviar directo a sala 9 de Imagenología HSR con orden firmada y timbrada por jefe de turno.",
+      "Paciente retorna al hospital base; informe disponible en RISPACS en máximo 1 hora."
+    ],
+    warning: "Cambio clave 2026: el paciente va directo a Imagenología HSR; no debe pasar por UEH HSR."
+  });
+
+  // Mantiene orden clínico de los flujos nuevos si se agregaron al final.
+  const desiredOrder = [
+    "Hemodinamia de urgencia",
+    "Neurología",
+    "Radiología intervencional",
+    "Cirugía de columna",
+    "Urgencia urológica",
+    "Cirugía vascular",
+    "TVP horario inhábil",
+    "Posible donante"
+  ];
+  protocols.sort((a, b) => {
+    const ai = desiredOrder.findIndex((title) => normalize(title) === normalize(a.title));
+    const bi = desiredOrder.findIndex((title) => normalize(title) === normalize(b.title));
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
+  window.__CRS_CONSULTORIA_2026_CANONICAL__ = true;
   if (typeof renderRoute === "function") renderRoute();
 })();
