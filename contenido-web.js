@@ -1,64 +1,28 @@
 (() => {
-  const STORAGE_KEY = "crsGestionContentV2";
-  const KINDS = ["news", "education", "papers", "procedures"];
-
-  // Contenido publico versionado con la web.
-  // Para publicar noticias o papers visibles desde cualquier dispositivo,
-  // se agregan items en estas listas y se sube el cambio al repositorio.
-  const STATIC_CONTENT = {
+  // Fuente publica de Noticias, Educacion, Paper del mes y Procedimientos.
+  // Todo lo que este aqui queda versionado junto a la web y se ve desde cualquier navegador.
+  // Los campos aceptados son: id, title, description, url, eventUrl, month, category, createdAt.
+  window.CRS_STATIC_CONTENT = {
     news: [],
-    education: [],
+    education: [
+      {
+        id: "educacion-youtube-hph",
+        title: "Canal de YouTube Hospital Padre Hurtado",
+        description: "Material audiovisual institucional disponible para el equipo.",
+        url: "https://youtube.com/@hospitalpadrehurtado9819?si=oDPWrfC0hXeBHHZs",
+        category: "Canal",
+        createdAt: "2026-05-20T00:00:00.000Z"
+      },
+      {
+        id: "educacion-podcast-hph",
+        title: "Podcast Hospital Padre Hurtado",
+        description: "Episodios y contenido de audio para educacion medica.",
+        url: "https://open.spotify.com/show/4Yyb5LH2H6mj9NyDVajUMQ?si=LHra3q1PQl2s1-JQ8NysNg",
+        category: "Podcast",
+        createdAt: "2026-05-20T00:00:00.000Z"
+      }
+    ],
     papers: [],
     procedures: []
   };
-
-  window.CRS_STATIC_CONTENT = STATIC_CONTENT;
-
-  function readStore() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
-    } catch {
-      return {};
-    }
-  }
-
-  function writeStore(value) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-    } catch {
-      // Si el navegador bloquea localStorage, la app igual puede seguir mostrando la web base.
-    }
-  }
-
-  function normalizeItem(kind, item, index) {
-    const createdAt = item.createdAt || item.fecha || new Date().toISOString();
-    const month = item.month || String(createdAt).slice(0, 7);
-    return {
-      id: item.id || `web-${kind}-${month}-${index + 1}`,
-      title: item.title || item.titulo || "Contenido publicado",
-      description: item.description || item.descripcion || "",
-      url: item.url || item.link || "",
-      eventUrl: item.eventUrl || item.inscripcion || "",
-      month,
-      category: item.category || item.categoria || "",
-      createdAt,
-      staticContent: true
-    };
-  }
-
-  function mergeList(kind, storedList = [], staticList = []) {
-    const staticItems = staticList.map((item, index) => normalizeItem(kind, item, index));
-    const staticIds = new Set(staticItems.map((item) => item.id));
-    const localItems = (Array.isArray(storedList) ? storedList : [])
-      .filter((item) => !item.staticContent && !staticIds.has(item.id));
-    return [...staticItems, ...localItems]
-      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  }
-
-  const current = readStore();
-  const merged = { ...current };
-  KINDS.forEach((kind) => {
-    merged[kind] = mergeList(kind, current[kind], STATIC_CONTENT[kind] || []);
-  });
-  writeStore(merged);
 })();
