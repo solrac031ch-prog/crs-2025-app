@@ -11,3 +11,11 @@ window.CRS_SUPABASE_CONFIG = {
     admins: "crs_admins"
   }
 };
+
+window.addEventListener("load", () => {
+  if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
+  const script = document.createElement("script");
+  script.src = "./supabase-jefatura-panel.js?v=1";
+  script.dataset.supabaseJefaturaPanel = "true";
+  document.body.append(script);
+});
