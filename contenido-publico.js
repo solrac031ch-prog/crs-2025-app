@@ -6,6 +6,7 @@
     "#/gestion/educacion",
     "#/gestion/paper",
     "#/gestion/procedimientos",
+    "#/educacion",
     "#/jefatura"
   ]);
 
@@ -35,7 +36,8 @@
   function activate(pageId) {
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === pageId));
     $$("[data-route-link]").forEach((link) => {
-      link.classList.toggle("active", link.dataset.routeLink === "gestion");
+      const activeRoute = pageId === "educationPage" ? "educacion" : "gestion";
+      link.classList.toggle("active", link.dataset.routeLink === activeRoute);
     });
   }
 
@@ -51,6 +53,10 @@
 
   function nav() {
     return `<div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestion</a><a class="back-link" href="#/inicio">Inicio</a></div>`;
+  }
+
+  function educationNav() {
+    return `<div class="route-actions"><a class="back-link" href="#/inicio">Inicio</a><a class="back-link" href="#/gestion/educacion">Abrir en Gestion</a></div>`;
   }
 
   function action(item, label = "Abrir") {
@@ -80,6 +86,13 @@
     $("#managementTitle").textContent = title;
     const items = sorted(data()[kind] || []);
     $("#managementContent").innerHTML = `<div class="public-shell">${nav()}<section class="public-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section><section class="public-grid">${items.length ? items.map((item) => card(item, kind)).join("") : `<div class="public-empty">${esc(emptyText)}</div>`}</section></div>`;
+  }
+
+  function renderStandaloneEducation() {
+    activate("educationPage");
+    $("#educationTitle").textContent = "Educacion medica";
+    const items = sorted(data().education || []);
+    $("#educationContent").innerHTML = `<div class="public-shell">${educationNav()}<section class="public-hero"><h2>Educacion medica</h2><p>Canales, podcast y material docente publico. Esta vista usa la misma fuente que Gestion y se ve desde cualquier navegador.</p></section><section class="public-grid">${items.length ? items.map((item) => card(item, "education")).join("") : `<div class="public-empty">Aun no hay material docente publicado.</div>`}</section></div>`;
   }
 
   function monthLabel(item) {
@@ -141,6 +154,7 @@
     if (current === "#/gestion/educacion") renderEducation();
     if (current === "#/gestion/paper") renderPaper();
     if (current === "#/gestion/procedimientos") renderProcedures();
+    if (current === "#/educacion") renderStandaloneEducation();
     if (current === "#/jefatura") setTimeout(patchJefatura, 50);
   }
 
