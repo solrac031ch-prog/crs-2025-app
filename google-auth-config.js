@@ -11,3 +11,18 @@ window.CRS_GOOGLE_AUTH_CONFIG = {
   localSessionBridgeKey: "crsAuthSessionV3",
   notes: "Pegar appsScriptUrl despues de desplegar el Web App de Google Apps Script. Mientras este vacio, la app queda en modo preparado pero no valida contra Google."
 };
+
+(() => {
+  const scripts = [
+    { id: "crs-contenidos-drive-loader", src: "./contenidos-drive.js?v=1" },
+    { id: "crs-arsenal-terapeutico-loader", src: "./arsenal-terapeutico.js?v=1" }
+  ];
+  scripts.forEach((item) => {
+    if (document.getElementById(item.id)) return;
+    const script = document.createElement("script");
+    script.id = item.id;
+    script.src = item.src;
+    script.defer = true;
+    document.head.append(script);
+  });
+})();
