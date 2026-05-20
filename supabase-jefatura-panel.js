@@ -35,6 +35,13 @@
     return data?.user || null;
   }
 
+  function activateChiefPage() {
+    document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.id === "chiefPage"));
+    document.querySelectorAll("[data-route-link]").forEach((link) => {
+      link.classList.toggle("active", link.dataset.routeLink === "jefatura");
+    });
+  }
+
   function addStyle() {
     if ($("#supabase-jefatura-style")) return;
     const style = document.createElement("style");
@@ -43,6 +50,18 @@
       .sb-chief-shell{display:grid;gap:14px}.sb-chief-hero{display:grid;gap:12px;padding:clamp(20px,4vw,34px);border-radius:16px;background:linear-gradient(135deg,#082f49,#0f766e 56%,#16a34a);color:#fff;box-shadow:0 24px 60px rgba(15,23,42,.22)}.sb-chief-hero h2{margin:0;color:#fff;font-size:clamp(2rem,5vw,3.35rem);line-height:1}.sb-chief-hero p{margin:0;color:#e0f7f2;max-width:900px}.sb-chief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.sb-chief-card{display:grid;gap:10px;padding:16px;border:1px solid #dfe8e4;border-left:6px solid #0ea5e9;border-radius:14px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.08)}.sb-chief-card h3{margin:0;color:#10201c}.sb-chief-card p{margin:0;color:#52615c}.sb-chief-card label{display:grid;gap:5px;font-weight:850;color:#24312d}.sb-chief-card input,.sb-chief-card select,.sb-chief-card textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff;color:#10201c}.sb-chief-card textarea{min-height:86px}.sb-chief-card.amber{border-left-color:#f59e0b}.sb-chief-card.purple{border-left-color:#7c3aed}.sb-chief-card.red{border-left-color:#dc2626}.sb-chief-card.green{border-left-color:#16a34a}.sb-chief-card.teal{border-left-color:#0f766e}.sb-chief-card.blue{border-left-color:#2563eb}.sb-chief-status{grid-column:1/-1}.sb-chief-actions{display:flex;gap:10px;flex-wrap:wrap}.sb-mini{font-size:.88rem;color:#64748b}.sb-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px;border:1px solid #e5ebe8;border-radius:10px;background:#fff}.sb-list{display:grid;gap:8px}.sb-ok{border:1px solid #bbf7d0;background:#f0fdf4;color:#14532d;border-radius:12px;padding:10px;font-weight:800;line-height:1.35}.sb-warn{border:1px solid #fde68a;background:#fffbeb;color:#713f12;border-radius:12px;padding:10px;font-weight:800;line-height:1.35}.sb-error{border:1px solid #fecaca;background:#fff1f2;color:#7f1d1d;border-radius:12px;padding:10px;font-weight:800;line-height:1.35}@media(max-width:680px){.sb-chief-actions{display:grid}.sb-chief-actions .document-button,.sb-chief-actions .delete-button{width:100%;justify-content:center}.sb-row{grid-template-columns:1fr}}
     `;
     document.head.append(style);
+  }
+
+  function routeLinks() {
+    return `<div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestion</a><a class="back-link" href="#/inicio">Inicio</a></div>`;
+  }
+
+  function heroHtml(title, text) {
+    return `<section class="sb-chief-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>`;
+  }
+
+  function loginHtml() {
+    return `<div class="sb-chief-shell" data-sb-chief-shell>${routeLinks()}${heroHtml("Modulo Jefatura global", "Panel conectado a Supabase. Inicia sesion para publicar noticias, papers, educacion, procedimientos, documentos, especialistas, UHD y flujos.")}<section class="sb-chief-grid"><article class="sb-chief-card blue sb-chief-status"><h3>Ingreso Supabase</h3><div class="sb-ok">Supabase esta conectado. Usa el usuario creado en Supabase Authentication.</div><form class="sb-login" data-sb-login><label>Correo<input name="email" type="email" required autocomplete="email"></label><label>Clave Supabase<input name="password" type="password" autocomplete="current-password" placeholder="Dejar vacio para enlace por correo"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article></section></div>`;
   }
 
   function statusCard(user) {
@@ -86,7 +105,7 @@
   }
 
   function panelHtml(user) {
-    return `<div class="sb-chief-shell" data-sb-chief-shell><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestion</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="sb-chief-hero"><h2>Modulo Jefatura global</h2><p>Panel conectado a Supabase para publicar noticias, papers, educacion, procedimientos, documentos, especialistas, UHD y flujos desde la misma web.</p></section><section class="sb-chief-grid">${statusCard(user)}${paperCard()}${newsEducationCard()}${procedureCard()}${callCard("especialistas", "Especialistas de llamado", "Publica el documento o planilla vigente de especialistas.")}${callCard("uhd", "UHD - Unidad de Hospitalizacion Domiciliaria", "Publica disponibilidad o documento vigente de UHD.")}${baseDocumentCard("medicamentosUsoOcasional", "Medicamentos de uso ocasional", "Actualiza el formulario global de medicamentos de uso ocasional.")}${baseDocumentCard("leyUrgencias", "Ley de Urgencias", "Actualiza documentos o links de activacion / consentimiento.")}${baseDocumentCard("notificacionObligatoria", "Notificacion obligatoria", "Actualiza formularios o documentos asociados a notificacion obligatoria.")}${newFormCard()}${newFlowCard()}${usersCard()}${deleteInfoCard()}</section></div>`;
+    return `<div class="sb-chief-shell" data-sb-chief-shell>${routeLinks()}${heroHtml("Modulo Jefatura global", "Panel conectado a Supabase para publicar noticias, papers, educacion, procedimientos, documentos, especialistas, UHD y flujos desde la misma web.")}<section class="sb-chief-grid">${statusCard(user)}${paperCard()}${newsEducationCard()}${procedureCard()}${callCard("especialistas", "Especialistas de llamado", "Publica el documento o planilla vigente de especialistas.")}${callCard("uhd", "UHD - Unidad de Hospitalizacion Domiciliaria", "Publica disponibilidad o documento vigente de UHD.")}${baseDocumentCard("medicamentosUsoOcasional", "Medicamentos de uso ocasional", "Actualiza el formulario global de medicamentos de uso ocasional.")}${baseDocumentCard("leyUrgencias", "Ley de Urgencias", "Actualiza documentos o links de activacion / consentimiento.")}${baseDocumentCard("notificacionObligatoria", "Notificacion obligatoria", "Actualiza formularios o documentos asociados a notificacion obligatoria.")}${newFormCard()}${newFlowCard()}${usersCard()}${deleteInfoCard()}</section></div>`;
   }
 
   async function renderGlobalList() {
@@ -131,18 +150,18 @@
     if (rendering || route() !== "#/jefatura" || !enabled()) return;
     const content = $("#chiefContent");
     if (!content) return;
-    const user = await currentUser();
-    if (!user) return;
 
     rendering = true;
+    activateChiefPage();
     addStyle();
+    const user = await currentUser();
     content.dataset.sbChiefReady = "true";
-    content.innerHTML = panelHtml(user);
-    await Promise.all([renderGlobalList(), renderAdminList()]);
+    content.innerHTML = user ? panelHtml(user) : loginHtml();
+    if (user) await Promise.all([renderGlobalList(), renderAdminList()]);
     rendering = false;
   }
 
-  function scheduleRender(delay = 320) {
+  function scheduleRender(delay = 30) {
     clearTimeout(scheduled);
     scheduled = setTimeout(render, delay);
   }
@@ -161,19 +180,21 @@
     if (rendering || route() !== "#/jefatura" || !enabled()) return;
     const content = $("#chiefContent");
     if (!content) return;
-    if (!content.querySelector("[data-sb-chief-shell]") || content.querySelector("[data-sb-panel]")) {
-      scheduleRender(380);
+    if (!content.querySelector("[data-sb-chief-shell]") || content.querySelector("[data-sb-panel]") || content.textContent.includes("Ingresa con Google")) {
+      scheduleRender(40);
     }
   });
+
+  window.CRS_SUPABASE_JEFATURA = { render, scheduleRender };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       observer.observe(document.body, { childList: true, subtree: true });
-      scheduleRender(500);
+      scheduleRender(20);
     });
   } else {
     observer.observe(document.body, { childList: true, subtree: true });
-    scheduleRender(500);
+    scheduleRender(20);
   }
-  window.addEventListener("hashchange", () => scheduleRender(500));
+  window.addEventListener("hashchange", () => scheduleRender(20));
 })();
