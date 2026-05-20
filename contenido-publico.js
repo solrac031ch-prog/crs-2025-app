@@ -1,7 +1,6 @@
 (() => {
   const PUBLISHED_BASE = "https://solrac031ch-prog.github.io/crs-2025-app/";
   const ROUTES = new Set([
-    "#/gestion",
     "#/gestion/noticias",
     "#/gestion/educacion",
     "#/gestion/paper",
@@ -87,7 +86,7 @@
   function renderGestion() {
     activate("managementPage");
     $("#managementTitle").textContent = "Gestion";
-    $("#managementContent").innerHTML = `<div class="public-shell"><section class="public-hero"><h2>Gestion de Urgencia</h2><p>Noticias, educacion y paper del mes ahora usan contenido publico incluido en la misma web. Lo publicado aqui se ve desde cualquier navegador sin Drive.</p><div class="public-actions"><a class="document-button" href="#/gestion/noticias">Noticias</a><a class="document-button" href="#/gestion/educacion">Educacion</a><a class="document-button" href="#/gestion/paper">Paper del mes</a><a class="document-button" href="#/gestion/procedimientos">Procedimientos</a></div></section><section class="public-grid"><a class="public-card blue" href="#/gestion/noticias"><strong>Noticias</strong><span>Avisos, posters, cursos y enlaces de inscripcion publicados en el repositorio.</span></a><a class="public-card purple" href="#/gestion/educacion"><strong>Educacion medica</strong><span>Canales, podcast y material docente visible para todo el equipo.</span></a><a class="public-card amber" href="#/gestion/paper"><strong>Paper del mes</strong><span>Ultimo paper destacado y repositorio mensual publico.</span></a></section><div class="public-note">Puedes preparar borradores desde Jefatura. Para publicarlos globalmente, hay que agregarlos a la web publicada.</div></div>`;
+    $("#managementContent").innerHTML = `<div class="public-shell"><section class="public-hero"><h2>Gestion de Urgencia</h2><p>Noticias, educacion y paper del mes ahora usan contenido publico incluido en la misma web. Lo publicado aqui se ve desde cualquier navegador sin Drive.</p><div class="public-actions"><a class="document-button" href="#/jefatura">Modulo Jefatura</a><a class="document-button" href="#/gestion/noticias">Noticias</a><a class="document-button" href="#/gestion/educacion">Educacion</a><a class="document-button" href="#/gestion/paper">Paper del mes</a><a class="document-button" href="#/gestion/procedimientos">Procedimientos</a></div></section><section class="public-grid"><a class="public-card red" href="#/jefatura"><strong>Modulo Jefatura</strong><span>Preparar publicaciones, documentos y administracion.</span></a><a class="public-card blue" href="#/gestion/noticias"><strong>Noticias</strong><span>Avisos, posters, cursos y enlaces de inscripcion publicados en el repositorio.</span></a><a class="public-card purple" href="#/gestion/educacion"><strong>Educacion medica</strong><span>Canales, podcast y material docente visible para todo el equipo.</span></a><a class="public-card amber" href="#/gestion/paper"><strong>Paper del mes</strong><span>Ultimo paper destacado y repositorio mensual publico.</span></a></section><div class="public-note">Puedes preparar borradores desde Jefatura. Para publicarlos globalmente, hay que agregarlos a la web publicada.</div></div>`;
   }
 
   function card(item, kind) {
@@ -145,13 +144,14 @@
 
   function patchJefatura() {
     if (route() !== "#/jefatura") return;
+    $$("[data-route-link]").forEach((link) => link.classList.toggle("active", link.dataset.routeLink === "jefatura"));
     const content = $("#chiefContent");
-    if (!content || content.dataset.publicPatch === "true") return;
-    content.dataset.publicPatch = "true";
+    if (!content || content.querySelector("[data-public-jefatura-notice]")) return;
 
     const forms = $$('form[data-content]', content);
     const notice = document.createElement("article");
     notice.className = "admin-card public-admin-card";
+    notice.dataset.publicJefaturaNotice = "true";
     notice.innerHTML = `<h3>Publicacion global de noticias, paper y educacion</h3><p>El modulo de jefatura sigue activo para preparar contenido. Sin backend, lo que subas aqui queda como borrador local de este navegador. Para publicarlo mundialmente, enviame el contenido y lo dejo en el repositorio de la web.</p><div class="public-local-warning">Publicacion global = queda en contenido-web.js y se ve desde cualquier computador/celular. Borrador local = queda solo en este navegador.</div><div class="public-actions"><a class="document-button" href="${PUBLISHED_BASE}#/gestion/noticias" target="_blank" rel="noopener noreferrer">Ver noticias publicas</a><a class="document-button" href="${PUBLISHED_BASE}#/gestion/paper" target="_blank" rel="noopener noreferrer">Ver paper del mes</a><a class="document-button" href="${PUBLISHED_BASE}#/gestion/educacion" target="_blank" rel="noopener noreferrer">Ver educacion</a></div>`;
     const grid = $("#chiefContent .gestion-grid");
     if (grid) grid.prepend(notice);
@@ -171,7 +171,6 @@
     addStyle();
     const current = route();
     if (!ROUTES.has(current)) return;
-    if (current === "#/gestion") renderGestion();
     if (current === "#/gestion/noticias") renderNews();
     if (current === "#/gestion/educacion") renderEducation();
     if (current === "#/gestion/paper") renderPaper();
