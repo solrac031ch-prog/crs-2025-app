@@ -80,6 +80,14 @@
     document.head.append(style);
   }
 
+  function loadJefaturaUsuarios() {
+    if (document.querySelector("script[data-jefatura-usuarios]")) return;
+    const script = document.createElement("script");
+    script.src = "./jefatura-usuarios.js?v=1";
+    script.dataset.jefaturaUsuarios = "true";
+    (document.body || document.documentElement).append(script);
+  }
+
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
     if (!/^https:$/.test(location.protocol)) return;
@@ -101,8 +109,16 @@
   window.CRS_REGISTER_SERVICE_WORKER = registerServiceWorker;
 
   installResponsiveGuard();
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installResponsiveGuard, { once: true });
-  else installResponsiveGuard();
+  loadJefaturaUsuarios();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      installResponsiveGuard();
+      loadJefaturaUsuarios();
+    }, { once: true });
+  } else {
+    installResponsiveGuard();
+    loadJefaturaUsuarios();
+  }
 
   if (document.readyState === "complete") registerServiceWorker();
   else window.addEventListener("load", registerServiceWorker, { once: true });
