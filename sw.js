@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-global-v63";
+const CACHE_NAME = "crs-hph-global-v64";
 const APP_SHELL = [
   "./",
   "./index.html",
