@@ -18,6 +18,14 @@
     $$("[data-route-link]").forEach((link) => link.classList.toggle("active", link.dataset.routeLink === activeRoute));
   }
 
+  function cleanupLegacyCopy(hash = route()) {
+    if (hash !== "#/llamados") return;
+    const uhdNote = $("#uhdDocumentAction p");
+    if (uhdNote && /google\s+drive/i.test(uhdNote.textContent || "")) {
+      uhdNote.textContent = "Publicar la disponibilidad vigente desde Jefatura para que quede disponible globalmente.";
+    }
+  }
+
   function renderGestion() {
     addStyle();
     activate("managementPage", "gestion");
@@ -49,6 +57,8 @@
     if (hash === "#/jefatura") return renderJefaturaShell();
     if (["#/gestion/noticias", "#/gestion/educacion", "#/gestion/paper", "#/gestion/procedimientos", "#/educacion", "#/formularios", "#/llamados", "#/especialidades"].includes(hash)) {
       window.CRS_SUPABASE?.renderPublicRoute?.();
+      cleanupLegacyCopy(hash);
+      setTimeout(() => cleanupLegacyCopy(hash), 260);
     }
   }
 
