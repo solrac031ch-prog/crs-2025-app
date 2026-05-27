@@ -64,14 +64,15 @@
       #chiefContent,#chiefContent *,#managementContent,#managementContent *{min-width:0}
       #chiefContent [data-sb-chief-shell],#managementContent .public-shell{max-width:100%;overflow:hidden}
       #chiefContent .sb-chief-hero,#chiefContent .sb-chief-card,#chiefContent .sb-ok,#chiefContent .sb-warn,#chiefContent .sb-error{max-width:100%;overflow-wrap:anywhere;word-break:normal}
+      #chiefContent .sb-chief-hero h2{max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}
       #chiefContent .sb-chief-grid{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))!important}
       #chiefContent input,#chiefContent select,#chiefContent textarea,#chiefContent button{max-width:100%}
       @media(max-width:680px){
         .layout{width:100%;padding-left:12px!important;padding-right:12px!important}
         .route-actions{grid-template-columns:1fr!important}
         #chiefContent .sb-chief-grid{grid-template-columns:minmax(0,1fr)!important}
-        #chiefContent .sb-chief-hero{padding:20px!important;border-radius:14px!important}
-        #chiefContent .sb-chief-hero h2{font-size:clamp(1.7rem,8vw,2.15rem)!important;line-height:1.06!important}
+        #chiefContent .sb-chief-hero{padding:18px!important;border-radius:14px!important;overflow:visible!important}
+        #chiefContent .sb-chief-hero h2{font-size:clamp(1.45rem,6.8vw,1.85rem)!important;line-height:1.08!important}
         #chiefContent .sb-chief-hero p{font-size:.96rem!important;line-height:1.45!important}
         #chiefContent .sb-chief-card{padding:14px!important;border-radius:12px!important}
       }
