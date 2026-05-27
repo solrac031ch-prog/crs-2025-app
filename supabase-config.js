@@ -14,6 +14,7 @@ window.CRS_SUPABASE_CONFIG = {
 
 (() => {
   let insertShieldInstalled = false;
+  let supabaseFallbackLoading = false;
 
   function route() {
     return location.hash.split("?")[0] || "#/inicio";
@@ -21,6 +22,40 @@ window.CRS_SUPABASE_CONFIG = {
 
   function isJefaturaRoute() {
     return route() === "#/jefatura";
+  }
+
+  function fireSupabaseReady() {
+    try {
+      window.dispatchEvent(new Event("crs:supabase-ready"));
+    } catch (_) {
+      const event = document.createEvent("Event");
+      event.initEvent("crs:supabase-ready", true, true);
+      window.dispatchEvent(event);
+    }
+  }
+
+  function loadSupabaseFallback() {
+    if (window.supabase?.createClient || supabaseFallbackLoading) return;
+    supabaseFallbackLoading = true;
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/@supabase/supabase-js@2";
+    script.crossOrigin = "anonymous";
+    script.onload = () => {
+      supabaseFallbackLoading = false;
+      fireSupabaseReady();
+      setTimeout(() => {
+        window.CRS_SUPABASE?.renderPublicRoute?.();
+        window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0);
+      }, 80);
+    };
+    script.onerror = () => {
+      supabaseFallbackLoading = false;
+    };
+    document.head.append(script);
+  }
+
+  function ensureSupabaseClient() {
+    if (!window.supabase?.createClient) setTimeout(loadSupabaseFallback, 80);
   }
 
   function loadSupabaseJefaturaPanel() {
@@ -72,14 +107,22 @@ window.CRS_SUPABASE_CONFIG = {
   }
 
   function boot() {
+    window.CRS_REGISTER_SERVICE_WORKER?.();
     installLegacyJefaturaShield();
+    ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(40);
     scheduleNormalizeCopy(260);
     scheduleCanonicalJefatura(80);
   }
 
+  window.addEventListener("crs:supabase-ready", () => {
+    window.CRS_SUPABASE?.renderPublicRoute?.();
+    scheduleCanonicalJefatura(30);
+  });
+
   window.addEventListener("hashchange", () => {
+    ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(20);
     scheduleNormalizeCopy(220);
@@ -93,6 +136,7 @@ window.CRS_SUPABASE_CONFIG = {
   }
 
   window.addEventListener("load", () => {
+    ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(80);
     scheduleCanonicalJefatura(80);
