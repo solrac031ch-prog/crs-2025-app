@@ -1,16 +1,42 @@
 {
-  "id": "./index.html",
+  "id": "/crs-2025-app/",
   "name": "CRS HPH 2025",
   "short_name": "CRS HPH",
-  "description": "Derivaciones CRS 2025 para Urgencia Adulto HPH.",
-  "start_url": "./index.html#/inicio",
+  "description": "Derivaciones, formularios, directorio, educacion y gestion de Urgencia Adulto HPH.",
+  "start_url": "./#/inicio",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
   "background_color": "#f6f6f6",
   "theme_color": "#050505",
-  "categories": ["medical", "productivity"],
+  "categories": ["medical", "productivity", "education"],
   "lang": "es-CL",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Especialidades y flujos",
+      "short_name": "Flujos",
+      "description": "Abrir buscador de especialidades y flujos.",
+      "url": "./#/especialidades",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Formularios de turno",
+      "short_name": "Formularios",
+      "description": "Abrir formularios operativos de turno.",
+      "url": "./#/formularios",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Jefatura",
+      "short_name": "Jefatura",
+      "description": "Abrir modulo Jefatura conectado a Supabase.",
+      "url": "./#/jefatura",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "./icon-180.png",
