@@ -33,7 +33,10 @@ window.CRS_SUPABASE_CONFIG = {
     const hash = route();
     const managementEyebrow = document.querySelector("#managementPage .page-head .eyebrow");
     if (managementEyebrow && (hash === "#/gestion" || hash.startsWith("#/gestion/"))) {
-      managementEyebrow.textContent = hash === "#/gestion/pacientes" ? "Gestion pacientes" : "Publicacion global";
+      const nextText = hash === "#/gestion/pacientes" ? "Gestion pacientes" : "Publicacion global";
+      if (managementEyebrow.textContent !== nextText) {
+        managementEyebrow.textContent = nextText;
+      }
     }
 
     if (hash === "#/llamados") {
