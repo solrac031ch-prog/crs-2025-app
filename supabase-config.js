@@ -13,8 +13,12 @@ window.CRS_SUPABASE_CONFIG = {
 };
 
 (() => {
+  function route() {
+    return location.hash.split("?")[0] || "#/inicio";
+  }
+
   function isJefaturaRoute() {
-    return (location.hash.split("?")[0] || "#/inicio") === "#/jefatura";
+    return route() === "#/jefatura";
   }
 
   function loadSupabaseJefaturaPanel() {
@@ -23,6 +27,25 @@ window.CRS_SUPABASE_CONFIG = {
     script.src = "./supabase-jefatura-panel.js?v=3";
     script.dataset.supabaseJefaturaPanel = "true";
     (document.body || document.documentElement).append(script);
+  }
+
+  function normalizeSupabaseCopy() {
+    const hash = route();
+    const managementEyebrow = document.querySelector("#managementPage .page-head .eyebrow");
+    if (managementEyebrow && (hash === "#/gestion" || hash.startsWith("#/gestion/"))) {
+      managementEyebrow.textContent = hash === "#/gestion/pacientes" ? "Gestion pacientes" : "Publicacion global";
+    }
+
+    if (hash === "#/llamados") {
+      const uhdNote = document.querySelector("#uhdDocumentAction p");
+      if (uhdNote && /google\s+drive/i.test(uhdNote.textContent || "")) {
+        uhdNote.textContent = "Publicar la disponibilidad vigente desde Jefatura para que quede disponible globalmente.";
+      }
+    }
+  }
+
+  function scheduleNormalizeCopy(delay = 40) {
+    setTimeout(normalizeSupabaseCopy, delay);
   }
 
   function scheduleCanonicalJefatura(delay = 30) {
@@ -34,6 +57,7 @@ window.CRS_SUPABASE_CONFIG = {
     if (window.__CRS_SUPABASE_JEFATURA_WATCHER__) return;
     window.__CRS_SUPABASE_JEFATURA_WATCHER__ = true;
     const observer = new MutationObserver(() => {
+      normalizeSupabaseCopy();
       if (!isJefaturaRoute() || !window.CRS_SUPABASE?.enabled?.()) return;
       const content = document.querySelector("#chiefContent");
       if (!content) return;
@@ -44,7 +68,13 @@ window.CRS_SUPABASE_CONFIG = {
       }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
-    window.addEventListener("hashchange", () => scheduleCanonicalJefatura(40));
+    window.addEventListener("hashchange", () => {
+      scheduleNormalizeCopy(20);
+      scheduleNormalizeCopy(220);
+      scheduleCanonicalJefatura(40);
+    });
+    scheduleNormalizeCopy(40);
+    scheduleNormalizeCopy(260);
     scheduleCanonicalJefatura(80);
   }
 
@@ -60,5 +90,6 @@ window.CRS_SUPABASE_CONFIG = {
   window.addEventListener("load", () => {
     loadSupabaseJefaturaPanel();
     watchLegacyJefaturaPatches();
+    scheduleNormalizeCopy(80);
   }, { once: true });
 })();
