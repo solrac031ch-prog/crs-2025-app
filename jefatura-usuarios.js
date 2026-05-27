@@ -199,12 +199,11 @@
     if (route() !== "#/jefatura") return;
     const box = $("[data-sb-chief-admin-list]");
     if (!box) return;
-    if (box.dataset.chiefUserActionsReady === "true" && !force) return;
+    if (!force && box.querySelector("[data-chief-admin-active],[data-chief-reset-password]")) return;
     const sessionUser = await currentUser();
     if (!sessionUser) return;
     const currentEmail = normEmail(sessionUser.email);
     const admins = await fetchAdmins();
-    box.dataset.chiefUserActionsReady = "true";
     box.innerHTML = admins.length
       ? `<div class="sb-list">${admins.map((admin) => {
           const email = normEmail(admin.email);
