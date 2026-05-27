@@ -13,6 +13,8 @@ window.CRS_SUPABASE_CONFIG = {
 };
 
 (() => {
+  let insertShieldInstalled = false;
+
   function route() {
     return location.hash.split("?")[0] || "#/inicio";
   }
@@ -29,14 +31,32 @@ window.CRS_SUPABASE_CONFIG = {
     (document.body || document.documentElement).append(script);
   }
 
+  function scheduleCanonicalJefatura(delay = 30) {
+    if (!isJefaturaRoute()) return;
+    setTimeout(() => window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0), delay);
+  }
+
+  function installLegacyJefaturaShield() {
+    if (insertShieldInstalled) return;
+    insertShieldInstalled = true;
+    const nativeInsertAdjacentHTML = Element.prototype.insertAdjacentHTML;
+    Element.prototype.insertAdjacentHTML = function patchedInsertAdjacentHTML(position, html) {
+      const isLegacyPanel = typeof html === "string" && html.includes("data-sb-panel");
+      const insideChief = this?.id === "chiefContent" || Boolean(this?.closest?.("#chiefContent"));
+      if (isJefaturaRoute() && isLegacyPanel && insideChief) {
+        scheduleCanonicalJefatura(20);
+        return;
+      }
+      return nativeInsertAdjacentHTML.call(this, position, html);
+    };
+  }
+
   function normalizeSupabaseCopy() {
     const hash = route();
     const managementEyebrow = document.querySelector("#managementPage .page-head .eyebrow");
     if (managementEyebrow && (hash === "#/gestion" || hash.startsWith("#/gestion/"))) {
       const nextText = hash === "#/gestion/pacientes" ? "Gestion pacientes" : "Publicacion global";
-      if (managementEyebrow.textContent !== nextText) {
-        managementEyebrow.textContent = nextText;
-      }
+      if (managementEyebrow.textContent !== nextText) managementEyebrow.textContent = nextText;
     }
 
     if (hash === "#/llamados") {
@@ -51,48 +71,30 @@ window.CRS_SUPABASE_CONFIG = {
     setTimeout(normalizeSupabaseCopy, delay);
   }
 
-  function scheduleCanonicalJefatura(delay = 30) {
-    if (!isJefaturaRoute()) return;
-    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(delay);
-  }
-
-  function watchLegacyJefaturaPatches() {
-    if (window.__CRS_SUPABASE_JEFATURA_WATCHER__) return;
-    window.__CRS_SUPABASE_JEFATURA_WATCHER__ = true;
-    const observer = new MutationObserver(() => {
-      normalizeSupabaseCopy();
-      if (!isJefaturaRoute() || !window.CRS_SUPABASE?.enabled?.()) return;
-      const content = document.querySelector("#chiefContent");
-      if (!content) return;
-      const legacyNode = content.querySelector("[data-sb-panel],[data-public-draft-note],[data-public-jefatura-notice],#googleSignInButton");
-      const legacyText = content.textContent.includes("Ingresa con Google") || content.textContent.includes("borrador local");
-      if (legacyNode || legacyText || !content.querySelector("[data-sb-chief-shell]")) {
-        scheduleCanonicalJefatura(40);
-      }
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-    window.addEventListener("hashchange", () => {
-      scheduleNormalizeCopy(20);
-      scheduleNormalizeCopy(220);
-      scheduleCanonicalJefatura(40);
-    });
+  function boot() {
+    installLegacyJefaturaShield();
+    loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(40);
     scheduleNormalizeCopy(260);
     scheduleCanonicalJefatura(80);
   }
 
-  loadSupabaseJefaturaPanel();
+  window.addEventListener("hashchange", () => {
+    loadSupabaseJefaturaPanel();
+    scheduleNormalizeCopy(20);
+    scheduleNormalizeCopy(220);
+    scheduleCanonicalJefatura(40);
+  });
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      loadSupabaseJefaturaPanel();
-      watchLegacyJefaturaPatches();
-    }, { once: true });
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
   } else {
-    watchLegacyJefaturaPatches();
+    boot();
   }
+
   window.addEventListener("load", () => {
     loadSupabaseJefaturaPanel();
-    watchLegacyJefaturaPatches();
     scheduleNormalizeCopy(80);
+    scheduleCanonicalJefatura(80);
   }, { once: true });
 })();
