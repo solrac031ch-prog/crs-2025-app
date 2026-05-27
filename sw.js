@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-global-v62";
+const CACHE_NAME = "crs-hph-global-v63";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const APP_SHELL = [
   "./icon-512.png",
   "./logo-urgencia-hph.svg",
   "./compatibilidad-global.js?v=2",
+  "./jefatura-usuarios.js?v=1",
   "./ley-urgencias-data.js?v=38",
   "./app.js?v=40",
   "./arsenal-terapeutico.js?v=1",
