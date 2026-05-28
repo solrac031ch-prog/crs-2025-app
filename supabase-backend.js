@@ -91,6 +91,25 @@
     return user;
   }
 
+  function adminUsersFunctionName() {
+    return String(cfg.adminUsersFunction || "crs-admin-users").trim();
+  }
+
+  async function invokeAdminUsers(action, payload = {}) {
+    const api = sb();
+    await requireUser();
+    const { data: sessionData } = await api.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    if (!token) throw new Error("Vuelve a iniciar sesion Supabase para administrar usuarios.");
+    const { data, error } = await api.functions.invoke(adminUsersFunctionName(), {
+      body: { action, ...payload },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (error) throw error;
+    if (data?.ok === false) throw new Error(data.error || "No se pudo administrar el usuario.");
+    return data || {};
+  }
+
   function filePublicUrl(path) {
     const api = sb();
     if (!api || !path) return "";
@@ -134,6 +153,7 @@
       month: item.month,
       eventUrl: item.event_url,
       url: item.url || filePublicUrl(item.file_path),
+      imageUrl: item.image_url || "",
       createdAt: item.created_at
     }));
     const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
@@ -171,7 +191,7 @@
   }
 
   function routeNav() {
-    return `<div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestion</a><a class="back-link" href="#/inicio">Inicio</a></div>`;
+    return `<div class="route-actions"><a class="back-link" href="#/inicio">Inicio</a></div>`;
   }
 
   function publicAction(item, label = "Abrir") {
@@ -196,7 +216,7 @@
     const contentEl = standaloneEducation ? $("#educationContent") : $("#managementContent");
     if (!titleEl || !contentEl) return;
     titleEl.textContent = title;
-    contentEl.innerHTML = `<div class="public-shell">${standaloneEducation ? `<div class="route-actions"><a class="back-link" href="#/inicio">Inicio</a><a class="back-link" href="#/gestion/educacion">Abrir en Gestion</a></div>` : routeNav()}<section class="public-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section><section class="public-grid">${items.length ? items.map((item) => publicCard(item, kind)).join("") : `<div class="public-empty">${esc(emptyText)}</div>`}</section></div>`;
+    contentEl.innerHTML = `<div class="public-shell">${routeNav()}<section class="public-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section><section class="public-grid">${items.length ? items.map((item) => publicCard(item, kind)).join("") : `<div class="public-empty">${esc(emptyText)}</div>`}</section></div>`;
   }
 
   function monthLabel(item) {
@@ -225,18 +245,17 @@
     if (!enabled()) return;
     const current = route();
     try {
-      if (current === "#/gestion/noticias") await renderPublicList("news", "Noticias", "Avisos, cursos, posters y enlaces publicados por Jefatura.", "Aun no hay noticias publicadas.");
-      if (current === "#/gestion/educacion") await renderPublicList("education", "Educacion medica", "Canales, podcast y material docente publico.", "Aun no hay material docente adicional publicado.");
-      if (current === "#/educacion") await renderPublicList("education", "Educacion medica", "Canales, podcast y material docente publico.", "Aun no hay material docente publicado.", true);
-      if (current === "#/gestion/paper") await renderPaper();
-      if (current === "#/gestion/procedimientos") await renderPublicList("procedure", "Procedimientos medicos", "Repositorio publico de procedimientos y material practico.", "Aun no hay procedimientos publicados.");
+      if (current === "#/gestion/noticias") location.replace("#/noticias");
+      if (current === "#/gestion/educacion") location.replace("#/educacion");
+      if (current === "#/gestion/paper") location.replace("#/paper");
+      if (current === "#/gestion/procedimientos") location.replace("#/procedimientos");
       if (current === "#/formularios") await patchFormsPage();
       if (current === "#/llamados") await patchCallsPage();
       if (current === "#/especialidades") await patchFlowsPage();
       if (current === "#/jefatura") await patchJefatura();
     } catch (error) {
       console.error(error);
-      if (["#/gestion/noticias", "#/gestion/educacion", "#/educacion", "#/gestion/paper", "#/gestion/procedimientos"].includes(current)) {
+      if (["#/gestion/noticias", "#/gestion/educacion", "#/gestion/paper", "#/gestion/procedimientos"].includes(current)) {
         const contentEl = current === "#/educacion" ? $("#educationContent") : $("#managementContent");
         if (contentEl) contentEl.insertAdjacentHTML("afterbegin", `<div class="sb-error">${esc(errorText(error))}</div>`);
       }
@@ -293,6 +312,55 @@
     target.append(section);
   }
 
+  function pdfJs() {
+    if (window.pdfjsLib?.getDocument) return Promise.resolve(window.pdfjsLib);
+    return new Promise((resolve, reject) => {
+      const old = document.querySelector("script[data-pdfjs]");
+      if (old) {
+        old.addEventListener("load", () => resolve(window.pdfjsLib), { once: true });
+        old.addEventListener("error", reject, { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
+      script.dataset.pdfjs = "true";
+      script.onload = () => resolve(window.pdfjsLib);
+      script.onerror = reject;
+      document.head.append(script);
+    }).then((lib) => {
+      if (lib?.GlobalWorkerOptions) {
+        lib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+      }
+      return lib;
+    });
+  }
+
+  async function extractPaperMeta(file) {
+    if (!file || !/pdf/i.test(file.type || file.name || "")) return {};
+    try {
+      const lib = await pdfJs();
+      const buffer = await file.arrayBuffer();
+      const pdf = await lib.getDocument({ data: buffer }).promise;
+      const pages = Math.min(pdf.numPages || 1, 3);
+      let text = "";
+      for (let pageNo = 1; pageNo <= pages; pageNo += 1) {
+        const page = await pdf.getPage(pageNo);
+        const content = await page.getTextContent();
+        text += " " + content.items.map((item) => item.str || "").join(" ");
+      }
+      const normalized = text.replace(/\s+/g, " ").trim();
+      const abstractMatch = normalized.match(/\babstract\b[:\s-]*(.{120,1600}?)(?:\bkeywords\b|\bintroduction\b|\bbackground\b|\bmethods\b|$)/i);
+      const firstTitle = normalized.split(/[.!?]\s/)[0]?.slice(0, 180).trim();
+      return {
+        title: firstTitle || "",
+        description: abstractMatch ? abstractMatch[1].trim() : ""
+      };
+    } catch (error) {
+      console.warn("No se pudo extraer titulo/abstract del PDF", error);
+      return {};
+    }
+  }
+
   async function publishContent(form) {
     const api = sb();
     const user = await requireUser();
@@ -303,11 +371,12 @@
         ? "procedure"
         : String(formData.get("kind") || "news");
     const file = form.file?.files?.[0] || null;
+    const extracted = kind === "paper" ? await extractPaperMeta(file) : {};
     const uploaded = await uploadFile(file, kind);
     const row = {
       kind,
-      title: formData.get("title") || "Sin titulo",
-      description: formData.get("description") || formData.get("summary") || "",
+      title: formData.get("title") || extracted.title || "Sin titulo",
+      description: formData.get("description") || formData.get("summary") || extracted.description || "",
       category: formData.get("category") || "",
       month: formData.get("month") || "",
       event_url: formData.get("eventUrl") || "",
@@ -395,22 +464,27 @@
   }
 
   async function upsertAdmin(form) {
-    const api = sb();
     await requireUser();
     const formData = new FormData(form);
     const email = String(formData.get("email") || "").trim().toLowerCase();
     if (!email) throw new Error("Falta correo.");
-    const row = {
-      email,
-      display_name: formData.get("nombre") || "",
-      role: formData.get("rol") || "jefatura",
-      active: true
-    };
-    const { error } = await api.from(tables.admins).upsert(row, { onConflict: "email" });
-    if (error) throw error;
+    const name = String(formData.get("nombre") || "").trim();
+    const role = String(formData.get("rol") || "jefatura").trim();
+    const password = String(formData.get("password") || "").trim();
+    const result = await invokeAdminUsers("upsertUser", { email, displayName: name, role, password });
     form.reset();
-    toast("Usuario agregado a permisos de Jefatura en Supabase. Recuerda crear tambien su usuario en Authentication.");
+    const suffix = result.temporaryPassword ? ` Clave temporal: ${result.temporaryPassword}` : "";
+    toast(`Usuario listo en Supabase Authentication y permisos CRS.${suffix}`);
     await renderAdminList();
+    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(80);
+  }
+
+  async function deleteAdminUser(email) {
+    if (!email) throw new Error("Falta correo.");
+    await invokeAdminUsers("deleteUser", { email });
+    toast("Usuario eliminado de Supabase Authentication y permisos CRS.");
+    await renderAdminList();
+    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(80);
   }
 
   async function signIn(form) {
@@ -447,14 +521,15 @@
     if (!enabled()) return;
     const box = $("[data-sb-admin-list]");
     if (!box) return;
-    const api = sb();
-    const { data, error } = await api.from(tables.admins).select("email,display_name,role,active").order("email");
-    if (error) {
-      box.innerHTML = `<div class="sb-error">${esc(errorText(error))}</div>`;
+    let users = [];
+    try {
+      users = (await invokeAdminUsers("listUsers")).users || [];
+    } catch (error) {
+      box.innerHTML = `<div class="sb-error">${esc(errorText(error))}<br><span class="mini">Debes desplegar la funcion Supabase ${esc(adminUsersFunctionName())} para crear y eliminar usuarios desde la web.</span></div>`;
       return;
     }
-    box.innerHTML = (data || []).length
-      ? `<div class="sb-list">${data.map((user) => `<div class="sb-row"><span><strong>${esc(user.display_name || user.email)}</strong><br><span class="mini">${esc(user.email)} · ${esc(user.role)} · ${user.active ? "activo" : "inactivo"}</span></span></div>`).join("")}</div>`
+    box.innerHTML = users.length
+      ? `<div class="sb-list">${users.map((user) => `<div class="sb-row"><span><strong>${esc(user.display_name || user.email)}</strong><br><span class="mini">${esc(user.email)} - ${esc(user.role)} - ${user.active ? "activo" : "inactivo"} - Auth: ${user.auth_id ? "creado" : "sin cuenta"}</span></span><button class="delete-button" type="button" data-sb-delete-user="${esc(user.email)}">Eliminar</button></div>`).join("")}</div>`
       : `<div class="sb-warn">No hay usuarios registrados en crs_admins.</div>`;
   }
 
@@ -478,40 +553,14 @@
       ...(flows.data || []).map((item) => ({ type: "flow", label: item.category, ...item }))
     ].sort((a, b) => String(b.updated_at || b.created_at).localeCompare(String(a.updated_at || a.created_at))).slice(0, 18);
     box.innerHTML = rows.length
-      ? `<div class="sb-list">${rows.map((item) => `<div class="sb-row"><span><strong>${esc(item.title)}</strong><br><span class="mini">${esc(item.label)} · ${esc(item.status)}</span></span><button class="delete-button" type="button" data-sb-archive="${esc(item.type)}" data-sb-id="${esc(item.id)}">Ocultar</button></div>`).join("")}</div>`
+      ? `<div class="sb-list">${rows.map((item) => `<div class="sb-row"><span><strong>${esc(item.title)}</strong><br><span class="mini">${esc(item.label)} - ${esc(item.status)}</span></span><button class="delete-button" type="button" data-sb-archive="${esc(item.type)}" data-sb-id="${esc(item.id)}">Ocultar</button></div>`).join("")}</div>`
       : `<div class="sb-warn">Aun no hay publicaciones globales en Supabase.</div>`;
-  }
-
-  function disabledPanelHtml() {
-    return `<article class="admin-card sb-panel" data-sb-panel><h3>Publicacion global con Supabase</h3><div class="sb-warn">Supabase esta preparado, pero aun no esta conectado. Completa supabase-config.js con Project URL, anon public key y enabled: true.</div><p>Mientras este apagado, los formularios actuales seguiran guardando borradores locales.</p><div class="public-actions"><a class="document-button" href="./SUPABASE-SETUP.md" target="_blank" rel="noopener noreferrer">Ver pasos de instalacion</a><a class="document-button" href="./supabase-setup.sql" target="_blank" rel="noopener noreferrer">Abrir SQL</a></div></article>`;
-  }
-
-  function enabledPanelHtml(user) {
-    if (!user) {
-      return `<article class="admin-card sb-panel" data-sb-panel><h3>Publicacion global con Supabase</h3><div class="sb-ok">Supabase esta conectado. Inicia sesion para publicar globalmente.</div><form class="sb-login" data-sb-login><label>Correo<input name="email" type="email" required autocomplete="email"></label><label>Clave Supabase<input name="password" type="password" autocomplete="current-password" placeholder="Dejar vacio para enlace por correo"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article>`;
-    }
-    return `<article class="admin-card sb-panel" data-sb-panel><h3>Publicacion global con Supabase</h3><div class="sb-ok">Sesion activa: ${esc(user.email)}. Los formularios de este modulo publican globalmente.</div><div class="public-actions"><button class="document-button" type="button" data-sb-refresh>Actualizar lista global</button><button class="delete-button" type="button" data-sb-signout>Cerrar sesion Supabase</button></div><h3>Publicaciones globales recientes</h3><div data-sb-global-list><div class="mini">Cargando...</div></div><h3>Usuarios con permiso</h3><div data-sb-admin-list><div class="mini">Cargando...</div></div></article>`;
   }
 
   async function patchJefatura(force = false) {
     addStyle();
     if (route() !== "#/jefatura") return;
-    const content = $("#chiefContent");
-    if (!content) return;
-    const grid = $(".gestion-grid", content) || content;
-    const old = $("[data-sb-panel]", content);
-    if (old && !force) return;
-    if (old) old.remove();
-    const user = enabled() ? await currentUser() : null;
-    grid.insertAdjacentHTML("afterbegin", enabled() ? enabledPanelHtml(user) : disabledPanelHtml());
-
-    if (enabled() && user) {
-      $$("[data-public-draft-note]", content).forEach((note) => {
-        note.className = "sb-ok";
-        note.textContent = "Supabase activo: al enviar este formulario se publica globalmente para todos los navegadores.";
-      });
-      await Promise.all([renderGlobalList(), renderAdminList()]);
-    }
+    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(force ? 0 : 30);
   }
 
   function handledForm(form) {
@@ -543,7 +592,8 @@
     const signout = ev.target.closest("[data-sb-signout]");
     const refresh = ev.target.closest("[data-sb-refresh]");
     const archive = ev.target.closest("[data-sb-archive]");
-    if (!signout && !refresh && !archive) return;
+    const deleteUser = ev.target.closest("[data-sb-delete-user]");
+    if (!signout && !refresh && !archive && !deleteUser) return;
     ev.preventDefault();
     try {
       if (signout) {
@@ -553,6 +603,7 @@
       }
       if (refresh) await patchJefatura(true);
       if (archive) await archiveItem(archive.dataset.sbArchive, archive.dataset.sbId);
+      if (deleteUser && confirm(`Eliminar usuario ${deleteUser.dataset.sbDeleteUser}?`)) await deleteAdminUser(deleteUser.dataset.sbDeleteUser);
     } catch (error) {
       console.error(error);
       toast(errorText(error), true);
