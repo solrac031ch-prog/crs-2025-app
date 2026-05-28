@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-global-v68";
+const CACHE_NAME = "crs-hph-global-v69";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -23,12 +23,12 @@ const APP_SHELL = [
   "./protocolos-detalle-polish.js?v=2",
   "./directorio-telefonico.js?v=2",
   "./contenido-web.js?v=2",
-  "./supabase-config.js?v=7",
+  "./supabase-config.js?v=8",
   "./supabase-admin-users.js?v=1",
   "./supabase-backend.js?v=4",
-  "./supabase-jefatura-panel.js?v=5",
-  "./jefatura-final-patch.js?v=1",
-  "./gestion-panel-final.js?v=2",
+  "./supabase-jefatura-panel.js?v=6",
+  "./jefatura-final-patch.js?v=2",
+  "./gestion-panel-final.js?v=3",
   "./gestion-pacientes-core.js?v=2"
 ];
 const CACHEABLE_EXTENSIONS = /\.(?:html|css|js|mjs|json|webmanifest|svg|png|jpg|jpeg|webp|gif|ico)(?:\?|$)/i;
