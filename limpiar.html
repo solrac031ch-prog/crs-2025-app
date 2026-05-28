@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Limpiar CRS HPH</title>
+    <style>
+      body{margin:0;font-family:Arial,sans-serif;background:#f6f8f7;color:#10201c;display:grid;min-height:100vh;place-items:center}
+      main{width:min(680px,calc(100vw - 32px));background:#fff;border:1px solid #dfe8e4;border-radius:12px;padding:24px;box-shadow:0 18px 42px rgba(15,23,42,.12)}
+      h1{margin:0 0 10px;font-size:clamp(1.8rem,5vw,2.6rem)}
+      p{line-height:1.45;color:#44504b}
+      a,button{display:inline-flex;margin-top:12px;padding:12px 16px;border-radius:8px;border:1px solid #0f766e;background:#0f766e;color:#fff;text-decoration:none;font-weight:800;cursor:pointer}
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Limpiando CRS HPH</h1>
+      <p id="status">Borrando version instalada y cache del navegador...</p>
+      <button id="go" type="button">Abrir inicio limpio</button>
+    </main>
+    <script>
+      async function clean() {
+        try {
+          if ("serviceWorker" in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((item) => item.unregister()));
+          }
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((key) => caches.delete(key)));
+          }
+          localStorage.removeItem("crsLastRoutePatch");
+          document.querySelector("#status").textContent = "Listo. Abriendo inicio limpio...";
+        } catch (error) {
+          document.querySelector("#status").textContent = "Se limpio lo posible. Abriendo inicio...";
+        }
+        setTimeout(() => {
+          location.replace("./?limpio=" + Date.now() + "#/inicio");
+        }, 700);
+      }
+      document.querySelector("#go").addEventListener("click", clean);
+      clean();
+    </script>
+  </body>
+</html>
