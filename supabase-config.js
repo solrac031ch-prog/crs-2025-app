@@ -61,7 +61,7 @@ window.CRS_SUPABASE_CONFIG = {
   function loadSupabaseJefaturaPanel() {
     if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
     const script = document.createElement("script");
-    script.src = "./supabase-jefatura-panel.js?v=7";
+    script.src = "./supabase-jefatura-panel.js?v=9";
     script.dataset.supabaseJefaturaPanel = "true";
     (document.body || document.documentElement).append(script);
   }
