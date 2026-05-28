@@ -28,7 +28,7 @@
 
   function activate(pageId, activeRoute = "gestion") {
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === pageId));
-    $$("[data-route-link]").forEach((link) => link.classList.toggle("active", link.datasetRouteLink === activeRoute));
+    $$("[data-route-link]").forEach((link) => link.classList.toggle("active", link.dataset.routeLink === activeRoute));
   }
 
   function nav() {
