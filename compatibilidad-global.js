@@ -81,11 +81,14 @@
   }
 
   function loadJefaturaUsuarios() {
-    if (document.querySelector("script[data-jefatura-usuarios]")) return;
-    const script = document.createElement("script");
-    script.src = "./jefatura-usuarios.js?v=1";
-    script.dataset.jefaturaUsuarios = "true";
-    (document.body || document.documentElement).append(script);
+    setTimeout(() => {
+      if (window.CRS_SUPABASE_CONFIG?.enabled) return;
+      if (document.querySelector("script[data-jefatura-usuarios]")) return;
+      const script = document.createElement("script");
+      script.src = "./jefatura-usuarios.js?v=2";
+      script.dataset.jefaturaUsuarios = "true";
+      (document.body || document.documentElement).append(script);
+    }, 500);
   }
 
   function registerServiceWorker() {
