@@ -72,7 +72,7 @@
   }
 
   function routeLinks() {
-    return `<div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestion</a><a class="back-link" href="#/inicio">Inicio</a></div>`;
+    return `<div class="route-actions"><a class="back-link" href="#/inicio">Inicio</a></div>`;
   }
 
   function heroHtml(title, text) {
@@ -88,11 +88,11 @@
   }
 
   function paperCard() {
-    return `<article class="sb-chief-card amber"><h3>Paper del mes</h3><p>Publica el paper destacado y deja repositorio mensual.</p><form data-content="paper"><label>Mes<input name="month" type="month" required></label><label>Titulo<input name="title" required></label><label>Comentario<textarea name="description"></textarea></label><label>PDF / archivo<input name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"></label><label>Link<input name="url" type="url"></label><button class="document-button" type="submit">Publicar paper</button></form></article>`;
+    return `<article class="sb-chief-card amber"><h3>Paper del mes</h3><p>Sube el PDF. Si dejas titulo o abstract vacio, la app intentara tomarlos directamente del archivo.</p><form data-content="paper"><label>Mes<input name="month" type="month" required></label><label>Titulo opcional<input name="title" placeholder="Se puede extraer del PDF"></label><label>Abstract opcional<textarea name="description" placeholder="Se puede extraer del PDF"></textarea></label><label>PDF / archivo<input name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"></label><label>Link<input name="url" type="url"></label><button class="document-button" type="submit">Publicar paper</button></form></article>`;
   }
 
   function newsEducationCard() {
-    return `<article class="sb-chief-card purple"><h3>Noticias / Educacion</h3><p>Publica noticias, cursos, posters, enlaces, podcast o material docente.</p><form data-content="mixed"><label>Tipo<select name="kind"><option value="news">Noticia</option><option value="education">Educacion</option></select></label><label>Titulo<input name="title" required></label><label>Texto / publicidad<textarea name="description"></textarea></label><label>Enlace inscripcion / publicidad<input name="eventUrl" type="url"></label><label>Archivo / poster<input name="file" type="file"></label><label>Link material<input name="url" type="url"></label><button class="document-button" type="submit">Publicar</button></form></article>`;
+    return `<article class="sb-chief-card purple"><h3>Noticias / Educacion</h3><p>Publica noticias, cursos, posters, enlaces, podcast o material docente. Para noticias, puedes subir una imagen o poster para que la tarjeta se vea atractiva.</p><form data-content="mixed"><label>Tipo<select name="kind"><option value="news">Noticia</option><option value="education">Educacion</option></select></label><label>Titulo<input name="title" required></label><label>Texto / publicidad<textarea name="description"></textarea></label><label>Enlace de la noticia / inscripcion<input name="eventUrl" type="url"></label><label>Imagen, poster o archivo<input name="file" type="file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.txt"></label><label>Link material<input name="url" type="url"></label><button class="document-button" type="submit">Publicar</button></form></article>`;
   }
 
   function procedureCard() {
