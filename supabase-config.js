@@ -59,20 +59,20 @@ window.CRS_SUPABASE_CONFIG = {
     if (!window.supabase?.createClient) setTimeout(loadSupabaseFallback, 80);
   }
 
-  function loadSupabaseJefaturaPanel() {
-    if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
-    const script = document.createElement("script");
-    script.src = "./supabase-jefatura-panel.js?v=5";
-    script.dataset.supabaseJefaturaPanel = "true";
-    (document.body || document.documentElement).append(script);
-    loadJefaturaFinalPatch();
-  }
-
   function loadJefaturaFinalPatch() {
     if (document.querySelector("script[data-jefatura-final-patch]")) return;
     const script = document.createElement("script");
-    script.src = "./jefatura-final-patch.js?v=1";
+    script.src = "./jefatura-final-patch.js?v=2";
     script.dataset.jefaturaFinalPatch = "true";
+    (document.body || document.documentElement).append(script);
+  }
+
+  function loadSupabaseJefaturaPanel() {
+    loadJefaturaFinalPatch();
+    if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
+    const script = document.createElement("script");
+    script.src = "./supabase-jefatura-panel.js?v=6";
+    script.dataset.supabaseJefaturaPanel = "true";
     (document.body || document.documentElement).append(script);
   }
 
@@ -100,7 +100,7 @@ window.CRS_SUPABASE_CONFIG = {
     const hash = route();
     const managementEyebrow = document.querySelector("#managementPage .page-head .eyebrow");
     if (managementEyebrow && (hash === "#/gestion" || hash.startsWith("#/gestion/"))) {
-      const nextText = hash === "#/gestion/pacientes" ? "Gestion pacientes" : "Publicacion global";
+      const nextText = hash === "#/gestion/pacientes" ? "Gestion pacientes" : "Seguimiento operativo";
       if (managementEyebrow.textContent !== nextText) managementEyebrow.textContent = nextText;
     }
 
