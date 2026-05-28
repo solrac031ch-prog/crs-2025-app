@@ -32,9 +32,11 @@
     document.head.append(style);
   }
 
-  function activate(pageId, activeRoute = "") {
+  function activate(pageId, activeRoute = "", eyebrowText = "") {
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === pageId));
     $$("[data-route-link]").forEach((link) => link.classList.toggle("active", Boolean(activeRoute) && link.dataset.routeLink === activeRoute));
+    const eyebrow = pageId === "educationPage" ? $("#educationPage .page-head .eyebrow") : $(`#${pageId} .page-head .eyebrow`);
+    if (eyebrow && eyebrowText) eyebrow.textContent = eyebrowText;
   }
 
   function nav() {
@@ -100,7 +102,7 @@
   }
 
   function pageShell(title, text, body, pageId = "managementPage", activeRoute = "") {
-    activate(pageId, activeRoute);
+    activate(pageId, activeRoute, title);
     const titleEl = pageId === "educationPage" ? $("#educationTitle") : $("#managementTitle");
     const contentEl = pageId === "educationPage" ? $("#educationContent") : $("#managementContent");
     if (titleEl) titleEl.textContent = title;
@@ -132,17 +134,17 @@
 
   function renderGestion() {
     addStyle();
-    activate("managementPage", "gestion");
+    activate("managementPage", "gestion", "Seguimiento operativo");
     const title = $("#managementTitle");
     const contentEl = $("#managementContent");
     if (title) title.textContent = "Gestion";
     if (!contentEl) return;
-    contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>Gestion de casos</h2><p>Panel operativo para seguimiento de pacientes y tareas prioritarias. Noticias, Educacion Medica, Paper del Mes y Jefatura viven como accesos propios desde Inicio.</p></section><section class="gf-grid"><a class="gf-home-card teal" href="#/gestion/pacientes"><strong>Gestion pacientes</strong><span>Seguimiento de casos prioritarios para jefatura.</span></a><a class="gf-home-card blue" href="#/urgencia"><strong>Equipo Urgencia</strong><span>Accesos operativos de turno, flujos y documentos frecuentes.</span></a></section></div>`;
+    contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>Gestion de casos</h2><p>Panel operativo para seguimiento de pacientes y tareas prioritarias.</p></section><section class="gf-grid"><a class="gf-home-card teal" href="#/gestion/pacientes"><strong>Gestion pacientes</strong><span>Seguimiento de casos prioritarios para jefatura.</span></a></section></div>`;
   }
 
   function renderUrgencia() {
     addStyle();
-    activate("doctorsPage", "gestion");
+    activate("doctorsPage", "gestion", "Equipo Urgencia");
     const contentEl = $("#doctorsContent");
     if (!contentEl) return;
     contentEl.innerHTML = `<div class="gf-shell"><div class="gf-route"><a class="back-link" href="#/inicio">Inicio</a><a class="back-link" href="#/gestion">Gestion</a></div><section class="gf-hero"><h2>Equipo Urgencia</h2><p>Accesos de lectura para el equipo durante el turno.</p><div class="gf-actions"><a class="document-button" href="#/especialidades">Flujos clinicos</a><a class="document-button" href="#/llamados">Especialistas / UHD</a><a class="document-button" href="#/visita">Visita diaria</a><a class="document-button" href="#/formularios">Formularios</a><a class="document-button" href="#/telefonos">Directorio</a></div></section></div>`;
@@ -150,7 +152,7 @@
 
   function renderJefaturaShell() {
     addStyle();
-    activate("chiefPage", "jefatura");
+    activate("chiefPage", "jefatura", "Espacio jefatura");
     window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(20);
   }
 
