@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-global-v64";
+const CACHE_NAME = "crs-hph-global-v65";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -23,9 +23,10 @@ const APP_SHELL = [
   "./protocolos-detalle-polish.js?v=2",
   "./directorio-telefonico.js?v=2",
   "./contenido-web.js?v=2",
-  "./supabase-config.js?v=5",
-  "./supabase-backend.js?v=2",
-  "./supabase-jefatura-panel.js?v=3",
+  "./supabase-config.js?v=6",
+  "./supabase-admin-users.js?v=1",
+  "./supabase-backend.js?v=3",
+  "./supabase-jefatura-panel.js?v=4",
   "./gestion-supabase-home.js?v=1",
   "./gestion-pacientes-core.js?v=1"
 ];
