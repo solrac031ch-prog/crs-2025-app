@@ -1,5 +1,45 @@
 (() => {
   const $ = (selector, root = document) => root.querySelector(selector);
+  let pdfLoading = null;
+
+  function loadPdfJs() {
+    if (window.pdfjsLib?.getDocument) return Promise.resolve(window.pdfjsLib);
+    if (pdfLoading) return pdfLoading;
+    pdfLoading = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
+      script.onload = () => resolve(window.pdfjsLib);
+      script.onerror = reject;
+      document.head.append(script);
+    }).then((lib) => {
+      if (lib?.GlobalWorkerOptions) {
+        lib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+      }
+      return lib;
+    });
+    return pdfLoading;
+  }
+
+  async function extractPaperMeta(file) {
+    if (!file || !/pdf/i.test(file.type || file.name || "")) return {};
+    const lib = await loadPdfJs();
+    const pdf = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages = Math.min(pdf.numPages || 1, 3);
+    const chunks = [];
+    for (let pageNo = 1; pageNo <= pages; pageNo += 1) {
+      const page = await pdf.getPage(pageNo);
+      const content = await page.getTextContent();
+      chunks.push(content.items.map((item) => item.str || "").join(" "));
+    }
+    const text = chunks.join(" ").replace(/\s+/g, " ").trim();
+    const abstract = text.match(/\babstract\b[:\s-]*(.{120,1600}?)(?:\bkeywords\b|\bintroduction\b|\bbackground\b|\bmethods\b|$)/i);
+    const beforeAbstract = text.split(/\babstract\b/i)[0] || text;
+    const title = beforeAbstract.split(/[.!?]\s/)[0]?.slice(0, 180).trim();
+    return {
+      title: title || "",
+      description: abstract ? abstract[1].trim() : ""
+    };
+  }
 
   function patchPaperForm(root = document) {
     const form = $('form[data-content="paper"]', root);
@@ -19,6 +59,31 @@
       if (label?.firstChild) label.firstChild.textContent = "Abstract opcional";
     }
     if (file) file.accept = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt";
+    if (file && !file.dataset.pdfExtractReady) {
+      file.dataset.pdfExtractReady = "true";
+      file.addEventListener("change", async () => {
+        const selected = file.files?.[0];
+        if (!selected || !/pdf/i.test(selected.type || selected.name || "")) return;
+        const button = form.querySelector("button[type='submit']");
+        const oldText = button?.textContent;
+        if (button) {
+          button.disabled = true;
+          button.textContent = "Leyendo PDF...";
+        }
+        try {
+          const meta = await extractPaperMeta(selected);
+          if (meta.title && title && !title.value.trim()) title.value = meta.title;
+          if (meta.description && description && !description.value.trim()) description.value = meta.description;
+        } catch (error) {
+          console.warn("No se pudo extraer titulo/abstract del PDF", error);
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.textContent = oldText || "Publicar paper";
+          }
+        }
+      });
+    }
     const card = form.closest("article");
     const intro = card?.querySelector("p");
     if (intro) intro.textContent = "Sube el PDF. Si dejas titulo o abstract vacio, la app intentara tomarlos directamente del archivo.";
