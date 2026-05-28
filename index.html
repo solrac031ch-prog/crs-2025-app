@@ -61,9 +61,11 @@
           <a class="action-card" href="#/visita"><span class="action-top"><span class="action-number">3</span><span class="action-kicker">Visita</span></span><strong>Visita diaria</strong><span>Planilla AM/PM compartida por jefatura.</span></a>
           <a class="action-card" href="#/formularios"><span class="action-top"><span class="action-number">4</span><span class="action-kicker">Formularios</span></span><strong>Formularios de turno</strong><span>Antimicrobianos, Ley de Urgencias y notificaciones.</span></a>
           <a class="action-card" href="#/telefonos"><span class="action-top"><span class="action-number">5</span><span class="action-kicker">Directorio</span></span><strong>Directorio telef&oacute;nico</strong><span>Anexos y contactos frecuentes.</span></a>
-          <a class="action-card" href="#/educacion"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Docencia</span></span><strong>Educacion medica</strong><span>Canal de Urgencias HPH, podcasts y material docente.</span></a>
-          <a class="action-card" href="#/gestion"><span class="action-top"><span class="action-number">7</span><span class="action-kicker">Gestion</span></span><strong>Casos prioritarios</strong><span>Equipo Urgencia y Jefatura para seguimiento ambulatorio.</span></a>
-          <a class="action-card" href="#/jefatura"><span class="action-top"><span class="action-number">8</span><span class="action-kicker">Jefatura</span></span><strong>M&oacute;dulo Jefatura</strong><span>Publicaciones, documentos y administraci&oacute;n del equipo.</span></a>
+          <a class="action-card" href="#/noticias"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Noticias</span></span><strong>Noticias</strong><span>Avisos y publicaciones vigentes con imagen destacada.</span></a>
+          <a class="action-card" href="#/educacion"><span class="action-top"><span class="action-number">7</span><span class="action-kicker">Docencia</span></span><strong>Educacion medica</strong><span>Material docente, videos, podcasts y procedimientos.</span></a>
+          <a class="action-card" href="#/paper"><span class="action-top"><span class="action-number">8</span><span class="action-kicker">Paper</span></span><strong>Paper del mes</strong><span>Titulo, abstract y repositorio mensual.</span></a>
+          <a class="action-card" href="#/gestion"><span class="action-top"><span class="action-number">9</span><span class="action-kicker">Gestion</span></span><strong>Casos prioritarios</strong><span>Seguimiento operativo de pacientes y tareas pendientes.</span></a>
+          <a class="action-card" href="#/jefatura"><span class="action-top"><span class="action-number">10</span><span class="action-kicker">Jefatura</span></span><strong>M&oacute;dulo Jefatura</strong><span>Publicaciones, documentos y administraci&oacute;n del equipo.</span></a>
         </div>
         <section class="home-panel" aria-label="Regla general"><strong>Recordatorio r&aacute;pido</strong><p>Toda derivaci&oacute;n se realiza por Pit&aacute;goras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p></section>
       </section>
@@ -84,7 +86,7 @@
       <section id="educationPage" class="page" aria-labelledby="educationTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Educacion medica</p><h1 id="educationTitle">Urgencias HPH</h1></div></div><div id="educationContent" class="document-list"></div></section>
       <section id="managementPage" class="page" aria-labelledby="managementTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Seguimiento local</p><h1 id="managementTitle">Gesti&oacute;n de casos</h1></div></div><div id="managementContent" aria-live="polite"></div></section>
       <section id="doctorsPage" class="page" aria-labelledby="doctorsTitle"><div class="page-head"><a class="back-link" href="#/gestion">Gesti&oacute;n</a><div><p class="eyebrow">Equipo Urgencia</p><h1 id="doctorsTitle">M&oacute;dulo operativo</h1></div></div><div id="doctorsContent" aria-live="polite"></div></section>
-      <section id="chiefPage" class="page" aria-labelledby="chiefTitle"><div class="page-head"><a class="back-link" href="#/gestion">Gesti&oacute;n</a><div><p class="eyebrow">Espacio jefatura</p><h1 id="chiefTitle">Panel restringido</h1></div></div><div id="chiefContent" aria-live="polite"></div></section>
+      <section id="chiefPage" class="page" aria-labelledby="chiefTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Espacio jefatura</p><h1 id="chiefTitle">Panel restringido</h1></div></div><div id="chiefContent" aria-live="polite"></div></section>
     </main>
 
     <template id="specialtyButtonTemplate"><a class="specialty-button"><span class="specialty-sticker" aria-hidden="true"></span><strong></strong></a></template>
@@ -101,11 +103,10 @@
     <script src="./directorio-telefonico.js?v=2"></script>
     <script src="./contenido-web.js?v=2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=6"></script>
+    <script src="./supabase-config.js?v=7"></script>
     <script src="./supabase-admin-users.js?v=1"></script>
-    <script src="./supabase-backend.js?v=3"></script>
-    <script src="./gestion-supabase-home.js?v=1"></script>
-    <script src="./gestion-panel-final.js?v=1"></script>
-    <script src="./gestion-pacientes-core.js?v=1"></script>
+    <script src="./supabase-backend.js?v=4"></script>
+    <script src="./gestion-panel-final.js?v=2"></script>
+    <script src="./gestion-pacientes-core.js?v=2"></script>
   </body>
 </html>
