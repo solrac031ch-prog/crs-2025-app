@@ -40,6 +40,22 @@ mdcarlosherrera@gmail.com
 
 Puedes cambiarlo o agregar otros correos desde la tabla `crs_admins`.
 
+## 3.1 Activar administracion de usuarios desde la web
+
+Para crear y eliminar usuarios sin entrar al panel de Supabase, despliega la funcion segura incluida en este repositorio:
+
+```bash
+supabase functions deploy crs-admin-users
+```
+
+La funcion usa `SUPABASE_SERVICE_ROLE_KEY` solo dentro de Supabase Edge Functions. No pongas esa clave en `supabase-config.js` ni en ningun archivo publico.
+
+Despues de desplegarla, el modulo Jefatura puede:
+
+- Crear el usuario en Supabase Authentication.
+- Agregar o actualizar su permiso en `crs_admins`.
+- Eliminar el usuario de Authentication y de `crs_admins`.
+
 ## 4. Conectar la web
 
 Edita `supabase-config.js`:
@@ -50,6 +66,7 @@ window.CRS_SUPABASE_CONFIG = {
   anonKey: "TU-ANON-PUBLIC-KEY",
   enabled: true,
   bucket: "crs-public",
+  adminUsersFunction: "crs-admin-users",
   tables: {
     content: "crs_content_items",
     documents: "crs_documents",
