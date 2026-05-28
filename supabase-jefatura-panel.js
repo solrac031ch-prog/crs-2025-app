@@ -71,16 +71,12 @@
     document.head.append(style);
   }
 
-  function routeLinks() {
-    return `<div class="route-actions"><a class="back-link" href="#/inicio">Inicio</a></div>`;
-  }
-
   function heroHtml(title, text) {
     return `<section class="sb-chief-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>`;
   }
 
   function loginHtml() {
-    return `<div class="sb-chief-shell" data-sb-chief-shell>${routeLinks()}${heroHtml("Modulo Jefatura global", "Panel conectado a Supabase. Inicia sesion para publicar noticias, papers, educacion, procedimientos, documentos, especialistas, UHD y flujos.")}<section class="sb-chief-grid"><article class="sb-chief-card blue sb-chief-status"><h3>Ingreso Supabase</h3><div class="sb-ok">Supabase esta conectado. Usa el usuario creado en Supabase Authentication.</div><form class="sb-login" data-sb-login><label>Correo<input name="email" type="email" required autocomplete="email"></label><label>Clave Supabase<input name="password" type="password" autocomplete="current-password" placeholder="Dejar vacio para enlace por correo"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article></section></div>`;
+    return `<div class="sb-chief-shell" data-sb-chief-shell>${heroHtml("Modulo Jefatura global", "Panel conectado a Supabase. Inicia sesion para publicar noticias, papers, educacion, procedimientos, documentos, especialistas, UHD y flujos.")}<section class="sb-chief-grid"><article class="sb-chief-card blue sb-chief-status"><h3>Ingreso Supabase</h3><div class="sb-ok">Supabase esta conectado. Usa el usuario creado en Supabase Authentication.</div><form class="sb-login" data-sb-login><label>Correo<input name="email" type="email" required autocomplete="email"></label><label>Clave Supabase<input name="password" type="password" autocomplete="current-password" placeholder="Dejar vacio para enlace por correo"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article></section></div>`;
   }
 
   function statusCard(user) {
@@ -119,12 +115,8 @@
     return `<article class="sb-chief-card blue"><h3>Administrador de usuarios</h3><p>Crea el acceso en Supabase Authentication y deja el correo autorizado para esta app.</p><form data-backend-user><label>Correo<input name="email" type="email" required></label><label>Nombre<input name="nombre" required></label><label>Clave inicial<input name="password" type="password" minlength="6" placeholder="Opcional: se genera una temporal"></label><label>Rol<select name="rol"><option value="jefatura">Jefatura</option><option value="admin">Admin</option><option value="equipo">Equipo</option></select></label><button class="document-button" type="submit">Crear / actualizar usuario</button></form></article>`;
   }
 
-  function deleteInfoCard() {
-    return `<article class="sb-chief-card amber"><h3>Eliminar / ocultar publicaciones</h3><p>Para no perder historial, las publicaciones globales se ocultan desde la lista superior. Los documentos locales antiguos ya no son el flujo principal.</p><div class="sb-warn">Usa el boton Ocultar en publicaciones globales recientes para retirar algo de la web publica.</div></article>`;
-  }
-
   function panelHtml(user) {
-    return `<div class="sb-chief-shell" data-sb-chief-shell>${routeLinks()}${heroHtml("Modulo Jefatura global", "Panel conectado a Supabase para publicar noticias, papers, educacion, procedimientos, documentos, especialistas, UHD y flujos desde la misma web.")}<section class="sb-chief-grid">${statusCard(user)}${paperCard()}${newsEducationCard()}${procedureCard()}${callCard("especialistas", "Especialistas de llamado", "Publica el documento o planilla vigente de especialistas.")}${callCard("uhd", "UHD - Unidad de Hospitalizacion Domiciliaria", "Publica disponibilidad o documento vigente de UHD.")}${baseDocumentCard("medicamentosUsoOcasional", "Medicamentos de uso ocasional", "Actualiza el formulario global de medicamentos de uso ocasional.")}${baseDocumentCard("leyUrgencias", "Ley de Urgencias", "Actualiza documentos o links de activacion / consentimiento.")}${baseDocumentCard("notificacionObligatoria", "Notificacion obligatoria", "Actualiza formularios o documentos asociados a notificacion obligatoria.")}${newFormCard()}${newFlowCard()}${usersCard()}${deleteInfoCard()}</section></div>`;
+    return `<div class="sb-chief-shell" data-sb-chief-shell>${heroHtml("Modulo Jefatura global", "Panel conectado a Supabase para publicar noticias, papers, educacion, procedimientos, documentos, especialistas, UHD y flujos desde la misma web.")}<section class="sb-chief-grid">${statusCard(user)}${paperCard()}${newsEducationCard()}${procedureCard()}${callCard("especialistas", "Especialistas de llamado", "Publica el documento o planilla vigente de especialistas.")}${callCard("uhd", "UHD - Unidad de Hospitalizacion Domiciliaria", "Publica disponibilidad o documento vigente de UHD.")}${baseDocumentCard("medicamentosUsoOcasional", "Medicamentos de uso ocasional", "Actualiza el formulario global de medicamentos de uso ocasional.")}${baseDocumentCard("leyUrgencias", "Ley de Urgencias", "Actualiza documentos o links de activacion / consentimiento.")}${baseDocumentCard("notificacionObligatoria", "Notificacion obligatoria", "Actualiza formularios o documentos asociados a notificacion obligatoria.")}${newFormCard()}${newFlowCard()}${usersCard()}</section></div>`;
   }
 
   async function renderGlobalList() {
@@ -147,7 +139,7 @@
       ...(flows.data || []).map((item) => ({ type: "flow", label: item.category, ...item }))
     ].sort((a, b) => String(b.updated_at || b.created_at).localeCompare(String(a.updated_at || a.created_at))).slice(0, 18);
     box.innerHTML = rows.length
-      ? `<div class="sb-list">${rows.map((item) => `<div class="sb-row"><span><strong>${esc(item.title)}</strong><br><span class="sb-mini">${esc(item.label)} · ${esc(item.status)}</span></span><button class="delete-button" type="button" data-sb-archive="${esc(item.type)}" data-sb-id="${esc(item.id)}">Ocultar</button></div>`).join("")}</div>`
+      ? `<div class="sb-list">${rows.map((item) => `<div class="sb-row"><span><strong>${esc(item.title)}</strong><br><span class="sb-mini">${esc(item.label)} - ${esc(item.status)}</span></span><button class="delete-button" type="button" data-sb-archive="${esc(item.type)}" data-sb-id="${esc(item.id)}">Ocultar</button></div>`).join("")}</div>`
       : `<div class="sb-warn">Aun no hay publicaciones globales en Supabase.</div>`;
   }
 
