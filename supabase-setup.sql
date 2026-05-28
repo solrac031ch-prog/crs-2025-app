@@ -1,6 +1,6 @@
 -- CRS HPH 2025 - Supabase setup
 -- Ejecutar una vez en Supabase > SQL Editor.
--- Luego crear usuarios en Authentication y registrar sus correos en crs_admins.
+-- Luego desplegar la funcion crs-admin-users para crear/eliminar usuarios desde la web.
 
 create extension if not exists pgcrypto;
 
