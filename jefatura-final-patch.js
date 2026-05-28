@@ -2,6 +2,10 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   let pdfLoading = null;
 
+  function currentRoute() {
+    return location.hash.split("?")[0] || "#/inicio";
+  }
+
   function loadPdfJs() {
     if (window.pdfjsLib?.getDocument) return Promise.resolve(window.pdfjsLib);
     if (pdfLoading) return pdfLoading;
@@ -108,15 +112,46 @@
     if (intro) intro.textContent = "Publica noticias, cursos, posters, enlaces, podcast o material docente. Para noticias, puedes subir una imagen o poster para que la tarjeta se vea atractiva.";
   }
 
+  function setEyebrow(pageSelector, text) {
+    const node = $(`${pageSelector} .page-head .eyebrow`);
+    if (node && node.textContent !== text) node.textContent = text;
+  }
+
+  function removeChiefGestionLinks() {
+    document.querySelectorAll("#chiefContent a").forEach((link) => {
+      if (/volver\s+a\s+gestion/i.test(link.textContent || "") || link.getAttribute("href") === "#/gestion") {
+        link.remove();
+      }
+    });
+  }
+
+  function patchRouteChrome() {
+    const hash = currentRoute();
+    if (hash === "#/gestion") setEyebrow("#managementPage", "Seguimiento operativo");
+    if (hash === "#/gestion/pacientes") setEyebrow("#managementPage", "Gestion pacientes");
+    if (hash === "#/noticias") setEyebrow("#managementPage", "Noticias");
+    if (hash === "#/paper") setEyebrow("#managementPage", "Paper del mes");
+    if (hash === "#/procedimientos") setEyebrow("#managementPage", "Procedimientos medicos");
+    if (hash === "#/educacion") setEyebrow("#educationPage", "Educacion medica");
+    if (hash === "#/jefatura") {
+      setEyebrow("#chiefPage", "Espacio jefatura");
+      removeChiefGestionLinks();
+    }
+  }
+
   function patch() {
-    if (location.hash.split("?")[0] !== "#/jefatura") return;
+    patchRouteChrome();
+    if (currentRoute() !== "#/jefatura") return;
     patchPaperForm();
     patchNewsForm();
   }
 
   const observer = new MutationObserver(patch);
   if (document.body) observer.observe(document.body, { childList: true, subtree: true });
-  window.addEventListener("hashchange", () => setTimeout(patch, 80));
+  window.addEventListener("hashchange", () => {
+    setTimeout(patch, 80);
+    setTimeout(patch, 420);
+  });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", patch);
   else patch();
 })();
