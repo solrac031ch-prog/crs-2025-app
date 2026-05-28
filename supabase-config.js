@@ -14,7 +14,6 @@ window.CRS_SUPABASE_CONFIG = {
 };
 
 (() => {
-  let insertShieldInstalled = false;
   let supabaseFallbackLoading = false;
 
   function route() {
@@ -59,19 +58,10 @@ window.CRS_SUPABASE_CONFIG = {
     if (!window.supabase?.createClient) setTimeout(loadSupabaseFallback, 80);
   }
 
-  function loadJefaturaFinalPatch() {
-    if (document.querySelector("script[data-jefatura-final-patch]")) return;
-    const script = document.createElement("script");
-    script.src = "./jefatura-final-patch.js?v=2";
-    script.dataset.jefaturaFinalPatch = "true";
-    (document.body || document.documentElement).append(script);
-  }
-
   function loadSupabaseJefaturaPanel() {
-    loadJefaturaFinalPatch();
     if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
     const script = document.createElement("script");
-    script.src = "./supabase-jefatura-panel.js?v=6";
+    script.src = "./supabase-jefatura-panel.js?v=7";
     script.dataset.supabaseJefaturaPanel = "true";
     (document.body || document.documentElement).append(script);
   }
@@ -79,21 +69,6 @@ window.CRS_SUPABASE_CONFIG = {
   function scheduleCanonicalJefatura(delay = 30) {
     if (!isJefaturaRoute()) return;
     setTimeout(() => window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0), delay);
-  }
-
-  function installLegacyJefaturaShield() {
-    if (insertShieldInstalled) return;
-    insertShieldInstalled = true;
-    const nativeInsertAdjacentHTML = Element.prototype.insertAdjacentHTML;
-    Element.prototype.insertAdjacentHTML = function patchedInsertAdjacentHTML(position, html) {
-      const isLegacyPanel = typeof html === "string" && html.includes("data-sb-panel");
-      const insideChief = this?.id === "chiefContent" || Boolean(this?.closest?.("#chiefContent"));
-      if (isJefaturaRoute() && isLegacyPanel && insideChief) {
-        scheduleCanonicalJefatura(20);
-        return;
-      }
-      return nativeInsertAdjacentHTML.call(this, position, html);
-    };
   }
 
   function normalizeSupabaseCopy() {
@@ -118,7 +93,6 @@ window.CRS_SUPABASE_CONFIG = {
 
   function boot() {
     window.CRS_REGISTER_SERVICE_WORKER?.();
-    installLegacyJefaturaShield();
     ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(40);
