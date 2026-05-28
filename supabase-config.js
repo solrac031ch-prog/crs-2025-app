@@ -3,6 +3,7 @@ window.CRS_SUPABASE_CONFIG = {
   anonKey: "sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9",
   enabled: true,
   bucket: "crs-public",
+  adminUsersFunction: "crs-admin-users",
   tables: {
     content: "crs_content_items",
     documents: "crs_documents",
@@ -61,7 +62,7 @@ window.CRS_SUPABASE_CONFIG = {
   function loadSupabaseJefaturaPanel() {
     if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
     const script = document.createElement("script");
-    script.src = "./supabase-jefatura-panel.js?v=3";
+    script.src = "./supabase-jefatura-panel.js?v=4";
     script.dataset.supabaseJefaturaPanel = "true";
     (document.body || document.documentElement).append(script);
   }
