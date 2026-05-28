@@ -39,10 +39,6 @@
     if (eyebrow && eyebrowText) eyebrow.textContent = eyebrowText;
   }
 
-  function nav() {
-    return `<div class="gf-route"><a class="back-link" href="#/inicio">Inicio</a></div>`;
-  }
-
   function isImageUrl(url = "") {
     return /\.(png|jpe?g|webp|gif|avif|svg)(\?|#|$)/i.test(String(url));
   }
@@ -106,7 +102,7 @@
     const titleEl = pageId === "educationPage" ? $("#educationTitle") : $("#managementTitle");
     const contentEl = pageId === "educationPage" ? $("#educationContent") : $("#managementContent");
     if (titleEl) titleEl.textContent = title;
-    if (contentEl) contentEl.innerHTML = `<div class="gf-shell">${nav()}<section class="gf-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>${body}</div>`;
+    if (contentEl) contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>${body}</div>`;
   }
 
   async function renderList(kind, title, text, empty, pageId = "managementPage", activeRoute = "") {
