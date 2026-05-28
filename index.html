@@ -50,11 +50,7 @@
         </span>
       </a>
       <nav class="topnav" aria-label="Navegacion principal">
-        <a href="#/especialidades" data-route-link="especialidades">Especialidades</a>
-        <a href="#/llamados" data-route-link="llamados">Llamados</a>
-        <a href="#/telefonos" data-route-link="telefonos">Directorio telef&oacute;nico</a>
-        <a href="#/visita" data-route-link="visita">Visita</a>
-        <a href="#/formularios" data-route-link="formularios">Formularios</a>
+        <a href="#/inicio" data-route-link="inicio">Inicio</a>
         <a href="#/gestion" data-route-link="gestion">Gesti&oacute;n</a>
         <a href="#/jefatura" data-route-link="jefatura">Jefatura</a>
       </nav>
@@ -68,16 +64,14 @@
           <p id="todayLabel" class="today-label"></p>
         </div>
         <div class="home-actions" aria-label="Accesos principales">
-          <a class="action-card action-primary" href="#/especialidades"><span class="action-top"><span class="action-number">1</span><span class="action-kicker">Derivar</span></span><strong>Especialidades</strong><span>Antes de derivar, enlace y flujo por especialidad.</span></a>
-          <a class="action-card" href="#/llamados"><span class="action-top"><span class="action-number">2</span><span class="action-kicker">Llamar</span></span><strong>Especialista de llamado y UHD</strong><span>Especialistas y disponibilidad domiciliaria.</span></a>
-          <a class="action-card" href="#/visita"><span class="action-top"><span class="action-number">3</span><span class="action-kicker">Visita</span></span><strong>Visita diaria</strong><span>Planilla AM/PM compartida por jefatura.</span></a>
-          <a class="action-card" href="#/formularios"><span class="action-top"><span class="action-number">4</span><span class="action-kicker">Formularios</span></span><strong>Formularios de turno</strong><span>Antimicrobianos, Ley de Urgencias y notificaciones.</span></a>
-          <a class="action-card" href="#/telefonos"><span class="action-top"><span class="action-number">5</span><span class="action-kicker">Directorio</span></span><strong>Directorio telef&oacute;nico</strong><span>Anexos y contactos frecuentes.</span></a>
-          <a class="action-card" href="#/noticias"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Noticias</span></span><strong>Noticias</strong><span>Avisos y publicaciones vigentes con imagen destacada.</span></a>
-          <a class="action-card" href="#/educacion"><span class="action-top"><span class="action-number">7</span><span class="action-kicker">Docencia</span></span><strong>Educacion medica</strong><span>Material docente, videos, podcasts y procedimientos.</span></a>
-          <a class="action-card" href="#/paper"><span class="action-top"><span class="action-number">8</span><span class="action-kicker">Paper</span></span><strong>Paper del mes</strong><span>Titulo, abstract y repositorio mensual.</span></a>
-          <a class="action-card" href="#/gestion"><span class="action-top"><span class="action-number">9</span><span class="action-kicker">Gestion</span></span><strong>Casos prioritarios</strong><span>Seguimiento operativo de pacientes y tareas pendientes.</span></a>
-          <a class="action-card" href="#/jefatura"><span class="action-top"><span class="action-number">10</span><span class="action-kicker">Jefatura</span></span><strong>M&oacute;dulo Jefatura</strong><span>Publicaciones, documentos y administraci&oacute;n del equipo.</span></a>
+          <a class="action-card action-primary" href="#/especialidades"><span class="action-top"><span class="action-number">1</span><span class="action-kicker">Derivar</span></span><strong>Especialidades</strong><span>Flujos, CRS, policl&iacute;nicos, hospitalizados y protocolos.</span></a>
+          <a class="action-card" href="#/llamados"><span class="action-top"><span class="action-number">2</span><span class="action-kicker">Turno</span></span><strong>Llamados y UHD</strong><span>Especialistas de llamado y hospitalizaci&oacute;n domiciliaria.</span></a>
+          <a class="action-card" href="#/formularios"><span class="action-top"><span class="action-number">3</span><span class="action-kicker">Documentos</span></span><strong>Formularios</strong><span>Documentos frecuentes del turno.</span></a>
+          <a class="action-card" href="#/noticias"><span class="action-top"><span class="action-number">4</span><span class="action-kicker">Comunidad</span></span><strong>Noticias</strong><span>Avisos y publicaciones vigentes.</span></a>
+          <a class="action-card" href="#/educacion"><span class="action-top"><span class="action-number">5</span><span class="action-kicker">Docencia</span></span><strong>Educaci&oacute;n m&eacute;dica</strong><span>Material docente, procedimientos y recursos.</span></a>
+          <a class="action-card" href="#/paper"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Lectura</span></span><strong>Paper del mes</strong><span>T&iacute;tulo, abstract y repositorio mensual.</span></a>
+          <a class="action-card" href="#/gestion"><span class="action-top"><span class="action-number">7</span><span class="action-kicker">Gesti&oacute;n</span></span><strong>Casos prioritarios</strong><span>Seguimiento operativo de pacientes y tareas.</span></a>
+          <a class="action-card" href="#/jefatura"><span class="action-top"><span class="action-number">8</span><span class="action-kicker">Admin</span></span><strong>Jefatura</strong><span>Publicaciones, documentos y usuarios.</span></a>
         </div>
         <section class="home-panel" aria-label="Regla general"><strong>Recordatorio r&aacute;pido</strong><p>Toda derivaci&oacute;n se realiza por Pit&aacute;goras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p></section>
       </section>
@@ -118,7 +112,7 @@
     <script src="./supabase-config.js?v=9"></script>
     <script src="./supabase-admin-users.js?v=1"></script>
     <script src="./supabase-backend.js?v=5"></script>
-    <script src="./gestion-panel-final.js?v=3"></script>
+    <script src="./gestion-panel-final.js?v=4"></script>
     <script src="./gestion-pacientes-core.js?v=2"></script>
   </body>
 </html>
