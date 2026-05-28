@@ -35,6 +35,25 @@
     return data?.user || null;
   }
 
+  function adminUsersFunctionName() {
+    return String(cfg.adminUsersFunction || "crs-admin-users").trim();
+  }
+
+  async function invokeAdminUsers(action, payload = {}) {
+    const client = api();
+    if (!client) throw new Error("Supabase no esta conectado.");
+    const { data: sessionData } = await client.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    if (!token) throw new Error("Vuelve a iniciar sesion Supabase para administrar usuarios.");
+    const { data, error } = await client.functions.invoke(adminUsersFunctionName(), {
+      body: { action, ...payload },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (error) throw error;
+    if (data?.ok === false) throw new Error(data.error || "No se pudo administrar el usuario.");
+    return data || {};
+  }
+
   function activateChiefPage() {
     document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.id === "chiefPage"));
     document.querySelectorAll("[data-route-link]").forEach((link) => {
@@ -97,7 +116,7 @@
   }
 
   function usersCard() {
-    return `<article class="sb-chief-card blue"><h3>Administrador de usuarios</h3><p>Autoriza correos para publicar desde Jefatura. El usuario tambien debe existir en Supabase Authentication.</p><form data-backend-user><label>Correo<input name="email" type="email" required></label><label>Nombre<input name="nombre" required></label><label>Rol<select name="rol"><option value="jefatura">Jefatura</option><option value="admin">Admin</option><option value="equipo">Equipo</option></select></label><button class="document-button" type="submit">Agregar / actualizar usuario</button></form></article>`;
+    return `<article class="sb-chief-card blue"><h3>Administrador de usuarios</h3><p>Crea el acceso en Supabase Authentication y deja el correo autorizado para esta app.</p><form data-backend-user><label>Correo<input name="email" type="email" required></label><label>Nombre<input name="nombre" required></label><label>Clave inicial<input name="password" type="password" minlength="6" placeholder="Opcional: se genera una temporal"></label><label>Rol<select name="rol"><option value="jefatura">Jefatura</option><option value="admin">Admin</option><option value="equipo">Equipo</option></select></label><button class="document-button" type="submit">Crear / actualizar usuario</button></form></article>`;
   }
 
   function deleteInfoCard() {
@@ -134,15 +153,16 @@
 
   async function renderAdminList() {
     const box = $("[data-sb-chief-admin-list]");
-    const client = api();
-    if (!box || !client) return;
-    const { data, error } = await client.from(tables.admins).select("email,display_name,role,active").order("email");
-    if (error) {
-      box.innerHTML = `<div class="sb-error">${esc(error.message || error)}</div>`;
+    if (!box) return;
+    let users = [];
+    try {
+      users = (await invokeAdminUsers("listUsers")).users || [];
+    } catch (error) {
+      box.innerHTML = `<div class="sb-error">${esc(error.message || error)}<br><span class="sb-mini">Debes desplegar la funcion Supabase ${esc(adminUsersFunctionName())} para crear y eliminar usuarios desde la web.</span></div>`;
       return;
     }
-    box.innerHTML = (data || []).length
-      ? `<div class="sb-list">${data.map((item) => `<div class="sb-row"><span><strong>${esc(item.display_name || item.email)}</strong><br><span class="sb-mini">${esc(item.email)} · ${esc(item.role)} · ${item.active ? "activo" : "inactivo"}</span></span></div>`).join("")}</div>`
+    box.innerHTML = users.length
+      ? `<div class="sb-list">${users.map((item) => `<div class="sb-row"><span><strong>${esc(item.display_name || item.email)}</strong><br><span class="sb-mini">${esc(item.email)} - ${esc(item.role)} - ${item.active ? "activo" : "inactivo"} - Auth: ${item.auth_id ? "creado" : "sin cuenta"}</span></span><button class="delete-button" type="button" data-sb-delete-user="${esc(item.email)}">Eliminar</button></div>`).join("")}</div>`
       : `<div class="sb-warn">No hay usuarios registrados en crs_admins.</div>`;
   }
 
