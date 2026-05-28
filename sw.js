@@ -27,6 +27,7 @@ const APP_SHELL = [
   "./supabase-admin-users.js?v=1",
   "./supabase-backend.js?v=4",
   "./supabase-jefatura-panel.js?v=5",
+  "./jefatura-final-patch.js?v=1",
   "./gestion-panel-final.js?v=2",
   "./gestion-pacientes-core.js?v=2"
 ];
