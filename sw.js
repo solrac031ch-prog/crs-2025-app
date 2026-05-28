@@ -1,4 +1,4 @@
-const CACHE_NAME = "crs-hph-global-v65";
+const CACHE_NAME = "crs-hph-global-v67";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -10,8 +10,8 @@ const APP_SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./logo-urgencia-hph.svg",
-  "./compatibilidad-global.js?v=2",
-  "./jefatura-usuarios.js?v=1",
+  "./compatibilidad-global.js?v=3",
+  "./jefatura-usuarios.js?v=2",
   "./ley-urgencias-data.js?v=38",
   "./app.js?v=40",
   "./arsenal-terapeutico.js?v=1",
@@ -28,6 +28,7 @@ const APP_SHELL = [
   "./supabase-backend.js?v=3",
   "./supabase-jefatura-panel.js?v=4",
   "./gestion-supabase-home.js?v=1",
+  "./gestion-panel-final.js?v=1",
   "./gestion-pacientes-core.js?v=1"
 ];
 const CACHEABLE_EXTENSIONS = /\.(?:html|css|js|mjs|json|webmanifest|svg|png|jpg|jpeg|webp|gif|ico)(?:\?|$)/i;
