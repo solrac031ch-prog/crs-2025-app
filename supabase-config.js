@@ -65,6 +65,15 @@ window.CRS_SUPABASE_CONFIG = {
     script.src = "./supabase-jefatura-panel.js?v=5";
     script.dataset.supabaseJefaturaPanel = "true";
     (document.body || document.documentElement).append(script);
+    loadJefaturaFinalPatch();
+  }
+
+  function loadJefaturaFinalPatch() {
+    if (document.querySelector("script[data-jefatura-final-patch]")) return;
+    const script = document.createElement("script");
+    script.src = "./jefatura-final-patch.js?v=1";
+    script.dataset.jefaturaFinalPatch = "true";
+    (document.body || document.documentElement).append(script);
   }
 
   function scheduleCanonicalJefatura(delay = 30) {
