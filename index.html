@@ -29,6 +29,18 @@
     <link rel="stylesheet" href="./protocolos-agiles.css?v=2" />
   </head>
   <body>
+    <script>
+      window.CRS_DISABLE_SERVICE_WORKER = true;
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations?.().then((items) => items.forEach((item) => item.unregister())).catch(() => {});
+        try {
+          navigator.serviceWorker.register = () => Promise.resolve({ unregister: () => Promise.resolve(true) });
+        } catch (_) {}
+      }
+      if ("caches" in window) {
+        caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).catch(() => {});
+      }
+    </script>
     <header class="topbar">
       <a class="brand" href="#/inicio" aria-label="Volver al inicio">
         <img class="brand-logo" src="./logo-urgencia-hph.svg" alt="Urgencia Hospital Padre Hurtado" />
@@ -92,7 +104,7 @@
     <template id="specialtyButtonTemplate"><a class="specialty-button"><span class="specialty-sticker" aria-hidden="true"></span><strong></strong></a></template>
     <script src="./compatibilidad-global.js?v=3"></script>
     <script src="./ley-urgencias-data.js?v=38"></script>
-    <script src="./app.js?v=40"></script>
+    <script src="./app.js?v=41"></script>
     <script src="./arsenal-terapeutico.js?v=1"></script>
     <script src="./arsenal-uso-ocasional.js?v=1"></script>
     <script>try{if(typeof pages!=="undefined"){pages.urgencia=document.querySelector("#doctorsPage");pages.medicos=document.querySelector("#doctorsPage");pages["equipo-urgencia"]=document.querySelector("#doctorsPage");pages.jefatura=document.querySelector("#chiefPage");}}catch(_){}</script>
