@@ -62,6 +62,20 @@ window.CRS_SUPABASE_CONFIG = {
     }, delay);
   }
 
+  function scheduleCurrentRouteRepair(delay = 120) {
+    setTimeout(() => {
+      patchDynamicRoutePages();
+      try {
+        if (typeof renderRoute === "function") renderRoute();
+      } catch (_) {}
+      window.CRS_GESTION_FINAL?.schedule?.();
+      window.CRS_SUPABASE?.renderPublicRoute?.();
+      window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0);
+      scheduleNormalizeCopy(20);
+      scheduleCanonicalJefatura(20);
+    }, delay);
+  }
+
   function fireSupabaseReady() {
     try {
       window.dispatchEvent(new Event("crs:supabase-ready"));
@@ -85,6 +99,7 @@ window.CRS_SUPABASE_CONFIG = {
         window.CRS_SUPABASE?.renderPublicRoute?.();
         window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0);
         scheduleDynamicRouteRender(20);
+        scheduleCurrentRouteRepair(160);
       }, 80);
     };
     script.onerror = () => {
@@ -134,6 +149,8 @@ window.CRS_SUPABASE_CONFIG = {
     patchDynamicRoutePages();
     scheduleDynamicRouteRender(80);
     scheduleDynamicRouteRender(300);
+    scheduleCurrentRouteRepair(180);
+    scheduleCurrentRouteRepair(900);
     window.CRS_REGISTER_SERVICE_WORKER?.();
     ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
@@ -146,6 +163,8 @@ window.CRS_SUPABASE_CONFIG = {
     patchDynamicRoutePages();
     window.CRS_SUPABASE?.renderPublicRoute?.();
     scheduleDynamicRouteRender(30);
+    scheduleCurrentRouteRepair(160);
+    scheduleCurrentRouteRepair(1000);
     scheduleCanonicalJefatura(30);
   });
 
@@ -153,6 +172,10 @@ window.CRS_SUPABASE_CONFIG = {
     patchDynamicRoutePages();
     scheduleDynamicRouteRender(10);
     scheduleDynamicRouteRender(180);
+    scheduleCurrentRouteRepair(120);
+    scheduleCurrentRouteRepair(700);
+    scheduleCurrentRouteRepair(1800);
+    scheduleCurrentRouteRepair(3400);
     ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(20);
@@ -169,6 +192,8 @@ window.CRS_SUPABASE_CONFIG = {
   window.addEventListener("load", () => {
     patchDynamicRoutePages();
     scheduleDynamicRouteRender(40);
+    scheduleCurrentRouteRepair(160);
+    scheduleCurrentRouteRepair(1200);
     ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(80);
