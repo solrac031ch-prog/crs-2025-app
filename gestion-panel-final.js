@@ -76,17 +76,29 @@
     return [...items].sort((a, b) => String(b.createdAt || b.month || "").localeCompare(String(a.createdAt || a.month || "")));
   }
 
+  function staticContent(kind) {
+    const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
+    return sortItems(window.CRS_STATIC_CONTENT?.[staticKey] || []);
+  }
+
+  function withTimeout(promise, ms = 1200) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Supabase tardo demasiado; usando contenido local.")), ms))
+    ]);
+  }
+
   async function content(kind) {
+    const fallback = staticContent(kind);
     const api = window.CRS_SUPABASE;
     if (api?.enabled?.()) {
       try {
-        return sortItems(await api.fetchContent(kind));
+        return sortItems(await withTimeout(api.fetchContent(kind)));
       } catch (error) {
-        console.error(error);
+        console.warn(error?.message || error);
       }
     }
-    const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
-    return sortItems(window.CRS_STATIC_CONTENT?.[staticKey] || []);
+    return fallback;
   }
 
   function card(item, kind) {
@@ -107,7 +119,9 @@
 
   async function renderList(kind, title, text, empty, pageId = "managementPage", activeRoute = "") {
     addStyle();
+    const expectedRoute = route();
     const items = await content(kind);
+    if (route() !== expectedRoute) return;
     const body = items.length
       ? `<section class="gf-grid">${items.map((item) => card(item, kind)).join("")}</section>`
       : `<div class="gf-empty">${esc(empty)}</div>`;
@@ -116,7 +130,9 @@
 
   async function renderPaper() {
     addStyle();
+    const expectedRoute = route();
     const papers = await content("paper");
+    if (route() !== expectedRoute) return;
     const latest = papers[0];
     const older = papers.slice(1);
     const featured = latest
