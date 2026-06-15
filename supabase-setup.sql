@@ -6,16 +6,30 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.crs_admins (
   email text primary key,
+  username text,
   display_name text,
-  role text not null default 'jefatura',
+  role text not null default 'jefe',
   active boolean not null default true,
+  created_by_email text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-insert into public.crs_admins (email, display_name, role, active)
-values ('mdcarlosherrera@gmail.com', 'Administrador CRS HPH', 'admin', true)
-on conflict (email) do nothing;
+alter table public.crs_admins add column if not exists username text;
+alter table public.crs_admins add column if not exists created_by_email text;
+alter table public.crs_admins alter column role set default 'jefe';
+
+create unique index if not exists crs_admins_username_unique
+on public.crs_admins (lower(username))
+where username is not null and btrim(username) <> '';
+
+insert into public.crs_admins (email, username, display_name, role, active)
+values ('mdcarlosherrera@gmail.com', 'creador', 'Creador CRS HPH', 'creador', true)
+on conflict (email) do update set
+  username = coalesce(public.crs_admins.username, excluded.username),
+  display_name = coalesce(public.crs_admins.display_name, excluded.display_name),
+  role = 'creador',
+  active = true;
 
 create or replace function public.crs_touch_updated_at()
 returns trigger
@@ -25,6 +39,14 @@ begin
   new.updated_at = now();
   return new;
 end;
+$$;
+
+create or replace function public.crs_allowed_admin_role(role_value text)
+returns boolean
+language sql
+stable
+as $$
+  select lower(coalesce(role_value, '')) in ('creador', 'jefe', 'jefatura', 'disenador', 'diseñador', 'admin');
 $$;
 
 create or replace function public.crs_is_admin()
@@ -39,8 +61,29 @@ as $$
     from public.crs_admins a
     where lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
       and a.active = true
+      and public.crs_allowed_admin_role(a.role)
   );
 $$;
+
+create or replace function public.crs_login_email(login_text text)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select a.email
+  from public.crs_admins a
+  where a.active = true
+    and public.crs_allowed_admin_role(a.role)
+    and (
+      lower(a.email) = lower(btrim(login_text))
+      or lower(coalesce(a.username, '')) = lower(btrim(login_text))
+    )
+  limit 1;
+$$;
+
+grant execute on function public.crs_login_email(text) to anon, authenticated;
 
 create table if not exists public.crs_content_items (
   id uuid primary key default gen_random_uuid(),
