@@ -1,462 +1,134 @@
-const protocols = [
+const specialties = [
   {
-    title: "Antes de derivar",
-    category: "Regla general",
-    page: "p. 2",
-    summary: "Reglas administrativas comunes para las derivaciones ambulatorias desde Urgencia Adulto HPH.",
-    tags: ["Reglas", "Pitágoras", "APS", "IC"],
-    fields: [
-      ["Sistema válido", "Toda derivación se realiza por Pitágoras."],
-      ["No validado", "Derivaciones por otros sistemas no están validadas administrativamente."],
-      ["Fuera de flujo", "Paciente que no entra en los flujos descritos debe ser derivado a APS."]
-    ],
-    warning: "Las IC directas no Pitágoras serán devueltas directamente a quien las realiza."
-  },
-  {
-    title: "Medicina Interna",
-    category: "CRS",
+    name: "Medicina Interna",
     page: "p. 3",
-    summary: "Derivación restringida a especialistas de Medicina Interna y Medicina de Urgencia.",
-    tags: ["Poli Alta Urgencia", "Módulo Docente", "Especialista"],
-    fields: [
-      ["Quién deriva", "Exclusivamente especialistas en Medicina Interna y Medicina de Urgencia."],
-      ["Destino", "IC a Poli Alta Urgencia."],
-      ["Documentos", "Debe ir con IC/DAU a Módulo Docente."]
-    ]
+    description: "Derivación restringida a especialistas de Medicina Interna y Medicina de Urgencia.",
+    actions: ["IC a Poli Alta Urgencia", "Adjuntar IC/DAU", "Módulo Docente"]
   },
   {
-    title: "Poli TACO",
-    category: "CRS",
-    page: "p. 4",
-    summary: "Derivación directa para control en poli TACO.",
-    tags: ["TACO", "Pitágoras", "DAU"],
-    fields: [
-      ["Indicación", "IC por Pitágoras e indicación en DAU."],
-      ["Destino", "Paciente va directamente a poli TACO a pedir hora."]
-    ]
-  },
-  {
-    title: "Sala Pulso",
-    category: "Flujo",
+    name: "Sala Pulso",
     page: "p. 5",
-    summary: "Coordinación de tratamientos ambulatorios, especialmente transfusión, con requisitos previos claros.",
-    tags: ["Transfusión", "Grupo/Rh", "Banco de Sangre", "Horario hábil", "Horario inhábil"],
-    fields: [
-      ["IC", "Realizar IC en Pitágoras a “IC Sala Pulso”."],
-      ["Urgencia", "Escribir la urgencia del tratamiento: por ejemplo TX GR lo antes posible, en una semana, etc."],
-      ["Horario hábil", "Coordinar con EU Bárbara Borie: +56993124816, llamada o mensaje."],
-      ["Horario inhábil", "Enviar correo con información del paciente a admpulsos@gmail.com y citar al próximo día hábil."],
-      ["Antes de derivar", "Orden de transfusión y grupo/Rh tomado en Urgencia; enviar al Banco de Sangre."],
-      ["Texto clínico", "Dejar indicación clara: por ejemplo Hb 5.8, se dializa, cardiopatía, etc."]
-    ],
-    flow: [
-      "Crear IC Pitágoras a “IC Sala Pulso”.",
-      "Definir urgencia del tratamiento en DAU/IC.",
-      "Coordinar hora según horario hábil o inhábil.",
-      "Emitir orden de transfusión y tomar grupo/Rh en Urgencia.",
-      "Dejar texto clínico explícito para justificar indicación."
-    ],
-    warning: "No decir al paciente que vaya a transfundirse inmediatamente, sobre todo si no tiene hora agendada."
+    description: "Coordinación de tratamientos ambulatorios y transfusión con requisitos previos.",
+    actions: ["IC Sala Pulso", "Coordinar por horario", "Orden de transfusión + Grupo/Rh"]
   },
   {
-    title: "EDA",
-    category: "Flujo",
-    page: "p. 6",
-    summary: "Distingue EDA ambulatoria coordinada de EDA por llamado.",
-    tags: ["Endoscopía", "Jefatura", "EDA"],
-    fields: [
-      ["EDA de estudio", "No se realiza desde este flujo; debe hacerse a través de consultorio."],
-      ["Casos coordinados", "Con Endoscopía y Jefatura se autoriza IC a Poli EDA."],
-      ["Autorizados", "Dr. Gutiérrez, Dra. Marín, Dr. Yaksic, Dr. González."],
-      ["EDA llamado", "Ceñirse al protocolo actual; jefe de turno coordina llamado."]
-    ]
-  },
-  {
-    title: "Poli Choque ORL",
-    category: "Poli choque",
-    page: "p. 7",
-    summary: "Derivación ORL desde alta u hospitalización en Urgencia.",
-    tags: ["ORL", "08:00-10:00", "Anexo"],
-    fields: [
-      ["Alta desde Urgencia", "DAU + interconsulta Pitágoras."],
-      ["Horario", "08:00 a 10:00 hrs."],
-      ["Hospitalizado en Urgencia", "Llamar al anexo 260532/260533 para coordinar."],
-      ["Epistaxis anterior de alta", "Control en APS/consultorio."]
-    ],
-    pathologies: [
-      ["Choque ORL", ["Otomastoiditis", "Laberintitis", "Parálisis facial periférica", "Fístula laberíntica", "Abscesos subperiósticos", "Petrositis", "Otitis externa complicada", "Otitis externa micótica", "Trauma ótico", "Cuerpo extraño nasal", "Cuerpo extraño del oído", "Hipoacusia súbita", "Fractura nasal y/o hematoma septal"]],
-      ["Urgencia", ["Meningitis", "Abscesos y colecciones intracraneales", "Empiema subdural", "Tromboflebitis seno lateral", "Epistaxis posterior", "Absceso periamigdalino", "Absceso submandibular", "Absceso parafaríngeo", "Absceso retrofaríngeo", "Cuerpo extraño vía aéreo-digestiva superior"]],
-      ["Consultorio", ["Otitis externa", "Tapón de cerumen", "Epistaxis anterior"]]
-    ]
-  },
-  {
-    title: "Poli Choque Oftalmología",
-    category: "Poli choque",
+    name: "Oftalmología",
     page: "p. 8",
-    summary: "HPH no tiene poli choque oftalmológico; el destino depende de emergencia, horario y condición.",
-    tags: ["Oftalmo", "UTO", "HSDR", "Trauma ocular", "Glaucoma"],
-    fields: [
-      ["HPH", "No existe poli choque oftalmológico en HPH."],
-      ["Emergencia inhábil", "Glaucoma agudo con alta sospecha o trauma ocular: derivar a UTO Hospital Salvador."],
-      ["Horario UTO", "Lunes a domingo 08:00 - 20:00 hrs."],
-      ["Resto urgencias oftalmo", "Poli Choque Oftalmo HSDR, Sótero CDT pasillo 10, DAU + IC por Pitágoras."],
-      ["Horario HSDR", "Lunes, martes, jueves y viernes 08:00; miércoles 14:00. Deben llegar antes."],
-      ["Hospitalizado por patología oftalmo", "Ir al CRS y hablar con oftalmólogo."]
-    ],
-    warning: "No derivar como poli choque HPH: el documento explicita que no existe en HPH."
+    description: "No existe poli choque oftalmo en HPH; destino depende de emergencia y horario.",
+    actions: ["Trauma o glaucoma -> UTO", "Resto -> HSDR", "Hospitalizados -> CRS oftalmólogo"]
   },
   {
-    title: "Dermatología",
-    category: "Poli choque",
+    name: "Dermatología",
     page: "p. 9",
-    summary: "Poli choque dermatología para pacientes ambulatorios y contacto directo para hospitalizados.",
-    tags: ["Dermato", "Módulo Docente", "Especialista"],
-    fields: [
-      ["Ambulatorio", "Ir a las 08:00 hrs al pasillo Módulo Docente con IC “Poli Dermato” + DAU."],
-      ["Quién puede hacer IC", "Sólo especialistas del turno."],
-      ["Atención", "Se asignará hora; puede que no lo vean el mismo día."],
-      ["Hospitalizado", "Ir directamente a pasillo dermatología."]
-    ]
+    description: "Poli choque dermatología para ambulatorios y contacto directo para hospitalizados.",
+    actions: ["08:00 pasillo Módulo Docente", "IC por especialista", "Hospitalizado: pasillo dermatología"]
   },
   {
-    title: "Medicina Paliativa",
-    category: "Poli choque",
-    page: "p. 10",
-    summary: "Derivación a paliativos desde urgencia, incluyendo debut de cáncer.",
-    tags: ["Paliativos", "Cáncer", "Especialista"],
-    fields: [
-      ["Poli choque", "Lunes a viernes a las 14:00 hrs, DAU + IC por especialista."],
-      ["Hospitalizado", "Avisar que existe paciente para seguimiento."],
-      ["Debut de cáncer", "Derivar con DAU + IC; no es necesario tener IPD de Paliativos."]
-    ]
-  },
-  {
-    title: "Maxilofacial",
-    category: "Hospitalizados",
-    page: "p. 11",
-    summary: "HPH no tiene prestación formal de urgencia maxilofacial.",
-    tags: ["Maxilo", "HSDR", "Anexo"],
-    fields: [
-      ["HPH", "La prestación maxilofacial HPH no existe formalmente; no hay urgencia maxilofacial."],
-      ["Destino", "Derivar a Urgencia HSDR, anexo 262356."],
-      ["Hospitalizados", "Presentar a equipo Maxilo HPH, Dr. Passalacqua, para seguimiento en piso."],
-      ["Controles", "Controles maxilofaciales se derivan a CRS HPH, no HSR."]
-    ]
-  },
-  {
-    title: "Urología",
-    category: "CRS",
+    name: "Urología",
     page: "p. 12",
-    summary: "Flujo urológico parcial descrito para sonda Foley y diagnósticos CRS.",
-    tags: ["Uro", "Sonda Foley", "APS"],
-    fields: [
-      ["Poli choque", "Sonda Foley con IC por Pitágoras."],
-      ["CRS Urología", "Por diagnósticos definidos en el flujo local."],
-      ["Resto", "Resto de diagnósticos: derivación desde APS."]
-    ],
-    pathologies: [
-      ["CRS Urología por diagnósticos", ["Tumor maligno del riñón, excepto pelvis renal", "Tumor maligno del testículo no descendido", "Tumor maligno del testículo descendido", "Tumor maligno del testículo no especificado", "Tumores malignos de vejiga: trígono, cúpula, paredes lateral/anterior/posterior, cuello, orificio ureteral, uraco, sitios contiguos o parte no especificada"]]
-    ]
-  },
-  {
-    title: "Urgencia Maternidad",
-    category: "Flujo",
-    page: "p. 13",
-    summary: "Coordinación con maternidad para pacientes estables y caso a caso para no estables.",
-    tags: ["Maternidad", "Anexos", "Estable"],
-    fields: [
-      ["Paciente estable", "IC por Pitágoras y aviso telefónico o presencial a maternidad para coordinación."],
-      ["Sistema", "Deben ser egresadas del sistema Adulto."],
-      ["Paciente no estable", "Pedir evaluación caso a caso al equipo de urgencia maternidad."],
-      ["Anexos", "260659, 260653; residencia médico 260649."]
-    ]
-  },
-  {
-    title: "Cirugía",
-    category: "CRS",
-    page: "p. 14-17",
-    summary: "Derivación a CRS con DAU + IC Pitágoras; otros diagnósticos desde APS.",
-    tags: ["Cirugía", "DAU", "IC", "APS"],
-    fields: [
-      ["Destino", "Derivación a CRS."],
-      ["Documentos", "DAU + IC por Pitágoras."],
-      ["Resto diagnósticos", "Deben ser derivados desde APS al CRS."]
-    ],
-    pathologies: [
-      ["Cirugía abdominal", ["Patología biliar: colecistitis, colelitiasis, coledocolitiasis y colangitis", "Tumores digestivos: esófago, estómago, duodeno, intestino delgado, colon, rectosigmoides, recto, ano/conducto anal", "Tumores hepatobiliares y pancreáticos: vesícula, vías biliares, ampolla de Vater, hígado y páncreas", "Hernia diafragmática con o sin obstrucción/gangrena", "Quiste de páncreas"]],
-      ["Cirugía adulto", ["Hernia ventral con obstrucción", "Hernia ventral con gangrena", "Hernia ventral sin obstrucción ni gangrena"]],
-      ["Cirugía plástica", ["Heridas por arma de fuego o arma blanca", "Herida complicada, simple, cortante, infectada o contusa", "Herida con lesión de tendón, nervio periférico o compromiso articular", "Absceso, seroma, hemorragia, infección o dehiscencia de herida operatoria"]],
-      ["Cabeza, cuello y maxilofacial", ["Absceso cutáneo, furúnculo y carbunco del cuello", "Tumor maligno de cabeza, cara y cuello"]],
-      ["Coloproctología", ["Apendicitis aguda con peritonitis, absceso o no especificada", "Tumores de ciego, apéndice, colon, recto y ano", "Fístula anal", "Absceso rectal", "Hemorroides de tercer y cuarto grado"]],
-      ["Tórax", ["Tumores de bronquio y pulmón", "Tumor maligno de costilla, esternón y clavícula", "Tumor maligno secundario del pulmón", "Hernia diafragmática"]],
-      ["Vascular", ["Aneurismas de aorta, miembro superior, renal, ilíaca, miembro inferior u otras arterias", "Embolia y trombosis de arterias de miembros inferiores", "Estrechez arterial", "Complicaciones circulatorias periféricas asociadas a diabetes"]]
-    ]
-  },
-  {
-    title: "Flujo Sospecha TVP",
-    category: "Flujo",
-    page: "p. 18",
-    summary: "Algoritmo para sospecha o confirmación de TVP según horario y disponibilidad de eco.",
-    tags: ["TVP", "Dímero D", "Eco", "Enoxaparina", "Poli TACO", "Domiciliaria"],
-    fields: [
-      ["Horario hábil", "08:00 - 16:00, lunes a domingo: si diagnóstico confirmado, presentar a domiciliaria."],
-      ["Horario inhábil", "TVP confirmada sin domiciliaria: derivar a poli TACO día siguiente."],
-      ["Exámenes", "Dímero, creatinina, perfil hemato y coagulación."],
-      ["Eco positiva", "Si paciente tiene TVP, rayos deriva directo a poli TACO, no a Urgencia."]
-    ],
-    flow: [
-      "Paciente con alta sospecha clínica de TVP.",
-      "Tomar dímero D.",
-      "Si dímero positivo y no hay eco: enoxaparina.",
-      "Derivar a “Poli TVP” al día hábil siguiente en rayos, 08:00-10:00 o 14:00-16:00.",
-      "Si TVP confirmada: seguir destino según horario, domiciliaria o poli TACO."
-    ]
-  },
-  {
-    title: "Flujo ECO TVP Hospital Sótero del Río",
-    category: "Flujo",
-    page: "p. 19",
-    summary: "Ruta para eco TVP cuando Poli TVP HPH no puede responder, especialmente fines de semana o feriados.",
-    tags: ["TVP", "CASR", "Imagenología", "Fin de semana", "Feriado"],
-    fields: [
-      ["Indicación", "Sospecha real de TVP: clínica + dímero D elevado, cuando Poli TVP HPH no responde."],
-      ["Contacto", "Llamar a articuladora de red: +569 9253 7195 para asignación de cupo con hora específica."],
-      ["Cuestionario", "Tras hora asignada, completar cuestionario indicado en la descripción del grupo WhatsApp."],
-      ["Destino", "Sala 9 Imagenología, block central CASR, con orden médica."],
-      ["Resultado", "Informe sube a sistema de imágenes aproximadamente en 1 hora; paciente vuelve a HPH para resultado."]
-    ],
-    warning: "Derivar a Imagenología CASR, no a la Urgencia."
-  },
-  {
-    title: "Enlaces",
-    category: "Regla general",
-    page: "p. 20",
-    summary: "Regla para interconsultas a especialista.",
-    tags: ["Especialista", "Visita", "Hospitalización"],
-    fields: [
-      ["Antes de llamar", "Toda interconsulta a especialista debe conversarse en la visita o al momento de hospitalización con el especialista de turno."]
-    ],
-    warning: "No llamar sin haber hecho esto antes."
-  },
-  {
-    title: "Nefro y Diálisis",
-    category: "Flujo",
-    page: "p. 21",
-    summary: "Coordinación de diálisis según horario.",
-    tags: ["Nefro", "Diálisis", "Anexo", "Horario hábil", "Horario inhábil"],
-    fields: [
-      ["Horario hábil", "08:00 - 17:00, lunes a jueves: llamar a diálisis 260709 para presentar paciente y ver qué nefrólogo está de llamado."],
-      ["Horario inhábil", "Viernes, fines de semana e inhábil: llamar a Nefro de turno."],
-      ["Alcance", "Sólo para programar diálisis; calendario se enviará periódicamente."]
-    ]
+    description: "Flujo urológico parcial con sonda Foley y diagnósticos definidos.",
+    actions: ["Sonda Foley por Pitágoras", "CRS por diagnósticos", "Resto por APS"]
   }
 ];
 
-const state = {
-  query: "",
-  category: "Todos",
-  shift: "all",
-  selectedTitle: "Antes de derivar"
+const documents = {
+  onCall: {
+    title: "Especialistas de llamado (mensual)",
+    updatedAt: "Mayo 2026",
+    url: "https://drive.google.com/",
+    note: "Reemplazar este enlace mensualmente por la jefatura."
+  },
+  rounds: {
+    title: "Planilla de visita diaria (jefe servicio AM / jefe turno PM)",
+    updatedAt: "Mayo 2026",
+    url: "https://docs.google.com/spreadsheets/",
+    note: "Puede ser enlace a Excel en OneDrive o Google Sheets."
+  }
 };
 
-const cardsEl = document.querySelector("#cards");
-const metaEl = document.querySelector("#resultsMeta");
-const template = document.querySelector("#cardTemplate");
-const searchInput = document.querySelector("#searchInput");
-const protocolNav = document.querySelector("#protocolNav");
+const state = {
+  view: "presentacion",
+  selectedSpecialty: specialties[0].name
+};
 
-function normalize(text) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+const views = {
+  presentacion: document.querySelector("#view-presentacion"),
+  especialidades: document.querySelector("#view-especialidades"),
+  documentos: document.querySelector("#view-documentos")
+};
 
-function protocolHaystack(protocol) {
-  return normalize([
-    protocol.title,
-    protocol.category,
-    protocol.summary,
-    ...(protocol.tags || []),
-    ...(protocol.fields || []).flat(),
-    ...(protocol.flow || []),
-    ...((protocol.pathologies || []).flat(2)),
-    protocol.warning || ""
-  ].join(" "));
-}
+const specialtyButtons = document.querySelector("#specialtyButtons");
+const specialtyTitle = document.querySelector("#specialtyTitle");
+const specialtyDetail = document.querySelector("#specialtyDetail");
+const onCallDoc = document.querySelector("#onCallDoc");
+const roundsDoc = document.querySelector("#roundsDoc");
 
-function isShiftMatch(protocol) {
-  if (state.shift === "all") return true;
-  const text = protocolHaystack(protocol);
-  if (state.shift === "habil") {
-    return text.includes("horario habil") || text.includes("lunes a jueves") || text.includes("lunes a domingo") || text.includes("08:00");
-  }
-  return text.includes("horario inhabil") || text.includes("inhabil") || text.includes("viernes") || text.includes("feriado") || text.includes("fin de semana");
-}
+function renderNav() {
+  document.querySelectorAll("[data-view]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.view === state.view);
+  });
 
-function filteredProtocols() {
-  const q = normalize(state.query.trim());
-  return protocols.filter((protocol) => {
-    const categoryMatch = state.category === "Todos" || protocol.category === state.category;
-    const queryMatch = !q || protocolHaystack(protocol).includes(q);
-    return categoryMatch && queryMatch && isShiftMatch(protocol);
+  Object.entries(views).forEach(([key, el]) => {
+    el.classList.toggle("active", key === state.view);
   });
 }
 
-function selectedProtocol(results = filteredProtocols()) {
-  return results.find((protocol) => protocol.title === state.selectedTitle) || results[0] || null;
-}
-
-function displayTitle(title) {
-  return title.replace(/^Poli Choque\s+/i, "").replace(/^Flujo\s+/i, "");
-}
-
-function renderProtocolNav() {
-  const results = filteredProtocols();
-  const selected = selectedProtocol(results);
-  if (selected && selected.title !== state.selectedTitle) {
-    state.selectedTitle = selected.title;
-  }
-
-  protocolNav.innerHTML = "";
-  if (!results.length) {
-    const empty = document.createElement("div");
-    empty.className = "nav-empty";
-    empty.textContent = "Sin coincidencias";
-    protocolNav.append(empty);
-    return;
-  }
-
-  results.forEach((protocol) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `protocol-button${protocol.title === state.selectedTitle ? " active" : ""}`;
-    button.dataset.protocolTitle = protocol.title;
-    button.innerHTML = `<strong>${displayTitle(protocol.title)}</strong><span>${protocol.category} · ${protocol.page}</span>`;
-    protocolNav.append(button);
+function renderSpecialtyButtons() {
+  specialtyButtons.innerHTML = "";
+  specialties.forEach((specialty) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `specialty-btn${specialty.name === state.selectedSpecialty ? " active" : ""}`;
+    btn.dataset.specialty = specialty.name;
+    btn.innerHTML = `<strong>${specialty.name}</strong><span>${specialty.page}</span>`;
+    specialtyButtons.append(btn);
   });
 }
 
-function renderCards() {
-  const results = filteredProtocols();
-  const protocol = selectedProtocol(results);
-  cardsEl.innerHTML = "";
-  metaEl.textContent = results.length
-    ? `Mostrando: ${protocol.title}`
-    : "No hay protocolos para mostrar";
+function renderSpecialtyDetail() {
+  const specialty = specialties.find((item) => item.name === state.selectedSpecialty);
+  if (!specialty) return;
 
-  if (!protocol) {
-    const empty = document.createElement("div");
-    empty.className = "empty";
-    empty.textContent = "No encontré coincidencias en el documento CRS 2025.";
-    cardsEl.append(empty);
-    return;
-  }
-
-  const node = template.content.cloneNode(true);
-  const card = node.querySelector(".protocol-card");
-  card.open = true;
-  node.querySelector("h2").textContent = protocol.title;
-  node.querySelector(".card-category").textContent = protocol.category;
-  node.querySelector(".page-badge").textContent = protocol.page;
-  node.querySelector(".summary").textContent = protocol.summary;
-
-  const tags = node.querySelector(".tags");
-  protocol.tags.forEach((tag) => {
-    const span = document.createElement("span");
-    span.className = "tag";
-    span.textContent = tag;
-    tags.append(span);
-  });
-
-  const grid = node.querySelector(".grid");
-  protocol.fields.forEach(([label, value]) => {
-    const field = document.createElement("div");
-    field.className = "field";
-    field.innerHTML = `<strong>${label}</strong><span>${value}</span>`;
-    grid.append(field);
-  });
-
-  const flow = node.querySelector(".flow");
-  if (protocol.flow?.length) {
-    protocol.flow.forEach((step, index) => {
-      const row = document.createElement("div");
-      row.className = "flow-step";
-      row.innerHTML = `<span class="step-number">${index + 1}</span><p>${step}</p>`;
-      flow.append(row);
-    });
-  } else {
-    flow.remove();
-  }
-
-  const pathologies = node.querySelector(".pathologies");
-  if (protocol.pathologies?.length) {
-    const heading = document.createElement("p");
-    heading.className = "detail-label";
-    heading.textContent = "Patologías según imagen del PDF";
-    pathologies.append(heading);
-
-    protocol.pathologies.forEach(([group, items]) => {
-      const block = document.createElement("section");
-      block.className = "pathology-group";
-      const list = items.map((item) => `<li>${item}</li>`).join("");
-      block.innerHTML = `<h3>${group}</h3><ul>${list}</ul>`;
-      pathologies.append(block);
-    });
-  } else {
-    pathologies.remove();
-  }
-
-  const warning = node.querySelector(".warning");
-  if (protocol.warning) {
-    warning.textContent = protocol.warning;
-    warning.classList.add("visible");
-  } else {
-    warning.remove();
-  }
-
-  cardsEl.append(node);
+  specialtyTitle.textContent = `Detalle: ${specialty.name} (${specialty.page})`;
+  specialtyDetail.innerHTML = `
+    <p>${specialty.description}</p>
+    <ul>
+      ${specialty.actions.map((item) => `<li>${item}</li>`).join("")}
+    </ul>
+  `;
 }
 
-function setCategory(category) {
-  state.category = category;
-  document.querySelectorAll("[data-category]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.category === category);
-  });
-  renderProtocolNav();
-  renderCards();
+function renderDocCard(target, doc) {
+  target.innerHTML = `
+    <h4>${doc.title}</h4>
+    <p><strong>Última actualización sugerida:</strong> ${doc.updatedAt}</p>
+    <p>${doc.note}</p>
+    <a href="${doc.url}" target="_blank" rel="noopener noreferrer">Abrir documento</a>
+  `;
 }
-
-searchInput.addEventListener("input", (event) => {
-  state.query = event.target.value;
-  renderProtocolNav();
-  renderCards();
-});
 
 document.addEventListener("click", (event) => {
-  const categoryButton = event.target.closest("[data-category]");
-  if (categoryButton) setCategory(categoryButton.dataset.category);
-
-  const protocolButton = event.target.closest("[data-protocol-title]");
-  if (protocolButton) {
-    state.selectedTitle = protocolButton.dataset.protocolTitle;
-    renderProtocolNav();
-    renderCards();
+  const navBtn = event.target.closest("[data-view]");
+  if (navBtn) {
+    state.view = navBtn.dataset.view;
+    renderNav();
   }
 
-  const shiftButton = event.target.closest("[data-shift]");
-  if (shiftButton) {
-    state.shift = shiftButton.dataset.shift;
-    document.querySelectorAll("[data-shift]").forEach((button) => {
-      button.classList.toggle("active", button === shiftButton);
-    });
-    renderProtocolNav();
-    renderCards();
+  const specialtyBtn = event.target.closest("[data-specialty]");
+  if (specialtyBtn) {
+    state.selectedSpecialty = specialtyBtn.dataset.specialty;
+    state.view = "documentos";
+    renderSpecialtyButtons();
+    renderSpecialtyDetail();
+    renderNav();
   }
 });
 
-renderProtocolNav();
-renderCards();
+renderNav();
+renderSpecialtyButtons();
+renderSpecialtyDetail();
+renderDocCard(onCallDoc, documents.onCall);
+renderDocCard(roundsDoc, documents.rounds);
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});

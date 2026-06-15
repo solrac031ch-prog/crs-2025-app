@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#050505" />
     <title>CRS HPH 2025</title>
-    <link rel="manifest" href="./manifest.webmanifest" /ff>
-    <link rel="stylesheet" href="./styles.css?v=12" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css?v=13" />
   </head>
   <body>
     <header class="topbar">
@@ -15,74 +15,59 @@
         <p class="eyebrow">Urgencia Adulto HPH</p>
         <h1>Derivaciones CRS 2025</h1>
       </div>
-      <div class="source">Fuente: CRS 2025.pdf</div>
     </header>
 
+    <nav class="main-nav" aria-label="Navegación principal">
+      <button class="nav-btn active" data-view="presentacion" type="button">1) Presentación</button>
+      <button class="nav-btn" data-view="especialidades" type="button">2) Especialidades</button>
+      <button class="nav-btn" data-view="documentos" type="button">3) Documentos y anexos</button>
+    </nav>
+
     <main class="layout">
-      <section class="content">
-        <section class="control-panel" aria-label="Buscador y filtros">
-          <label class="search">
-            <span>Buscar flujo, especialidad o contacto</span>
-            <input id="searchInput" type="search" placeholder="Ej: TVP, oftalmo, pulso, TACO..." autocomplete="off" />
-          </label>
+      <section id="view-presentacion" class="view active">
+        <h2>Presentación</h2>
+        <p>
+          Esta web organiza los flujos CRS por página y permite acceder rápidamente a la información operativa por especialidad.
+        </p>
+        <ul>
+          <li>Página 1: presentación general.</li>
+          <li>Página 2: botones con cada especialidad.</li>
+          <li>Página 3: detalle por especialidad + documentos anexables.</li>
+        </ul>
+      </section>
 
-          <div class="shift-box">
-            <span class="label">Contexto de turno</span>
-            <div class="segmented" role="group" aria-label="Horario">
-              <button class="segment active" data-shift="all" type="button">Todos</button>
-              <button class="segment" data-shift="habil" type="button">Hábil</button>
-              <button class="segment" data-shift="inhabil" type="button">Inhábil</button>
-            </div>
-          </div>
+      <section id="view-especialidades" class="view">
+        <h2>Especialidades</h2>
+        <p>Seleccione una especialidad para ver su página de detalle.</p>
+        <div id="specialtyButtons" class="button-grid"></div>
+      </section>
 
-          <div class="notice">
-            <strong>Recordatorio rápido</strong>
-            <p>Toda derivación se realiza por Pitágoras. Lo que no entra en estos flujos debe ir a APS para seguir el conducto establecido.</p>
-          </div>
-        </section>
+      <section id="view-documentos" class="view">
+        <h2>Documentos y anexos de jefatura</h2>
 
-        <div class="quick-actions">
-          <button class="chip active" data-category="Todos" type="button">Todos</button>
-          <button class="chip" data-category="Flujo" type="button">Flujos</button>
-          <button class="chip" data-category="Poli choque" type="button">Especialidades</button>
-          <button class="chip" data-category="CRS" type="button">CRS</button>
-          <button class="chip" data-category="Hospitalizados" type="button">Hospitalizados</button>
-        </div>
+        <article class="panel">
+          <h3>Documento mensual de especialistas de llamado</h3>
+          <p>
+            Este bloque está pensado para que jefatura cambie el enlace cada mes de forma rápida (solo editar en <code>app.js</code>).
+          </p>
+          <div id="onCallDoc" class="doc-card"></div>
+        </article>
 
-        <div id="resultsMeta" class="results-meta"></div>
-        <nav class="protocol-tabs" id="protocolNav" aria-label="Protocolos"></nav>
-        <div id="cards" class="cards selected-mode" aria-live="polite"></div>
+        <article class="panel">
+          <h3>Planilla de visita diaria (mañana/tarde)</h3>
+          <p>
+            Sí, se puede anexar la planilla de Excel/Drive que usan los jefes. Aquí queda un acceso directo editable.
+          </p>
+          <div id="roundsDoc" class="doc-card"></div>
+        </article>
+
+        <article class="panel">
+          <h3 id="specialtyTitle">Detalle de especialidad</h3>
+          <div id="specialtyDetail"></div>
+        </article>
       </section>
     </main>
 
-    <template id="cardTemplate">
-      <details class="protocol-card">
-        <summary class="card-toggle">
-          <div class="card-head">
-            <div>
-              <p class="card-category"></p>
-              <h2></h2>
-            </div>
-            <div class="card-side">
-              <span class="page-badge"></span>
-              <span class="chevron" aria-hidden="true">⌄</span>
-            </div>
-          </div>
-          <p class="summary"></p>
-          <div class="tags"></div>
-        </summary>
-        <div class="card-detail">
-          <div>
-            <p class="detail-label">Detalle operativo</p>
-          </div>
-          <div class="grid"></div>
-          <div class="flow"></div>
-          <div class="pathologies"></div>
-          <div class="warning"></div>
-        </div>
-      </details>
-    </template>
-
-    <script src="./app.js?v=11"></script>
+    <script src="./app.js?v=13"></script>
   </body>
 </html>

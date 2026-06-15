@@ -1,26 +1,16 @@
 # CRS HPH 2025
 
-Web app estatica para consulta rapida de flujos de derivacion CRS 2025 de Urgencia Adulto HPH.
+Aplicación web estática para organizar la información CRS por páginas:
 
-## Publicacion con GitHub Pages
+1. Presentación general.
+2. Botones por especialidad.
+3. Detalle por especialidad + anexos documentales editables por jefatura.
 
-1. Crear un repositorio publico en GitHub, por ejemplo `crs-2025-app`.
-2. Subir el contenido completo de esta carpeta al repositorio.
-3. Entrar en `Settings > Pages`.
-4. En `Build and deployment`, elegir `Deploy from a branch`.
-5. Seleccionar la rama `main` y la carpeta `/root`.
-6. Guardar.
+## Edición rápida de documentos mensuales
 
-El sitio quedara disponible en:
+Los enlaces editables están en `app.js`, dentro del objeto `documents`:
 
-```text
-https://TU-USUARIO.github.io/crs-2025-app/
-```
+- `documents.onCall.url`: documento mensual de especialistas de llamado.
+- `documents.rounds.url`: planilla de visita diaria (Excel/Drive).
 
-## Archivos principales
-
-- `index.html`: estructura de la app.
-- `app.js`: datos de protocolos, buscador y filtros.
-- `styles.css`: diseno visual responsive.
-- `manifest.webmanifest` y `sw.js`: instalacion y uso offline basico.
-- `pdf-images/`: imagenes de apoyo extraidas del PDF original.
+Solo deben reemplazar la URL y (opcionalmente) el campo `updatedAt`.
