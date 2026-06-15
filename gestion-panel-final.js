@@ -88,25 +88,33 @@
     ]);
   }
 
-  async function content(kind) {
-    const fallback = staticContent(kind);
+  async function remoteContent(kind) {
     const api = window.CRS_SUPABASE;
-    if (api?.enabled?.()) {
-      try {
-        return sortItems(await withTimeout(api.fetchContent(kind)));
-      } catch (error) {
-        console.warn(error?.message || error);
-      }
+    if (!api?.enabled?.()) return null;
+    try {
+      return sortItems(await withTimeout(api.fetchContent(kind)));
+    } catch (error) {
+      console.warn(error?.message || error);
+      return null;
     }
-    return fallback;
   }
 
-  function card(item, kind) {
-    const [a, b, fallback] = VISUALS[kind] || VISUALS.news;
-    const image = visualImage(item, kind);
-    const label = item.category || fallback;
-    const actionLabel = kind === "paper" ? "Abrir paper" : kind === "procedure" ? "Abrir procedimiento" : kind === "education" ? "Abrir material" : item.eventUrl ? "Inscripcion / publicidad" : "Abrir";
-    return `<article class="gf-card" style="--gf-a:${a};--gf-b:${b}"><div class="gf-media">${image ? `<img src="${esc(image)}" alt="">` : ""}<span class="gf-tag">${esc(label)}</span><strong>${esc(kind === "news" ? "Noticia destacada" : fallback)}</strong></div><div class="gf-body"><h3>${esc(item.title)}</h3><p>${esc(item.description || "Contenido publicado por Jefatura.")}</p><div class="gf-actions">${action(item, actionLabel)}</div></div></article>`;
+  function listBody(items, kind, empty) {
+    return items.length
+      ? `<section class="gf-grid">${items.map((item) => card(item, kind)).join("")}</section>`
+      : `<div class="gf-empty">${esc(empty)}</div>`;
+  }
+
+  function paperBody(papers) {
+    const latest = papers[0];
+    const older = papers.slice(1);
+    const featured = latest
+      ? `<main class="gf-paper-main"><article class="gf-paper-featured"><span class="gf-tag">${esc(monthLabel(latest))}</span><h2>${esc(latest.title)}</h2><div class="gf-abstract"><strong>Abstract</strong><p>${esc(latest.description || "Al publicar el PDF desde Jefatura, la app intentara extraer el abstract automaticamente.")}</p></div><div class="gf-actions">${action(latest, "Abrir paper")}</div></article></main>`
+      : `<main class="gf-paper-main"><div class="gf-empty">Aun no hay paper del mes publicado. Cuando Jefatura suba un PDF, aqui se mostrara el titulo y abstract.</div></main>`;
+    const repo = older.length
+      ? `<div class="gf-repo-list">${older.map((paper) => `<a class="gf-repo-item" href="${esc(paper.url || "#/paper")}" ${paper.url ? `target="_blank" rel="noopener noreferrer"` : ""}><strong>${esc(paper.title)}</strong><span>${esc(monthLabel(paper))}</span></a>`).join("")}</div>`
+      : `<div class="gf-empty">Sin papers previos.</div>`;
+    return `<section class="gf-paper-layout">${featured}<aside class="gf-repo"><h2>Repositorio</h2>${repo}</aside></section>`;
   }
 
   function pageShell(title, text, body, pageId = "managementPage", activeRoute = "") {
@@ -120,28 +128,20 @@
   async function renderList(kind, title, text, empty, pageId = "managementPage", activeRoute = "") {
     addStyle();
     const expectedRoute = route();
-    const items = await content(kind);
-    if (route() !== expectedRoute) return;
-    const body = items.length
-      ? `<section class="gf-grid">${items.map((item) => card(item, kind)).join("")}</section>`
-      : `<div class="gf-empty">${esc(empty)}</div>`;
-    pageShell(title, text, body, pageId, activeRoute);
+    const fallback = staticContent(kind);
+    pageShell(title, text, listBody(fallback, kind, empty), pageId, activeRoute);
+    const items = await remoteContent(kind);
+    if (route() !== expectedRoute || !items) return;
+    pageShell(title, text, listBody(items, kind, empty), pageId, activeRoute);
   }
 
   async function renderPaper() {
     addStyle();
     const expectedRoute = route();
-    const papers = await content("paper");
-    if (route() !== expectedRoute) return;
-    const latest = papers[0];
-    const older = papers.slice(1);
-    const featured = latest
-      ? `<main class="gf-paper-main"><article class="gf-paper-featured"><span class="gf-tag">${esc(monthLabel(latest))}</span><h2>${esc(latest.title)}</h2><div class="gf-abstract"><strong>Abstract</strong><p>${esc(latest.description || "Al publicar el PDF desde Jefatura, la app intentara extraer el abstract automaticamente.")}</p></div><div class="gf-actions">${action(latest, "Abrir paper")}</div></article></main>`
-      : `<main class="gf-paper-main"><div class="gf-empty">Aun no hay paper del mes publicado. Cuando Jefatura suba un PDF, aqui se mostrara el titulo y abstract.</div></main>`;
-    const repo = older.length
-      ? `<div class="gf-repo-list">${older.map((paper) => `<a class="gf-repo-item" href="${esc(paper.url || "#/paper")}" ${paper.url ? `target="_blank" rel="noopener noreferrer"` : ""}><strong>${esc(paper.title)}</strong><span>${esc(monthLabel(paper))}</span></a>`).join("")}</div>`
-      : `<div class="gf-empty">Sin papers previos.</div>`;
-    pageShell("Paper del mes", "Lectura destacada con titulo, abstract y repositorio mensual al lado derecho.", `<section class="gf-paper-layout">${featured}<aside class="gf-repo"><h2>Repositorio</h2>${repo}</aside></section>`);
+    pageShell("Paper del mes", "Lectura destacada con titulo, abstract y repositorio mensual al lado derecho.", paperBody(staticContent("paper")));
+    const papers = await remoteContent("paper");
+    if (route() !== expectedRoute || !papers) return;
+    pageShell("Paper del mes", "Lectura destacada con titulo, abstract y repositorio mensual al lado derecho.", paperBody(papers));
   }
 
   function renderGestion() {
@@ -184,8 +184,8 @@
   }
 
   function schedule() {
-    setTimeout(() => render().catch(console.error), 60);
-    setTimeout(() => render().catch(console.error), 360);
+    setTimeout(() => render().catch(console.error), 0);
+    setTimeout(() => render().catch(console.error), 80);
   }
 
   window.CRS_GESTION_FINAL = { render, schedule };
