@@ -41,6 +41,20 @@ jobs:
           path: pdf-debug-renders/*.png
           if-no-files-found: error
 
+      - name: Subir PDFs de trabajo
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-form-sources
+          path: |
+            form-docs/examenes-hph.pdf
+            form-docs/examenes-hph-rellenable.pdf
+            form-docs/transfusion.pdf
+            form-docs/transfusion-rellenable.pdf
+            form-docs/ley-urgencia-activacion-rellenable.pdf
+            form-docs/ley-urgencia-consentimiento-rellenable.pdf
+            form-docs/medicamentos-uso-ocasional-rellenable.pdf
+          if-no-files-found: error
+
       - name: Guardar reporte en rama de trabajo
         if: github.event_name == 'push'
         shell: bash
