@@ -31,3 +31,5 @@ jobs:
           git add gestion-pacientes-core.js index.html .github/workflows/validate.yml
           git commit -m "Validar Gestión pacientes con sesión Supabase"
           git push origin HEAD:agent/secure-patient-apps-script
+
+# trigger: contrato listo para aplicar
