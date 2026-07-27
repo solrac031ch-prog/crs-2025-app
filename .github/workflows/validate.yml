@@ -69,6 +69,9 @@ jobs:
       - name: Validar frontera de estilos de Jefatura
         run: node scripts/check-jefatura-style-boundary.mjs
 
+      - name: Validar frontera de estilos de recuperación
+        run: node scripts/check-recovery-style-boundary.mjs
+
       - name: Validar archivos locales referenciados por index.html
         shell: python
         run: |
