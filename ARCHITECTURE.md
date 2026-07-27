@@ -87,6 +87,14 @@ No debe convertirse en un segundo router general ni administrar login o usuarios
 
 El correo electrónico se autentica directamente. La resolución por nombre de usuario mediante `crs_login_email` es opcional. El módulo debe tolerar instalaciones antiguas donde `crs_admins.username` todavía no exista.
 
+No debe inyectar su hoja visual; los estilos `crs-access-*` pertenecen a `supabase-admin-users.css`.
+
+### `supabase-admin-users.css`
+
+Dueño de los estilos visuales del panel Jefatura: login, tarjetas, formularios, estados y comportamiento responsivo.
+
+Se carga desde `<head>` y debe mantenerse separado de autenticación, roles y CRUD.
+
 ### `supabase-jefatura-panel.js`
 
 Extensión pequeña para recuperación de contraseña. Escucha `PASSWORD_RECOVERY`, permite establecer una nueva clave y no controla el ciclo de render de Jefatura ni registra listeners globales de navegación.
@@ -101,6 +109,7 @@ Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y norma
 index.html
   -> gestion-panel-final.css (estilos de Gestión)
   -> gestion-pacientes-core.css (estilos de Gestión pacientes)
+  -> supabase-admin-users.css (estilos de Jefatura)
   -> gestion-pacientes-core.js (gestión clínica segura)
   -> app-protocol-data.js (dataset clínico CRS)
   -> app-operational-data.js (datos no clínicos)
@@ -127,6 +136,7 @@ index.html
 - No volver a incrustar datos estáticos de Ley de Urgencias/notificación obligatoria en `app.js` o `app-forms.js`.
 - No volver a inyectar estilos `gf-*` desde `gestion-panel-final.js`.
 - No volver a inyectar estilos `patient-*` desde `gestion-pacientes-core.js`.
+- No volver a inyectar estilos `crs-access-*` desde `supabase-admin-users.js`.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
 - `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
 - El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
@@ -136,7 +146,7 @@ index.html
 
 ## Deuda técnica priorizada
 
-1. Mover progresivamente a CSS los estilos todavía inyectados por módulos de Jefatura y otros módulos secundarios.
+1. Mover progresivamente a CSS los estilos todavía inyectados por módulos secundarios restantes.
 2. Añadir pruebas de navegador/end-to-end para rutas y formularios críticos.
 3. Seguir separando datasets menores de UI sólo cuando reduzca acoplamiento real.
 4. Desplegar `crs_login_email` en todas las instalaciones sólo si se decide mantener el ingreso por alias de usuario.
