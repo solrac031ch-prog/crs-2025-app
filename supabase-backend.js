@@ -63,8 +63,7 @@
   }
 
   function toast(message, isError = false) {
-    const old = $(".sb-toast");
-    if (old) old.remove();
+    $(".sb-toast")?.remove();
     const box = document.createElement("div");
     box.className = `sb-toast${isError ? " error" : ""}`;
     box.textContent = message;
@@ -74,12 +73,8 @@
 
   function errorText(error) {
     const msg = String(error?.message || error || "Error desconocido");
-    if (/row-level security|permission denied/i.test(msg)) {
-      return "Tu usuario no tiene permiso activo para publicar en CRS.";
-    }
-    if (/relation.*does not exist/i.test(msg)) {
-      return "Falta actualizar el esquema de Supabase para CRS.";
-    }
+    if (/row-level security|permission denied/i.test(msg)) return "Tu usuario no tiene permiso activo para publicar en CRS.";
+    if (/relation.*does not exist/i.test(msg)) return "Falta actualizar el esquema de Supabase para CRS.";
     return msg;
   }
 
@@ -93,7 +88,7 @@
 
   async function requireUser() {
     const user = await currentUser();
-    if (!user) throw new Error("Inicia sesion en Jefatura antes de publicar globalmente.");
+    if (!user) throw new Error("Inicia sesión en Jefatura antes de publicar globalmente.");
     return user;
   }
 
@@ -103,10 +98,22 @@
     return api.storage.from(bucket).getPublicUrl(path).data?.publicUrl || "";
   }
 
+  async function removeStoredFile(path) {
+    if (!path) return;
+    const api = sb();
+    if (!api) return;
+    const { error } = await api.storage.from(bucket).remove([path]);
+    if (error) console.warn("No se pudo limpiar archivo de Storage", path, error);
+  }
+
+  async function rollbackUploadedFile(uploaded) {
+    if (uploaded?.file_path) await removeStoredFile(uploaded.file_path);
+  }
+
   async function uploadFile(file, folder) {
     if (!file || !file.name) return {};
     const api = sb();
-    if (!api) throw new Error("Supabase no esta conectado.");
+    if (!api) throw new Error("Supabase no está conectado.");
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
     const path = `${folder}/${new Date().toISOString().slice(0, 10)}/${Date.now()}-${Math.random().toString(16).slice(2)}-${safeName}`;
     const { error } = await api.storage.from(bucket).upload(path, file, {
@@ -186,8 +193,7 @@
     if (!enabled() || route() !== "#/formularios") return;
     const list = $("#turnFormsList");
     if (!list) return;
-    const old = $("[data-sb-forms-panel]");
-    if (old) old.remove();
+    $("[data-sb-forms-panel]")?.remove();
     const docs = await fetchDocuments(["formulario-base", "formulario-extra"]);
     if (!docs.length) return;
     const section = document.createElement("section");
@@ -205,11 +211,10 @@
         ? $("#callsDocumentAction")?.closest(".document-panel")
         : $("#uhdDocumentAction")?.closest(".document-panel");
       if (!panel) return;
-      const old = panel.querySelector(`[data-sb-call-panel="${type}"]`);
-      if (old) old.remove();
+      panel.querySelector(`[data-sb-call-panel="${type}"]`)?.remove();
       const item = docs.find((doc) => doc.key === type);
       if (!item) return;
-      panel.insertAdjacentHTML("beforeend", `<div class="sb-global-panel" data-sb-call-panel="${type}"><div class="sb-ok">Documento global actualizado por Jefatura.</div><div class="public-actions" style="margin-top:10px">${documentButton(item, "Abrir version global")}</div></div>`);
+      panel.insertAdjacentHTML("beforeend", `<div class="sb-global-panel" data-sb-call-panel="${type}"><div class="sb-ok">Documento global actualizado por Jefatura.</div><div class="public-actions" style="margin-top:10px">${documentButton(item, "Abrir versión global")}</div></div>`);
     });
   }
 
@@ -217,8 +222,7 @@
     if (!enabled() || route() !== "#/especialidades") return;
     const target = $("#specialtyGroups");
     if (!target) return;
-    const old = $("[data-sb-flows-panel]", target);
-    if (old) old.remove();
+    $("[data-sb-flows-panel]", target)?.remove();
     const flows = await fetchFlows();
     if (!flows.length) return;
     const section = document.createElement("section");
@@ -244,9 +248,7 @@
       script.onerror = reject;
       document.head.append(script);
     }).then((lib) => {
-      if (lib?.GlobalWorkerOptions) {
-        lib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-      }
+      if (lib?.GlobalWorkerOptions) lib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
       return lib;
     });
   }
@@ -267,12 +269,9 @@
       const normalized = text.replace(/\s+/g, " ").trim();
       const abstractMatch = normalized.match(/\babstract\b[:\s-]*(.{120,1600}?)(?:\bkeywords\b|\bintroduction\b|\bbackground\b|\bmethods\b|$)/i);
       const firstTitle = normalized.split(/[.!?]\s/)[0]?.slice(0, 180).trim();
-      return {
-        title: firstTitle || "",
-        description: abstractMatch ? abstractMatch[1].trim() : ""
-      };
+      return { title: firstTitle || "", description: abstractMatch ? abstractMatch[1].trim() : "" };
     } catch (error) {
-      console.warn("No se pudo extraer titulo/abstract del PDF", error);
+      console.warn("No se pudo extraer título/abstract del PDF", error);
       return {};
     }
   }
@@ -286,17 +285,13 @@
     const api = sb();
     const user = await requireUser();
     const formData = new FormData(form);
-    const kind = form.dataset.content === "paper"
-      ? "paper"
-      : form.dataset.content === "procedure"
-        ? "procedure"
-        : String(formData.get("kind") || "news");
+    const kind = form.dataset.content === "paper" ? "paper" : form.dataset.content === "procedure" ? "procedure" : String(formData.get("kind") || "news");
     const file = form.file?.files?.[0] || null;
     const extracted = kind === "paper" ? await extractPaperMeta(file) : {};
     const uploaded = await uploadFile(file, kind);
     const row = {
       kind,
-      title: formData.get("title") || extracted.title || "Sin titulo",
+      title: formData.get("title") || extracted.title || "Sin título",
       description: formData.get("description") || formData.get("summary") || extracted.description || "",
       category: formData.get("category") || "",
       month: formData.get("month") || "",
@@ -311,7 +306,10 @@
       created_by_email: user.email || ""
     };
     const { error } = await api.from(tables.content).insert(row);
-    if (error) throw error;
+    if (error) {
+      await rollbackUploadedFile(uploaded);
+      throw error;
+    }
     form.reset();
     toast("Publicado globalmente en Supabase.");
     patchJefatura(true);
@@ -319,6 +317,16 @@
 
   function cardText(form, selector) {
     return form.closest("article")?.querySelector(selector)?.textContent?.trim() || "";
+  }
+
+  async function existingDocument(api, key) {
+    const { data, error } = await api
+      .from(tables.documents)
+      .select("url,file_path,file_name,file_type,file_size")
+      .eq("key", key)
+      .maybeSingle();
+    if (error) throw error;
+    return data || null;
   }
 
   async function upsertDocument(form) {
@@ -330,29 +338,33 @@
     const isCall = form.hasAttribute("data-upload-call");
     const title = formData.get("title") || cardText(form, "h3") || "Documento";
     const description = formData.get("description") || cardText(form, "p") || "";
-    const key = isBase
-      ? form.dataset.formKey
-      : isCall
-        ? form.dataset.callType
-        : `${slug(title)}-${Date.now()}`;
+    const key = isBase ? form.dataset.formKey : isCall ? form.dataset.callType : `${slug(title)}-${Date.now()}`;
     const groupName = isCall ? "llamados" : isBase ? "formulario-base" : "formulario-extra";
+    const previous = await existingDocument(api, key);
     const uploaded = await uploadFile(file, groupName);
+    const explicitUrl = String(formData.get("url") || "").trim();
     const row = {
       key,
       group_name: groupName,
       title,
       description,
-      url: formData.get("url") || uploaded.url || "",
-      file_path: uploaded.file_path || null,
-      file_name: uploaded.file_name || null,
-      file_type: uploaded.file_type || null,
-      file_size: uploaded.file_size || null,
+      url: explicitUrl || uploaded.url || previous?.url || "",
+      file_path: uploaded.file_path || previous?.file_path || null,
+      file_name: uploaded.file_name || previous?.file_name || null,
+      file_type: uploaded.file_type || previous?.file_type || null,
+      file_size: uploaded.file_size || previous?.file_size || null,
       status: "published",
       created_by: user.id,
       created_by_email: user.email || ""
     };
     const { error } = await api.from(tables.documents).upsert(row, { onConflict: "key" });
-    if (error) throw error;
+    if (error) {
+      await rollbackUploadedFile(uploaded);
+      throw error;
+    }
+    if (uploaded.file_path && previous?.file_path && uploaded.file_path !== previous.file_path) {
+      await removeStoredFile(previous.file_path);
+    }
     form.reset();
     toast("Documento publicado globalmente.");
     patchJefatura(true);
@@ -366,7 +378,7 @@
     const uploaded = await uploadFile(file, "flujos");
     const row = {
       category: formData.get("category") || "Flujo",
-      title: formData.get("title") || "Sin titulo",
+      title: formData.get("title") || "Sin título",
       summary: formData.get("summary") || "",
       url: formData.get("url") || uploaded.url || "",
       file_path: uploaded.file_path || null,
@@ -378,7 +390,10 @@
       created_by_email: user.email || ""
     };
     const { error } = await api.from(tables.flows).insert(row);
-    if (error) throw error;
+    if (error) {
+      await rollbackUploadedFile(uploaded);
+      throw error;
+    }
     form.reset();
     toast("Flujo publicado globalmente.");
     patchJefatura(true);
@@ -387,16 +402,18 @@
   async function archiveItem(type, id) {
     const api = sb();
     await requireUser();
-    const table = type === "content"
-      ? tables.content
-      : type === "document"
-        ? tables.documents
-        : type === "flow"
-          ? tables.flows
-          : tables.calls;
+    const tableByType = {
+      content: tables.content,
+      document: tables.documents,
+      flow: tables.flows,
+      call: tables.calls
+    };
+    const table = tableByType[type];
+    if (!table) throw new Error("Tipo de elemento no válido para ocultar.");
+    if (!id) throw new Error("Falta identificar el elemento a ocultar.");
     const { error } = await api.from(table).update({ status: "archived" }).eq("id", id);
     if (error) throw error;
-    toast("Elemento ocultado de la web publica.");
+    toast("Elemento ocultado de la web pública.");
     patchJefatura(true);
     schedulePublicRoute(0);
   }
@@ -405,11 +422,11 @@
     return form?.matches?.("[data-content],[data-upload-call],[data-form-base],[data-new-form],[data-new-flow]");
   }
 
-  document.addEventListener("submit", async (ev) => {
-    const form = ev.target;
+  document.addEventListener("submit", async (event) => {
+    const form = event.target;
     if (!enabled() || !handledForm(form)) return;
-    ev.preventDefault();
-    ev.stopImmediatePropagation();
+    event.preventDefault();
+    event.stopImmediatePropagation();
     try {
       if (form.matches("[data-content]")) await publishContent(form);
       else if (form.matches("[data-upload-call],[data-form-base],[data-new-form]")) await upsertDocument(form);
@@ -420,10 +437,10 @@
     }
   }, true);
 
-  document.addEventListener("click", async (ev) => {
-    const archive = ev.target.closest?.("[data-sb-archive]");
+  document.addEventListener("click", async (event) => {
+    const archive = event.target.closest?.("[data-sb-archive]");
     if (!archive) return;
-    ev.preventDefault();
+    event.preventDefault();
     try {
       await archiveItem(archive.dataset.sbArchive, archive.dataset.sbId);
     } catch (error) {
@@ -444,7 +461,7 @@
       else if (current === "#/llamados") await patchCallsPage();
       else if (current === "#/especialidades") await patchFlowsPage();
     } catch (error) {
-      console.error("No se pudo sincronizar contenido publico desde Supabase", error);
+      console.error("No se pudo sincronizar contenido público desde Supabase", error);
     }
   }
 
