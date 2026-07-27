@@ -9,6 +9,7 @@ const errors = [];
 const config = read('supabase-config.js');
 const chiefHelper = read('supabase-jefatura-panel.js');
 const chiefController = read('supabase-admin-users.js');
+const backend = read('supabase-backend.js');
 const gestion = read('gestion-panel-final.js');
 
 if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
@@ -25,6 +26,24 @@ if (/crs:supabase-ready/.test(chiefHelper)) {
 
 if (/CRS_SUPABASE_JEFATURA\?\.scheduleRender|CRS_SUPABASE_JEFATURA\.scheduleRender/.test(config)) {
   errors.push('supabase-config.js no debe disparar renders directos de Jefatura.');
+}
+
+const forbiddenBackendOwnership = [
+  [/data-sb-login/, 'supabase-backend.js no debe controlar formularios de login.'],
+  [/data-backend-user/, 'supabase-backend.js no debe administrar usuarios de Jefatura.'],
+  [/invokeAdminUsers\s*\(/, 'supabase-backend.js no debe invocar administracion de usuarios.'],
+  [/auth\.signInWithPassword\s*\(/, 'supabase-backend.js no debe iniciar sesiones.'],
+  [/auth\.signInWithOtp\s*\(/, 'supabase-backend.js no debe iniciar sesiones OTP.'],
+  [/auth\.signOut\s*\(/, 'supabase-backend.js no debe cerrar sesiones.'],
+  [/data-sb-delete-user/, 'supabase-backend.js no debe controlar eliminacion de usuarios.']
+];
+
+for (const [pattern, message] of forbiddenBackendOwnership) {
+  if (pattern.test(backend)) errors.push(message);
+}
+
+if (!/window\.CRS_SUPABASE_JEFATURA\?\.scheduleRender/.test(backend)) {
+  errors.push('supabase-backend.js debe delegar la actualizacion de Jefatura al controlador dedicado tras una mutacion.');
 }
 
 const scheduleMatch = gestion.match(/function\s+schedule\s*\([^)]*\)\s*\{([\s\S]*?)\n\s*\}/);
