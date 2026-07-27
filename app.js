@@ -34,7 +34,9 @@ const pages = {
   formularios: document.querySelector("#formsPage"),
   telefonos: document.querySelector("#phonesPage"),
   educacion: document.querySelector("#educationPage"),
-  gestion: document.querySelector("#managementPage")
+  gestion: document.querySelector("#managementPage"),
+  doctors: document.querySelector("#doctorsPage"),
+  jefatura: document.querySelector("#chiefPage")
 };
 
 const todayLabel = document.querySelector("#todayLabel");

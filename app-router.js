@@ -1,19 +1,34 @@
 (() => {
+  const delegatedRoutes = new Set(["gestion", "noticias", "educacion", "paper", "procedimientos", "urgencia", "medicos", "equipo-urgencia", "jefatura"]);
+  const routeShell = {
+    noticias: "gestion",
+    paper: "gestion",
+    procedimientos: "gestion",
+    urgencia: "doctors",
+    medicos: "doctors",
+    "equipo-urgencia": "doctors",
+    jefatura: "jefatura"
+  };
+
   function renderRoute() {
     const parts = routeParts();
     const [name, slug] = parts;
-    const pageName = pages[name] ? name : "inicio";
-  
+    const pageName = routeShell[name] || (pages[name] ? name : "inicio");
+
     showPage(pageName);
-  
+
+    if (delegatedRoutes.has(name)) {
+      window.scrollTo(0, 0);
+      return;
+    }
+
     if (pageName === "inicio") renderHome();
     if (pageName === "especialidades") renderSpecialties();
     if (pageName === "especialidad") renderProtocol(slug || "");
     if (pageName === "llamados" || pageName === "visita") renderDocuments();
     if (pageName === "formularios") renderFormsRoute(parts.slice(1));
     if (pageName === "telefonos") renderPhones();
-    if (pageName === "educacion") renderEducation();
-  
+
     window.scrollTo(0, 0);
   }
   
