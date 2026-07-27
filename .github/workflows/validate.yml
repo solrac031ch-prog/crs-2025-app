@@ -1,0 +1,67 @@
+name: Validar CRS HPH
+
+on:
+  push:
+    branches: [main, "agent/**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validar sintaxis JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Revisando $file"
+            node --check "$file"
+          done < <(find . -type f -name '*.js' -not -path './node_modules/*' -print0)
+
+      - name: Validar archivos locales referenciados por index.html
+        shell: python
+        run: |
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          root = Path('.')
+          html = (root / 'index.html').read_text(encoding='utf-8')
+
+          class Assets(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.paths = []
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  value = attrs.get('src') if tag in {'script', 'img'} else attrs.get('href') if tag == 'link' else None
+                  if value:
+                      self.paths.append(value)
+
+          parser = Assets()
+          parser.feed(html)
+          missing = []
+          for value in parser.paths:
+              if value.startswith(('http://', 'https://', '//', 'data:')):
+                  continue
+              path = urlsplit(value).path.lstrip('./')
+              if path and not (root / path).exists():
+                  missing.append((value, path))
+
+          if missing:
+              for value, path in missing:
+                  print(f'FALTA: {value} -> {path}')
+              raise SystemExit(1)
+          print('Todos los recursos locales de index.html existen.')
