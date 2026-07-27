@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 const source = fs.readFileSync('gestion-pacientes-core.js', 'utf8');
+const guard = fs.readFileSync('patient-storage-guard.js', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 const errors = [];
 
@@ -12,6 +13,17 @@ for (const key of ['crsPatientCasesBackupV1', 'crsPriorityCases']) {
   if (!source.includes(key) || !/localStorage\.removeItem\(key\)/.test(source)) {
     errors.push(`Debe purgarse el respaldo local legado ${key}.`);
   }
+  if (!guard.includes(key)) {
+    errors.push(`La guardia de almacenamiento debe bloquear la clave sensible ${key}.`);
+  }
+}
+
+if (!/Storage\?\.prototype/.test(guard) || !/BLOCKED_KEYS\.has\(String\(key\)\)/.test(guard)) {
+  errors.push('patient-storage-guard.js debe impedir escrituras futuras de claves clínicas legadas.');
+}
+
+if (!/this\s*===\s*window\.localStorage/.test(guard)) {
+  errors.push('La guardia clínica debe limitar el bloqueo a localStorage y no interferir con sessionStorage.');
 }
 
 if (!/event\.target\.closest\(["']\[data-priority-form\]["']\)/.test(source) || !/event\.stopImmediatePropagation\(\)/.test(source)) {
@@ -34,10 +46,11 @@ if (/guardado localmente|Modo respaldo local/i.test(source)) {
   errors.push('La interfaz no debe ofrecer un modo de respaldo local para datos de pacientes.');
 }
 
-const appIndex = index.indexOf('./app.js');
+const guardIndex = index.indexOf('./patient-storage-guard.js');
 const patientIndex = index.indexOf('./gestion-pacientes-core.js');
-if (appIndex < 0 || patientIndex < 0 || patientIndex >= appIndex) {
-  errors.push('gestion-pacientes-core.js debe cargar antes de app.js para registrar primero la protección del submit prioritario.');
+const appIndex = index.indexOf('./app.js');
+if (guardIndex < 0 || patientIndex < 0 || appIndex < 0 || !(guardIndex < patientIndex && patientIndex < appIndex)) {
+  errors.push('index.html debe cargar primero la guardia de almacenamiento, luego Gestión pacientes y después app.js.');
 }
 
 for (const error of errors) console.error(`ERROR: ${error}`);
