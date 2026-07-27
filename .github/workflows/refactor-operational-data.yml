@@ -1,0 +1,41 @@
+name: Extraer datos operativos de app.js
+
+on:
+  push:
+    branches: ["agent/extract-operational-data"]
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar rama
+        uses: actions/checkout@v4
+        with:
+          ref: agent/extract-operational-data
+          fetch-depth: 0
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Extraer datos no clínicos
+        run: node scripts/extract-operational-data.mjs
+
+      - name: Guardar resultado
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet && [ -z "$(git status --porcelain --untracked-files=normal)" ]; then
+            echo "Sin cambios que guardar."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js app-operational-data.js
+          git commit -m "Extraer datos operativos fuera de app.js"
+          git push origin HEAD:agent/extract-operational-data
