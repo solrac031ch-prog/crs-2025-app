@@ -1,6 +1,8 @@
 (() => {
   const clean = (value) => String(value || "").trim();
   const norm = (value) => clean(value).toLowerCase();
+  let recoveryActive = false;
+  let authSubscription = null;
 
   function client() {
     return window.CRS_SUPABASE?.client?.() || null;
@@ -18,7 +20,10 @@
 
   function friendlyError(error) {
     const msg = String(error?.message || error || "Error desconocido");
-    if (/crs_login_email|function|schema cache/i.test(msg)) return "Si usaste usuario, prueba con tu correo. Falta ejecutar el SQL actualizado para resolver usuarios.";
+    if (/crs_login_email|function|schema cache/i.test(msg)) return "Si usaste usuario, prueba con tu correo. La resolución por nombre de usuario aún no está desplegada en Supabase.";
+    if (/expired|otp.*expired|token.*expired/i.test(msg)) return "El enlace de recuperación venció. Solicita uno nuevo desde Jefatura.";
+    if (/same password|different from the old password/i.test(msg)) return "La nueva clave debe ser distinta de la anterior.";
+    if (/password/i.test(msg) && /short|weak|least/i.test(msg)) return "La nueva clave debe tener al menos 6 caracteres.";
     return msg;
   }
 
@@ -29,19 +34,83 @@
     if (value.includes("@")) return norm(value);
     const { data, error } = await api.rpc("crs_login_email", { login_text: value });
     if (error) throw error;
-    if (!data) throw new Error("No encontre ese usuario activo.");
+    if (!data) throw new Error("No encontré ese usuario activo.");
     return norm(data);
   }
 
   async function sendForgotPassword(loginValue) {
     const api = client();
-    if (!api) throw new Error("Supabase no esta conectado.");
+    if (!api) throw new Error("Supabase no está conectado.");
     const email = await resolveLoginEmail(loginValue);
-    const { error } = await api.auth.resetPasswordForEmail(email, {
-      redirectTo: `${location.origin}${location.pathname}#/jefatura`
-    });
+    // No usar #/jefatura como redirectTo: Supabase necesita controlar el fragmento
+    // de la URL durante el retorno del enlace de recuperación.
+    const redirectTo = `${location.origin}${location.pathname}`;
+    const { error } = await api.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) throw error;
-    toast("Te envie un correo para cambiar la clave. Revisa tambien spam o correo no deseado.");
+    toast("Te envié un correo para cambiar la clave. Abre el enlace más reciente y vuelve a CRS.");
+  }
+
+  function addRecoveryStyle() {
+    if (document.querySelector("#crs-password-recovery-style")) return;
+    const style = document.createElement("style");
+    style.id = "crs-password-recovery-style";
+    style.textContent = `
+      .crs-recovery-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(2,6,23,.78);backdrop-filter:blur(6px)}
+      .crs-recovery-card{width:min(460px,100%);display:grid;gap:14px;padding:22px;border-radius:18px;background:#fff;color:#0f172a;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+      .crs-recovery-card h2,.crs-recovery-card p{margin:0}.crs-recovery-card p{color:#475569;line-height:1.45}
+      .crs-recovery-card label{display:grid;gap:6px;font-weight:800}.crs-recovery-card input{width:100%;min-height:44px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
+      .crs-recovery-actions{display:flex;gap:10px;flex-wrap:wrap}.crs-recovery-actions button{flex:1 1 160px}
+    `;
+    document.head.append(style);
+  }
+
+  function showRecoveryForm() {
+    recoveryActive = true;
+    addRecoveryStyle();
+    const existing = document.querySelector("[data-crs-password-recovery]");
+    if (existing) return;
+    const overlay = document.createElement("div");
+    overlay.className = "crs-recovery-overlay";
+    overlay.dataset.crsPasswordRecovery = "true";
+    overlay.innerHTML = `
+      <form class="crs-recovery-card" data-crs-recovery-form>
+        <h2>Crear nueva clave</h2>
+        <p>El enlace de recuperación fue validado. Escribe una nueva contraseña para tu cuenta de Jefatura.</p>
+        <label>Nueva clave<input name="password" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Confirmar nueva clave<input name="confirmPassword" type="password" minlength="6" required autocomplete="new-password"></label>
+        <div class="crs-recovery-actions">
+          <button class="document-button" type="submit">Guardar nueva clave</button>
+          <button class="delete-button" type="button" data-crs-recovery-cancel>Cancelar</button>
+        </div>
+      </form>`;
+    document.body.append(overlay);
+    overlay.querySelector("input")?.focus();
+  }
+
+  function closeRecoveryForm() {
+    document.querySelector("[data-crs-password-recovery]")?.remove();
+    recoveryActive = false;
+  }
+
+  function goToJefatura() {
+    const next = `${location.pathname}#/jefatura`;
+    history.replaceState(null, "", next);
+    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0);
+  }
+
+  async function updateRecoveredPassword(form) {
+    const api = client();
+    if (!api) throw new Error("Supabase no está conectado.");
+    const data = new FormData(form);
+    const password = String(data.get("password") || "");
+    const confirmation = String(data.get("confirmPassword") || "");
+    if (password.length < 6) throw new Error("La nueva clave debe tener al menos 6 caracteres.");
+    if (password !== confirmation) throw new Error("Las dos claves no coinciden.");
+    const { error } = await api.auth.updateUser({ password });
+    if (error) throw error;
+    closeRecoveryForm();
+    toast("Clave actualizada correctamente. Ya puedes usar Jefatura.");
+    goToJefatura();
   }
 
   function enhanceForgotPassword() {
@@ -52,18 +121,56 @@
     button.className = "document-button";
     button.type = "button";
     button.dataset.crsForgotPassword = "true";
-    button.textContent = "Olvide mi clave";
+    button.textContent = "Olvidé mi clave";
     form.append(button);
   }
 
-  document.addEventListener("click", async (event) => {
-    const button = event.target.closest?.("[data-crs-forgot-password]");
-    if (!button) return;
+  function showUrlAuthError() {
+    const params = new URLSearchParams(String(location.hash || "").replace(/^#/, ""));
+    const description = params.get("error_description");
+    if (description) toast(friendlyError(description.replaceAll("+", " ")), true);
+  }
+
+  function listenForRecovery() {
+    const api = client();
+    if (!api || authSubscription) return;
+    const { data } = api.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setTimeout(showRecoveryForm, 0);
+      }
+    });
+    authSubscription = data?.subscription || true;
+  }
+
+  document.addEventListener("submit", async (event) => {
+    const form = event.target.closest?.("[data-crs-recovery-form]");
+    if (!form) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    const form = button.closest("form");
     try {
-      await sendForgotPassword(form?.querySelector("[name='login']")?.value || "");
+      await updateRecoveredPassword(form);
+    } catch (error) {
+      console.error(error);
+      toast(friendlyError(error), true);
+    }
+  }, true);
+
+  document.addEventListener("click", async (event) => {
+    const forgot = event.target.closest?.("[data-crs-forgot-password]");
+    const cancel = event.target.closest?.("[data-crs-recovery-cancel]");
+    if (!forgot && !cancel) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    try {
+      if (forgot) {
+        const form = forgot.closest("form");
+        await sendForgotPassword(form?.querySelector("[name='login']")?.value || "");
+      }
+      if (cancel) {
+        closeRecoveryForm();
+        if (recoveryActive) await client()?.auth?.signOut?.();
+        goToJefatura();
+      }
     } catch (error) {
       console.error(error);
       toast(friendlyError(error), true);
@@ -74,6 +181,8 @@
 
   function boot() {
     if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    listenForRecovery();
+    showUrlAuthError();
     enhanceForgotPassword();
   }
 
