@@ -8,7 +8,7 @@ Este documento define responsabilidades para evitar que la app vuelva a crecer m
 2. **Las rutas se renderizan una sola vez por cambio.** Los reintentos sólo se justifican para datos remotos y deben ser cancelables.
 3. **Supabase es backend, no router.** Los módulos Supabase pueden aportar datos o acciones, pero no deben competir con el router visual.
 4. **Jefatura tiene un solo controlador.** `supabase-admin-users.js` es el dueño del render y estado del panel restringido.
-5. **Los parches de compatibilidad deben ser temporales y explícitos.** No se agregan listeners globales para corregir un problema local.
+5. **Los parches de compatibilidad deben retirarse cuando la lógica puede vivir en su módulo dueño.** No se modifica el cliente Supabase global para resolver un caso local.
 
 ## Responsabilidades actuales
 
@@ -30,19 +30,15 @@ Capa de acceso a datos remotos y operaciones CRUD de contenido/documentos/flujos
 
 No debe convertirse en un segundo router general ni administrar login o usuarios.
 
-### `supabase-login-compat.js`
-
-Compatibilidad temporal para instalaciones donde no existe la función SQL `crs_login_email`. Permite que un correo electrónico pase directamente al controlador de autenticación; los nombres de usuario siguen requiriendo la función SQL.
-
-No inicia sesiones ni renderiza Jefatura.
-
 ### `supabase-admin-users.js`
 
 **Único controlador de Jefatura.** Administra autenticación, roles, render del panel y administración de usuarios. Expone `window.CRS_SUPABASE_JEFATURA`.
 
+El correo electrónico se autentica directamente. La resolución por nombre de usuario mediante `crs_login_email` es opcional. El módulo debe tolerar instalaciones antiguas donde `crs_admins.username` todavía no exista.
+
 ### `supabase-jefatura-panel.js`
 
-Extensión pequeña para recuperación de contraseña. No controla el ciclo de render de Jefatura ni registra listeners globales de navegación.
+Extensión pequeña para recuperación de contraseña. Escucha `PASSWORD_RECOVERY`, permite establecer una nueva clave y no controla el ciclo de render de Jefatura ni registra listeners globales de navegación.
 
 ### `supabase-config.js`
 
@@ -56,10 +52,9 @@ index.html
   -> Supabase SDK
   -> supabase-config.js (config/bootstrap)
   -> supabase-backend.js (cliente, datos y CRUD)
-  -> supabase-login-compat.js (correo sin RPC, temporal)
+  -> supabase-jefatura-panel.js (recuperación de clave)
   -> supabase-admin-users.js (Jefatura)
   -> gestion-panel-final.js (vistas de gestión/contenido)
-  -> supabase-jefatura-panel.js (recuperación de clave, carga dinámica)
 ```
 
 ## Reglas para cambios nuevos
@@ -70,13 +65,14 @@ index.html
 - No borrar todos los caches del origen.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
 - `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
-- `supabase-login-compat.js` sólo puede resolver correos; no puede iniciar o cerrar sesiones.
+- El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
+- Los `redirectTo` de recuperación/confirmación no deben incluir `#/jefatura`, porque Supabase necesita controlar el retorno de Auth.
 - Los cambios clínicos deben mantenerse separados de refactorizaciones técnicas siempre que sea posible.
 - Todo PR debe pasar `.github/workflows/validate.yml`.
 
 ## Deuda técnica priorizada
 
-1. Crear `crs_login_email` en todas las instalaciones de Supabase y retirar la compatibilidad temporal cuando los nombres de usuario estén disponibles en producción.
+1. Desplegar `crs_login_email` en todas las instalaciones si se decide mantener el ingreso por alias de usuario.
 2. Separar datos clínicos estáticos de `app.js` hacia módulos de datos.
 3. Reducir estilos inyectados desde JavaScript y moverlos progresivamente a CSS.
 4. Añadir pruebas de navegación para rutas críticas.

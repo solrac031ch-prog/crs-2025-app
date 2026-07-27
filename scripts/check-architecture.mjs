@@ -11,7 +11,6 @@ const config = read('supabase-config.js');
 const chiefHelper = read('supabase-jefatura-panel.js');
 const chiefController = read('supabase-admin-users.js');
 const backend = read('supabase-backend.js');
-const loginCompat = read('supabase-login-compat.js');
 const gestion = read('gestion-panel-final.js');
 
 if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
@@ -20,21 +19,36 @@ if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
 
 const backendIndex = index.indexOf('./supabase-backend.js');
 const recoveryIndex = index.indexOf('./supabase-jefatura-panel.js');
-const compatIndex = index.indexOf('./supabase-login-compat.js');
 const chiefIndex = index.indexOf('./supabase-admin-users.js');
 if (
-  backendIndex < 0 || recoveryIndex < 0 || compatIndex < 0 || chiefIndex < 0 ||
-  !(backendIndex < recoveryIndex && recoveryIndex < compatIndex && compatIndex < chiefIndex)
+  backendIndex < 0 || recoveryIndex < 0 || chiefIndex < 0 ||
+  !(backendIndex < recoveryIndex && recoveryIndex < chiefIndex)
 ) {
-  errors.push('index.html debe cargar backend, recuperación, compatibilidad de correo y luego Jefatura, en ese orden.');
+  errors.push('index.html debe cargar backend, recuperación y luego Jefatura, en ese orden.');
 }
 
-if (!/functionName\s*===\s*["']crs_login_email["']/.test(loginCompat) || !/includes\(["']@["']\)/.test(loginCompat)) {
-  errors.push('supabase-login-compat.js debe limitarse a resolver correos para crs_login_email.');
+if (index.includes('./supabase-login-compat.js')) {
+  errors.push('index.html no debe volver a cargar el parche temporal supabase-login-compat.js.');
 }
 
-if (/signInWithPassword|signInWithOtp|signOut\s*\(/.test(loginCompat)) {
-  errors.push('supabase-login-compat.js no debe iniciar ni cerrar sesiones.');
+if (!/value\.includes\(["']@["']\)\)\s*return\s+norm\(value\)/.test(chiefController)) {
+  errors.push('supabase-admin-users.js debe aceptar correos directamente sin depender de crs_login_email.');
+}
+
+if (!/api\.rpc\(["']crs_login_email["']/.test(chiefController)) {
+  errors.push('supabase-admin-users.js debe conservar resolución opcional por nombre de usuario mediante crs_login_email.');
+}
+
+if (!/missingColumn\([^)]*,\s*["']username["']\)/.test(chiefController)) {
+  errors.push('Jefatura debe tolerar instalaciones antiguas sin columna username.');
+}
+
+if (/resetPasswordForEmail\([^\n]*#\/jefatura/i.test(chiefController)) {
+  errors.push('El cambio de clave administrativo no debe incluir #/jefatura en redirectTo.');
+}
+
+if (/emailRedirectTo\s*:\s*`?[^\n]*#\/jefatura/i.test(chiefController)) {
+  errors.push('La confirmación de nuevos usuarios no debe incluir #/jefatura en emailRedirectTo.');
 }
 
 if (/addEventListener\(["']hashchange["']/.test(chiefHelper)) {
