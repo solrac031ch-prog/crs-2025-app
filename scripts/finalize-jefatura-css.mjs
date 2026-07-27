@@ -44,3 +44,4 @@ replaceOnce(
 );
 
 console.log('Frontera CSS de Jefatura finalizada.');
+// Commit de disparo: el workflow temporal ya existe en la rama.
