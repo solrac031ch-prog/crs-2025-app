@@ -66,6 +66,9 @@ jobs:
       - name: Validar frontera de estilos de Gestión pacientes
         run: node scripts/check-patient-style-boundary.mjs
 
+      - name: Validar frontera de estilos de Jefatura
+        run: node scripts/check-jefatura-style-boundary.mjs
+
       - name: Validar archivos locales referenciados por index.html
         shell: python
         run: |
