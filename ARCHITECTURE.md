@@ -99,6 +99,14 @@ Se carga desde `<head>` y debe mantenerse separado de autenticación, roles y CR
 
 Extensión pequeña para recuperación de contraseña. Escucha `PASSWORD_RECOVERY`, permite establecer una nueva clave y no controla el ciclo de render de Jefatura ni registra listeners globales de navegación.
 
+No debe inyectar su modal visual; los estilos `crs-recovery-*` pertenecen a `supabase-jefatura-panel.css`.
+
+### `supabase-jefatura-panel.css`
+
+Dueño de los estilos del overlay y formulario de recuperación de contraseña.
+
+Se carga desde `<head>` y debe mantenerse separado del flujo Auth (`PASSWORD_RECOVERY`, `resetPasswordForEmail` y `updateUser`).
+
 ### `supabase-config.js`
 
 Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y normalizar pequeños textos, pero no debe renderizar Jefatura directamente.
@@ -110,6 +118,7 @@ index.html
   -> gestion-panel-final.css (estilos de Gestión)
   -> gestion-pacientes-core.css (estilos de Gestión pacientes)
   -> supabase-admin-users.css (estilos de Jefatura)
+  -> supabase-jefatura-panel.css (estilos de recuperación)
   -> gestion-pacientes-core.js (gestión clínica segura)
   -> app-protocol-data.js (dataset clínico CRS)
   -> app-operational-data.js (datos no clínicos)
@@ -137,6 +146,7 @@ index.html
 - No volver a inyectar estilos `gf-*` desde `gestion-panel-final.js`.
 - No volver a inyectar estilos `patient-*` desde `gestion-pacientes-core.js`.
 - No volver a inyectar estilos `crs-access-*` desde `supabase-admin-users.js`.
+- No volver a inyectar estilos `crs-recovery-*` desde `supabase-jefatura-panel.js`.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
 - `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
 - El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
