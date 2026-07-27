@@ -1,6 +1,5 @@
 (() => {
   const LEGACY_STORAGE_KEYS = ["crsPatientCasesBackupV1", "crsPriorityCases"];
-  const LEGACY_SESSION_KEY = "crsAuthSessionV3";
   const SHEET_LABEL = "Gestion_pacientes";
   const CHIEF_ROLES = new Set(["admin", "owner", "desarrollador", "creador", "jefatura", "jefe", "jefe_turno"]);
 
@@ -11,8 +10,9 @@
   const today = () => new Date().toISOString().slice(0, 10);
   const uid = () => `caso-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-  let authState = { email: "", name: "Equipo Urgencia", role: "", active: false, source: "none" };
+  let authState = { email: "", name: "Equipo Urgencia", role: "", active: false };
   let visibleRows = [];
+  let renderVersion = 0;
 
   function purgeLegacyPatientStorage() {
     for (const key of LEGACY_STORAGE_KEYS) {
@@ -20,32 +20,24 @@
     }
   }
 
-  function legacySession() {
-    try { return JSON.parse(sessionStorage.getItem(LEGACY_SESSION_KEY) || "") || null; } catch { return null; }
-  }
-
-  function setLegacyAuthFallback() {
-    const user = legacySession();
-    if (!user) return authState;
-    authState = {
-      email: user.email || user.username || "",
-      name: user.name || user.email || user.username || "Equipo Urgencia",
-      role: user.role || "",
-      active: true,
-      source: "legacy"
-    };
-    return authState;
+  function client() {
+    return window.CRS_SUPABASE?.client?.() || null;
   }
 
   async function refreshAuth() {
-    const api = window.CRS_SUPABASE?.client?.();
-    if (!api?.auth?.getUser) return setLegacyAuthFallback();
+    const api = client();
+    if (!api?.auth?.getUser) {
+      authState = { email: "", name: "Equipo Urgencia", role: "", active: false };
+      return authState;
+    }
+
     try {
       const { data, error } = await api.auth.getUser();
       if (error || !data?.user) {
-        authState = { email: "", name: "Equipo Urgencia", role: "", active: false, source: "supabase" };
-        return setLegacyAuthFallback();
+        authState = { email: "", name: "Equipo Urgencia", role: "", active: false };
+        return authState;
       }
+
       const user = data.user;
       const email = String(user.email || "").trim().toLowerCase();
       let profile = null;
@@ -57,17 +49,18 @@
           .maybeSingle();
         if (!result.error) profile = result.data || null;
       }
+
       authState = {
         email,
         name: profile?.display_name || user.user_metadata?.display_name || email || "Equipo Urgencia",
         role: profile?.role || user.user_metadata?.role || "",
-        active: profile ? profile.active !== false : Boolean(email),
-        source: "supabase"
+        active: Boolean(profile && profile.active !== false)
       };
       return authState;
     } catch (error) {
       console.warn("No se pudo sincronizar sesión de Gestión pacientes", error);
-      return setLegacyAuthFallback();
+      authState = { email: "", name: "Equipo Urgencia", role: "", active: false };
+      return authState;
     }
   }
 
@@ -82,26 +75,49 @@
   }
 
   function apiUrl() {
-    return String(window.CRS_PATIENT_CASES_CONFIG?.appsScriptUrl || window.CRS_GOOGLE_AUTH_CONFIG?.appsScriptUrl || "").trim();
+    return String(window.CRS_PATIENT_CASES_CONFIG?.appsScriptUrl || "").trim();
   }
 
-  async function apiPost(action, payload = {}) {
+  async function secureRequest(action, payload = {}) {
     await refreshAuth();
     const url = apiUrl();
-    if (!url) return { ok: false, error: "Falta configurar appsScriptUrl." };
-    const user = activeUser();
-    if (!user.email) return { ok: false, error: "Inicia sesión antes de usar Gestión de pacientes." };
+    if (!url) return { ok: false, error: "Falta configurar el servicio de Gestión pacientes." };
+    if (!isChief()) return { ok: false, error: "Inicia sesión con un usuario autorizado de Jefatura." };
+
+    const api = client();
+    const anonKey = String(window.CRS_SUPABASE_CONFIG?.anonKey || "").trim();
+    if (!api?.auth?.getSession || !anonKey) {
+      return { ok: false, error: "No se pudo validar la sesión segura de Jefatura." };
+    }
+
     try {
+      const { data, error } = await api.auth.getSession();
+      const accessToken = String(data?.session?.access_token || "").trim();
+      if (error || !accessToken) {
+        return { ok: false, error: "La sesión de Jefatura venció. Vuelve a iniciar sesión." };
+      }
+
       const response = await fetch(url, {
         method: "POST",
         redirect: "follow",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action, email: user.email, ...payload })
+        body: JSON.stringify({
+          action,
+          accessToken,
+          supabaseAnonKey: anonKey,
+          ...payload
+        })
       });
-      const data = await response.json();
-      return data && typeof data === "object" ? data : { ok: false, error: "Respuesta inválida del servicio de gestión." };
+      const result = await response.json();
+      if (!result || typeof result !== "object") {
+        return { ok: false, error: "Respuesta inválida del servicio de Gestión." };
+      }
+      if (result.error === "Acción no reconocida") {
+        return { ok: false, error: "El backend de Gestión pacientes está desactualizado. Debe publicarse la versión CRS v2 del Apps Script." };
+      }
+      return result;
     } catch (error) {
-      return { ok: false, error: error?.message || "No se pudo conectar con el servicio de gestión." };
+      return { ok: false, error: error?.message || "No se pudo conectar con el servicio de Gestión." };
     }
   }
 
@@ -150,25 +166,23 @@
       resuelto: "Pendiente",
       proximo_paso: "Pendiente de revisión por jefatura",
       responsable: "Jefatura",
-      observaciones: "Registro automático desde Página 2 → Especialidades y flujos → Cierre de derivación."
+      observaciones: "Registro automático desde Especialidades y flujos → Cierre de derivación."
     });
   }
 
   async function saveCase(item) {
     const payload = normalizeCase(item);
-    const result = await apiPost("savePatientCase", { case: payload });
-    return result.ok ? { ...result, case: payload } : { ok: false, error: result.error || "No se pudo guardar el caso.", case: payload };
+    const result = await secureRequest("savePatientCase", { case: payload });
+    return result.ok ? { ...result, case: result.case || payload } : { ok: false, error: result.error || "No se pudo guardar el caso.", case: payload };
   }
 
   async function updateCase(id, patch) {
-    return apiPost("updatePatientCase", { id, patch });
+    return secureRequest("updatePatientCase", { id, patch });
   }
 
   async function listCases() {
-    const result = await apiPost("listPatientCases", {});
-    if (!result.ok) {
-      return { source: "unavailable", error: result.error || "No se pudo conectar con Drive.", rows: [] };
-    }
+    const result = await secureRequest("listPatientCases");
+    if (!result.ok) return { source: "unavailable", error: result.error || "No se pudo conectar con Drive.", rows: [] };
     return {
       source: "drive",
       spreadsheetUrl: result.spreadsheetUrl || "",
@@ -186,7 +200,9 @@
       summary: String(data.get("summary") || "").trim(),
       need: String(data.get("need") || "").trim()
     });
-    if (!item.paciente && !item.run && !item.resumen_clinico && !item.gestion_solicitada) return { ok: false, error: "Completa los datos del caso." };
+    if (!item.paciente && !item.run && !item.resumen_clinico && !item.gestion_solicitada) {
+      return { ok: false, error: "Completa los datos del caso." };
+    }
     const result = await saveCase(item);
     const status = form.closest(".priority-panel")?.querySelector(".priority-status");
     if (status) {
@@ -204,7 +220,11 @@
     const now = new Date();
     const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     if (mode === "dia") return date >= startToday;
-    if (mode === "semana") { const start = new Date(startToday); start.setDate(start.getDate() - 6); return date >= start; }
+    if (mode === "semana") {
+      const start = new Date(startToday);
+      start.setDate(start.getDate() - 6);
+      return date >= start;
+    }
     if (mode === "mes") return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
     return true;
   }
@@ -217,19 +237,21 @@
     return "pendiente";
   }
 
-  function csvCell(value) { return `"${String(value ?? "").replaceAll('"', '""')}"`; }
+  function csvCell(value) {
+    return `"${String(value ?? "").replaceAll('"', '""')}"`;
+  }
 
   function downloadCsv(rows, filename) {
     const headers = ["id","fecha_registro","registrado_por","paciente","run","edad","telefono","flujo","motivo","resumen_clinico","gestion_solicitada","prioridad","origen","estado","resuelto","proximo_paso","responsable","fecha_compromiso","fecha_resolucion","observaciones","actualizado"];
-    const csv = [headers.join(","), ...rows.map((row) => headers.map((h) => csvCell(row[h])).join(","))].join("\n");
+    const csv = [headers.join(","), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.append(a);
-    a.click();
-    a.remove();
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
     URL.revokeObjectURL(url);
   }
 
@@ -239,48 +261,68 @@
 
   function tableHtml(rows) {
     const total = rows.length;
-    const pending = rows.filter((r) => r.estado !== "Resuelto" && r.resuelto !== "SI").length;
-    const resolved = rows.filter((r) => r.estado === "Resuelto" || r.resuelto === "SI").length;
-    return `<section class="patient-grid"><article class="patient-card"><strong>Total casos</strong><span class="patient-kpi">${total}</span></article><article class="patient-card"><strong>Pendientes/en gestión</strong><span class="patient-kpi">${pending}</span></article><article class="patient-card"><strong>Resueltos</strong><span class="patient-kpi">${resolved}</span></article></section><section class="patient-table-wrap"><table class="patient-table"><thead><tr><th>Fecha</th><th>Paciente</th><th>Contacto</th><th>Flujo / motivo</th><th>Gestión solicitada</th><th>Estado</th><th>Seguimiento</th></tr></thead><tbody>${rows.length ? rows.map((row) => `<tr><td>${esc(String(row.fecha_registro).slice(0, 10))}<br><span class="patient-small">${esc(row.registrado_por)}</span></td><td><strong>${esc(row.paciente)}</strong><br>${esc(row.run)}${row.edad ? `<br>${esc(row.edad)} años` : ""}</td><td>${esc(row.telefono)}</td><td><strong>${esc(row.flujo)}</strong><br>${esc(row.motivo)}<br><span class="patient-small">${esc(row.resumen_clinico)}</span></td><td>${esc(row.gestion_solicitada)}</td><td><span class="patient-status ${statusClass(row.estado)}">${esc(row.estado)}</span><br>Resuelto: ${esc(row.resuelto)}<br><span class="patient-small">${esc(row.responsable)}</span></td><td>${updateForm(row)}</td></tr>`).join("") : `<tr><td colspan="7">No hay casos registrados.</td></tr>`}</tbody></table></section>`;
+    const pending = rows.filter((row) => row.estado !== "Resuelto" && row.resuelto !== "SI").length;
+    const resolved = rows.filter((row) => row.estado === "Resuelto" || row.resuelto === "SI").length;
+    const body = rows.length
+      ? rows.map((row) => `<tr><td>${esc(String(row.fecha_registro).slice(0, 10))}<br><span class="patient-small">${esc(row.registrado_por)}</span></td><td><strong>${esc(row.paciente)}</strong><br>${esc(row.run)}${row.edad ? `<br>${esc(row.edad)} años` : ""}</td><td>${esc(row.telefono)}</td><td><strong>${esc(row.flujo)}</strong><br>${esc(row.motivo)}<br><span class="patient-small">${esc(row.resumen_clinico)}</span></td><td>${esc(row.gestion_solicitada)}</td><td><span class="patient-status ${statusClass(row.estado)}">${esc(row.estado)}</span><br>Resuelto: ${esc(row.resuelto)}<br><span class="patient-small">${esc(row.responsable)}</span></td><td>${updateForm(row)}</td></tr>`).join("")
+      : `<tr><td colspan="7">No hay casos registrados.</td></tr>`;
+    return `<section class="patient-grid"><article class="patient-card"><strong>Total casos</strong><span class="patient-kpi">${total}</span></article><article class="patient-card"><strong>Pendientes/en gestión</strong><span class="patient-kpi">${pending}</span></article><article class="patient-card"><strong>Resueltos</strong><span class="patient-kpi">${resolved}</span></article></section><section class="patient-table-wrap"><table class="patient-table"><thead><tr><th>Fecha</th><th>Paciente</th><th>Contacto</th><th>Flujo / motivo</th><th>Gestión solicitada</th><th>Estado</th><th>Seguimiento</th></tr></thead><tbody>${body}</tbody></table></section>`;
   }
 
   function applyFilters() {
-    const q = clean($("[data-patient-filter='query']")?.value || "");
-    const estado = $("[data-patient-filter='estado']")?.value || "todos";
-    const periodo = $("[data-patient-filter='periodo']")?.value || "todos";
+    const query = clean($("[data-patient-filter='query']")?.value || "");
+    const status = $("[data-patient-filter='estado']")?.value || "todos";
+    const period = $("[data-patient-filter='periodo']")?.value || "todos";
     const rows = visibleRows.filter((row) => {
       const haystack = clean([row.paciente, row.run, row.telefono, row.flujo, row.motivo, row.resumen_clinico, row.gestion_solicitada, row.estado, row.proximo_paso].join(" "));
-      return (!q || haystack.includes(q)) && (estado === "todos" || row.estado === estado) && dateInRange(row.fecha_registro, periodo);
+      return (!query || haystack.includes(query)) && (status === "todos" || row.estado === status) && dateInRange(row.fecha_registro, period);
     });
     const mount = $("#patientCasesTable");
     if (mount) mount.innerHTML = tableHtml(rows);
   }
 
+  function routeActions() {
+    return `<div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div>`;
+  }
+
+  function hero(text) {
+    return `<section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>${text}</p></section>`;
+  }
+
   async function renderPage() {
+    if (location.hash !== "#/gestion/pacientes") return;
+    const version = ++renderVersion;
     await refreshAuth();
+    if (version !== renderVersion || location.hash !== "#/gestion/pacientes") return;
+
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === "managementPage"));
     const title = $("#managementTitle");
     const content = $("#managementContent");
     if (title) title.textContent = "Gestión de pacientes";
     if (!content) return;
+
     if (!isChief()) {
-      content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>Acceso restringido a jefatura.</p></section><div class="patient-warn">Inicia sesión con un usuario autorizado de Jefatura para ver la planilla.</div></div>`;
+      content.innerHTML = `<div class="patient-shell">${routeActions()}${hero("Acceso restringido a jefatura.")}<div class="patient-warn">Inicia sesión con un usuario autorizado de Jefatura para ver la planilla.</div></div>`;
       return;
     }
-    content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>Casos alimentados desde “¿Requiere gestión prioritaria?” en cada flujo CRS. Vista restringida a jefatura.</p></section><section class="patient-card"><h3>Cargando planilla...</h3></section></div>`;
+
+    content.innerHTML = `<div class="patient-shell">${routeActions()}${hero("Vista restringida a jefatura.")}<section class="patient-card"><h3>Cargando planilla...</h3></section></div>`;
     const result = await listCases();
+    if (version !== renderVersion || location.hash !== "#/gestion/pacientes") return;
+
     if (result.source !== "drive") {
       visibleRows = [];
-      content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>Vista restringida a jefatura.</p></section><div class="patient-warn">No se pudo conectar con la planilla. Por privacidad, CRS no guarda nombres, RUN, teléfonos ni resúmenes clínicos en este navegador. ${esc(result.error || "Reintenta cuando haya conexión.")}</div><div class="patient-actions"><button class="document-button" data-refresh-patient-cases>Reintentar</button></div></div>`;
+      content.innerHTML = `<div class="patient-shell">${routeActions()}${hero("Vista restringida a jefatura.")}<div class="patient-warn">No se pudo conectar con la planilla. Por privacidad, CRS no guarda nombres, RUN, teléfonos ni resúmenes clínicos en este navegador. ${esc(result.error || "Reintenta cuando haya conexión.")}</div><div class="patient-actions"><button class="document-button" data-refresh-patient-cases>Reintentar</button></div></div>`;
       return;
     }
+
     visibleRows = result.rows;
-    content.innerHTML = `<div class="patient-shell"><div class="route-actions"><a class="back-link" href="#/gestion">Volver a Gestión</a><a class="back-link" href="#/inicio">Inicio</a></div><section class="patient-hero"><h2>Gestión prioritaria de pacientes</h2><p>Casos alimentados desde el cierre de derivación. Vista restringida a jefatura.</p></section><section class="patient-card"><h3>Seguimiento y descarga</h3><div class="patient-note">Conectado a Google Sheets: ${SHEET_LABEL}</div>${result.spreadsheetUrl ? `<div class="patient-actions"><a class="document-button" href="${esc(result.spreadsheetUrl)}" target="_blank" rel="noopener">Abrir planilla Drive</a></div>` : ""}<div class="patient-filter"><label>Buscar<input data-patient-filter="query" type="search" placeholder="RUN, paciente, flujo, motivo..."></label><label>Estado<select data-patient-filter="estado"><option value="todos">Todos</option><option>Pendiente</option><option>En gestión</option><option>Resuelto</option><option>No resuelto</option></select></label><label>Periodo<select data-patient-filter="periodo"><option value="todos">Todos</option><option value="dia">Hoy</option><option value="semana">Últimos 7 días</option><option value="mes">Mes actual</option></select></label></div><div class="patient-actions"><button class="document-button" data-export-patient-cases="dia">Descargar día</button><button class="document-button" data-export-patient-cases="semana">Descargar semana</button><button class="document-button" data-export-patient-cases="mes">Descargar mes</button><button class="document-button" data-refresh-patient-cases>Actualizar desde Drive</button></div></section><div id="patientCasesTable"></div></div>`;
+    content.innerHTML = `<div class="patient-shell">${routeActions()}${hero("Casos alimentados desde el cierre de derivación. Vista restringida a jefatura.")}<section class="patient-card"><h3>Seguimiento y descarga</h3><div class="patient-note">Conectado a Google Sheets: ${SHEET_LABEL}</div>${result.spreadsheetUrl ? `<div class="patient-actions"><a class="document-button" href="${esc(result.spreadsheetUrl)}" target="_blank" rel="noopener">Abrir planilla Drive</a></div>` : ""}<div class="patient-filter"><label>Buscar<input data-patient-filter="query" type="search" placeholder="RUN, paciente, flujo, motivo..."></label><label>Estado<select data-patient-filter="estado"><option value="todos">Todos</option><option>Pendiente</option><option>En gestión</option><option>Resuelto</option><option>No resuelto</option></select></label><label>Periodo<select data-patient-filter="periodo"><option value="todos">Todos</option><option value="dia">Hoy</option><option value="semana">Últimos 7 días</option><option value="mes">Mes actual</option></select></label></div><div class="patient-actions"><button class="document-button" data-export-patient-cases="dia">Descargar día</button><button class="document-button" data-export-patient-cases="semana">Descargar semana</button><button class="document-button" data-export-patient-cases="mes">Descargar mes</button><button class="document-button" data-refresh-patient-cases>Actualizar desde Drive</button></div></section><div id="patientCasesTable"></div></div>`;
     applyFilters();
   }
 
   document.addEventListener("submit", async (event) => {
-    const form = event.target.closest("[data-priority-form]");
+    const form = event.target.closest?.("[data-priority-form]");
     if (!form) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -292,7 +334,7 @@
   }, true);
 
   document.addEventListener("submit", async (event) => {
-    const form = event.target.closest("[data-patient-case-update]");
+    const form = event.target.closest?.("[data-patient-case-update]");
     if (!form) return;
     event.preventDefault();
     const result = await updateCase(form.dataset.patientCaseUpdate, Object.fromEntries(new FormData(form).entries()));
@@ -303,26 +345,36 @@
     await renderPage();
   });
 
-  document.addEventListener("input", (event) => { if (event.target.closest("[data-patient-filter]")) applyFilters(); }, true);
-  document.addEventListener("change", (event) => { if (event.target.closest("[data-patient-filter]")) applyFilters(); }, true);
+  document.addEventListener("input", (event) => {
+    if (event.target.closest?.("[data-patient-filter]")) applyFilters();
+  }, true);
+
+  document.addEventListener("change", (event) => {
+    if (event.target.closest?.("[data-patient-filter]")) applyFilters();
+  }, true);
+
   document.addEventListener("click", async (event) => {
-    if (event.target.closest("[data-refresh-patient-cases]")) { await renderPage(); return; }
-    const exportBtn = event.target.closest("[data-export-patient-cases]");
-    if (exportBtn) {
-      const mode = exportBtn.dataset.exportPatientCases;
+    if (event.target.closest?.("[data-refresh-patient-cases]")) {
+      await renderPage();
+      return;
+    }
+    const exportButton = event.target.closest?.("[data-export-patient-cases]");
+    if (exportButton) {
+      const mode = exportButton.dataset.exportPatientCases;
       downloadCsv(visibleRows.filter((row) => dateInRange(row.fecha_registro, mode)), `gestion-pacientes-${mode}-${today()}.csv`);
     }
   }, true);
 
-  async function route() {
-    if (location.hash === "#/gestion/pacientes") await renderPage();
+  function route() {
+    if (location.hash === "#/gestion/pacientes") renderPage().catch(console.error);
+    else renderVersion += 1;
   }
 
   purgeLegacyPatientStorage();
-  window.addEventListener("hashchange", () => { route().catch(console.error); });
-  window.addEventListener("crs:supabase-ready", () => { route().catch(console.error); });
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => { route().catch(console.error); });
-  else route().catch(console.error);
+  window.addEventListener("hashchange", route);
+  window.addEventListener("crs:supabase-ready", route);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", route, { once: true });
+  else route();
 
   window.CRS_PATIENT_CASES = { isChief, refreshAuth, fromFlow, saveCase, saveFromPriorityForm, listCases, renderPage };
 })();
