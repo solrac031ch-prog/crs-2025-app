@@ -3,6 +3,8 @@ name: Inspeccionar PDFs rellenables
 on:
   push:
     branches: ["agent/fix-production-stability-pdf-v2"]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -15,7 +17,7 @@ jobs:
       - name: Descargar rama
         uses: actions/checkout@v4
         with:
-          ref: agent/fix-production-stability-pdf-v2
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'agent/fix-production-stability-pdf-v2' }}
           fetch-depth: 0
 
       - name: Configurar Python
@@ -39,7 +41,8 @@ jobs:
           path: pdf-debug-renders/*.png
           if-no-files-found: error
 
-      - name: Guardar reporte
+      - name: Guardar reporte en rama de trabajo
+        if: github.event_name == 'push'
         shell: bash
         run: |
           set -euo pipefail
