@@ -6,13 +6,45 @@ function read(path) {
 
 const errors = [];
 
+const index = read('index.html');
 const config = read('supabase-config.js');
+const data = read('supabase-data.js');
 const chiefHelper = read('supabase-jefatura-panel.js');
 const chiefController = read('supabase-admin-users.js');
 const gestion = read('gestion-panel-final.js');
 
 if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
   errors.push('supabase-admin-users.js debe exponer CRS_SUPABASE_JEFATURA.');
+}
+
+if (!data.includes('window.CRS_SUPABASE')) {
+  errors.push('supabase-data.js debe exponer CRS_SUPABASE.');
+}
+
+const dataIndex = index.indexOf('./supabase-data.js');
+const chiefIndex = index.indexOf('./supabase-admin-users.js');
+if (dataIndex < 0 || chiefIndex < 0 || dataIndex > chiefIndex) {
+  errors.push('index.html debe cargar supabase-data.js antes de supabase-admin-users.js.');
+}
+
+if (/supabase-backend\.js/.test(index)) {
+  errors.push('index.html no debe volver a cargar el backend monolitico legado.');
+}
+
+const forbiddenDataResponsibilities = [
+  /data-crs-login/,
+  /data-chief-create-user/,
+  /data-backend-user/,
+  /signInWithPassword/,
+  /signInWithOtp/,
+  /\.auth\.signOut\s*\(/,
+  /invokeAdminUsers/,
+  /renderAdminList/
+];
+for (const pattern of forbiddenDataResponsibilities) {
+  if (pattern.test(data)) {
+    errors.push(`supabase-data.js no debe administrar autenticacion o usuarios (${pattern}).`);
+  }
 }
 
 if (/addEventListener\(["']hashchange["']/.test(chiefHelper)) {
@@ -43,6 +75,10 @@ if (!/let\s+renderTimer\s*=\s*null/.test(gestion) || !/clearTimeout\(renderTimer
 
 if (!/function\s+card\s*\(/.test(gestion)) {
   errors.push('gestion-panel-final.js debe definir card() localmente para renderizar listados sin depender de globals.');
+}
+
+if (!/let\s+publicRouteTimer\s*=/.test(data) || !/clearTimeout\(publicRouteTimer\)/.test(data)) {
+  errors.push('supabase-data.js debe agrupar las actualizaciones de rutas publicas con un timer cancelable.');
 }
 
 for (const error of errors) console.error(`ERROR: ${error}`);
