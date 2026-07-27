@@ -6,7 +6,9 @@ FORM_DIR = Path('form-docs')
 OUT = Path('pdf-debug-renders')
 OUT.mkdir(exist_ok=True)
 TARGETS = [
+    'examenes-hph-editable.pdf',
     'examenes-hph-rellenable.pdf',
+    'transfusion-editable.pdf',
     'transfusion-rellenable.pdf',
     'ley-urgencia-activacion-rellenable.pdf',
     'ley-urgencia-consentimiento-rellenable.pdf',
