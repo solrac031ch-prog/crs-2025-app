@@ -34,7 +34,7 @@
 
   function activate(pageId, activeRoute = "", eyebrowText = "") {
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === pageId));
-    $$("[data-route-link]").forEach((link) => link.classList.toggle("active", Boolean(activeRoute) && link.dataset.routeLink === activeRoute));
+    $$('[data-route-link]').forEach((link) => link.classList.toggle("active", Boolean(activeRoute) && link.dataset.routeLink === activeRoute));
     const eyebrow = pageId === "educationPage" ? $("#educationPage .page-head .eyebrow") : $(`#${pageId} .page-head .eyebrow`);
     if (eyebrow && eyebrowText) eyebrow.textContent = eyebrowText;
   }
@@ -64,6 +64,17 @@
   function action(item, label) {
     const href = item.eventUrl || item.url || "";
     return href ? `<a class="document-button" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>` : "";
+  }
+
+  function card(item, kind) {
+    const [a, b, label] = VISUALS[kind] || VISUALS.news;
+    const image = visualImage(item, kind);
+    const href = item.eventUrl || item.url || "";
+    const media = `<div class="gf-media" style="--gf-a:${a};--gf-b:${b}">${image ? `<img src="${esc(image)}" alt="" loading="lazy">` : ""}<span class="gf-tag">${esc(label)}</span><strong>${esc(item.title || label)}</strong></div>`;
+    const body = `<div class="gf-body"><h3>${esc(item.title || label)}</h3><p>${esc(item.description || "")}</p>${action(item, "Abrir")}</div>`;
+    return href
+      ? `<article class="gf-card">${media}${body}</article>`
+      : `<article class="gf-card">${media}${body}</article>`;
   }
 
   function monthLabel(item) {
@@ -128,8 +139,7 @@
   async function renderList(kind, title, text, empty, pageId = "managementPage", activeRoute = "") {
     addStyle();
     const expectedRoute = route();
-    const fallback = staticContent(kind);
-    pageShell(title, text, listBody(fallback, kind, empty), pageId, activeRoute);
+    pageShell(title, text, listBody(staticContent(kind), kind, empty), pageId, activeRoute);
     const items = await remoteContent(kind);
     if (route() !== expectedRoute || !items) return;
     pageShell(title, text, listBody(items, kind, empty), pageId, activeRoute);
@@ -183,14 +193,18 @@
     if (current === "#/procedimientos") return renderList("procedure", "Procedimientos medicos", "Repositorio visual de procedimientos y material practico.", "Aun no hay procedimientos publicados.");
   }
 
-  function schedule() {
-    setTimeout(() => render().catch(console.error), 0);
-    setTimeout(() => render().catch(console.error), 80);
+  let renderTimer = null;
+  function schedule(delay = 0) {
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(() => {
+      renderTimer = null;
+      render().catch(console.error);
+    }, delay);
   }
 
   window.CRS_GESTION_FINAL = { render, schedule };
-  window.addEventListener("hashchange", schedule);
-  window.addEventListener("crs:supabase-ready", schedule);
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schedule);
+  window.addEventListener("hashchange", () => schedule());
+  window.addEventListener("crs:supabase-ready", () => schedule(20));
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => schedule());
   else schedule();
 })();

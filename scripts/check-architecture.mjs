@@ -5,7 +5,6 @@ function read(path) {
 }
 
 const errors = [];
-const warnings = [];
 
 const config = read('supabase-config.js');
 const chiefHelper = read('supabase-jefatura-panel.js');
@@ -29,14 +28,23 @@ if (/CRS_SUPABASE_JEFATURA\?\.scheduleRender|CRS_SUPABASE_JEFATURA\.scheduleRend
 }
 
 const scheduleMatch = gestion.match(/function\s+schedule\s*\([^)]*\)\s*\{([\s\S]*?)\n\s*\}/);
-if (scheduleMatch) {
+if (!scheduleMatch) {
+  errors.push('gestion-panel-final.js debe mantener un scheduler explicito.');
+} else {
   const renderTimers = (scheduleMatch[1].match(/setTimeout/g) || []).length;
   if (renderTimers > 1) {
-    warnings.push('gestion-panel-final.js aún tiene más de un setTimeout en schedule(); queda como deuda técnica prioritaria.');
+    errors.push('gestion-panel-final.js no puede programar mas de un setTimeout por schedule().');
   }
 }
 
-for (const warning of warnings) console.warn(`AVISO: ${warning}`);
+if (!/let\s+renderTimer\s*=\s*null/.test(gestion) || !/clearTimeout\(renderTimer\)/.test(gestion)) {
+  errors.push('gestion-panel-final.js debe usar un timer cancelable para agrupar renders consecutivos.');
+}
+
+if (!/function\s+card\s*\(/.test(gestion)) {
+  errors.push('gestion-panel-final.js debe definir card() localmente para renderizar listados sin depender de globals.');
+}
+
 for (const error of errors) console.error(`ERROR: ${error}`);
 
 if (errors.length) process.exit(1);
