@@ -19,10 +19,14 @@ if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
 }
 
 const backendIndex = index.indexOf('./supabase-backend.js');
+const recoveryIndex = index.indexOf('./supabase-jefatura-panel.js');
 const compatIndex = index.indexOf('./supabase-login-compat.js');
 const chiefIndex = index.indexOf('./supabase-admin-users.js');
-if (backendIndex < 0 || compatIndex < 0 || chiefIndex < 0 || !(backendIndex < compatIndex && compatIndex < chiefIndex)) {
-  errors.push('index.html debe cargar backend, compatibilidad de correo y luego Jefatura, en ese orden.');
+if (
+  backendIndex < 0 || recoveryIndex < 0 || compatIndex < 0 || chiefIndex < 0 ||
+  !(backendIndex < recoveryIndex && recoveryIndex < compatIndex && compatIndex < chiefIndex)
+) {
+  errors.push('index.html debe cargar backend, recuperación, compatibilidad de correo y luego Jefatura, en ese orden.');
 }
 
 if (!/functionName\s*===\s*["']crs_login_email["']/.test(loginCompat) || !/includes\(["']@["']\)/.test(loginCompat)) {
@@ -39,6 +43,22 @@ if (/addEventListener\(["']hashchange["']/.test(chiefHelper)) {
 
 if (/crs:supabase-ready/.test(chiefHelper)) {
   errors.push('supabase-jefatura-panel.js no debe controlar el ciclo crs:supabase-ready.');
+}
+
+if (!/PASSWORD_RECOVERY/.test(chiefHelper)) {
+  errors.push('supabase-jefatura-panel.js debe escuchar PASSWORD_RECOVERY.');
+}
+
+if (!/auth\.updateUser\s*\(\s*\{\s*password/.test(chiefHelper)) {
+  errors.push('supabase-jefatura-panel.js debe permitir guardar la nueva clave con auth.updateUser().');
+}
+
+if (/redirectTo\s*:\s*`?[^\n]*#\/jefatura/i.test(chiefHelper)) {
+  errors.push('La recuperación no debe usar #/jefatura dentro de redirectTo porque Supabase usa el fragmento para Auth.');
+}
+
+if (!/data-supabase-jefatura-panel/.test(index)) {
+  errors.push('index.html debe cargar recuperación de clave de forma temprana para no perder PASSWORD_RECOVERY.');
 }
 
 if (/CRS_SUPABASE_JEFATURA\?\.scheduleRender|CRS_SUPABASE_JEFATURA\.scheduleRender/.test(config)) {
