@@ -36,6 +36,9 @@ jobs:
       - name: Validar seguridad Supabase
         run: node scripts/check-supabase-security.mjs
 
+      - name: Validar integridad de publicaciones y Storage
+        run: node scripts/check-storage-integrity.mjs
+
       - name: Validar archivos locales referenciados por index.html
         shell: python
         run: |
