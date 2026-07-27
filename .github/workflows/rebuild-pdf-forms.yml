@@ -1,0 +1,44 @@
+name: Reconstruir PDFs rellenables
+
+on:
+  push:
+    branches: ["agent/fix-production-stability-pdf-v2"]
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar rama
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-production-stability-pdf-v2
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias PDF
+        run: python -m pip install --disable-pip-version-check pymupdf==1.26.7 opencv-python-headless==4.13.0.92 numpy
+
+      - name: Reconstruir formularios
+        run: python scripts/rebuild-pdf-forms.py
+
+      - name: Guardar PDFs corregidos
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            form-docs/examenes-hph-rellenable.pdf \
+            form-docs/transfusion-rellenable.pdf \
+            form-docs/ley-urgencia-activacion-rellenable.pdf \
+            form-docs/medicamentos-uso-ocasional-rellenable.pdf
+          git commit -m "Recalibrar campos de formularios PDF"
+          git push origin HEAD:agent/fix-production-stability-pdf-v2
