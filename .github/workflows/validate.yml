@@ -30,6 +30,13 @@ jobs:
             node --check "$file"
           done < <(find . -type f -name '*.js' -not -path './node_modules/*' -print0)
 
+      - name: Validar sintaxis Apps Script
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp apps-script/gestion-pacientes.gs /tmp/gestion-pacientes.js
+          node --check /tmp/gestion-pacientes.js
+
       - name: Validar límites de arquitectura
         run: node scripts/check-architecture.mjs
 
@@ -47,6 +54,9 @@ jobs:
 
       - name: Validar privacidad de Gestión pacientes
         run: node scripts/check-patient-privacy.mjs
+
+      - name: Validar contrato seguro de Gestión pacientes
+        run: node scripts/check-patient-backend-contract.mjs
 
       - name: Validar frontera de datos operativos
         run: node scripts/check-operational-data-boundary.mjs
