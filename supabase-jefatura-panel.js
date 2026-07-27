@@ -56,16 +56,6 @@
     form.append(button);
   }
 
-  function scheduleRender(delay = 60) {
-    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(delay);
-    setTimeout(enhanceForgotPassword, delay + 80);
-  }
-
-  function render() {
-    window.CRS_SUPABASE_JEFATURA?.render?.();
-    setTimeout(enhanceForgotPassword, 120);
-  }
-
   document.addEventListener("click", async (event) => {
     const button = event.target.closest?.("[data-crs-forgot-password]");
     if (!button) return;
@@ -81,11 +71,17 @@
   }, true);
 
   const observer = new MutationObserver(enhanceForgotPassword);
-  if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+
+  function boot() {
+    if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    enhanceForgotPassword();
+  }
 
   window.CRS_SUPABASE_JEFATURA_LEGACY_DISABLED = true;
-  window.addEventListener("hashchange", () => scheduleRender(80));
-  window.addEventListener("crs:supabase-ready", () => scheduleRender(80));
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => scheduleRender(80), { once: true });
-  else scheduleRender(80);
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
 })();
