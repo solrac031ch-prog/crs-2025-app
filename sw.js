@@ -1,16 +1,23 @@
-const CACHE_NAME = "crs-hph-disabled-v70";
+const CACHE_PREFIX = "crs-hph-";
+const CACHE_NAME = "crs-hph-disabled-v71";
+
+async function clearCrsCaches() {
+  const keys = await caches.keys();
+  await Promise.all(
+    keys
+      .filter((key) => key === CACHE_NAME || key.startsWith(CACHE_PREFIX))
+      .map((key) => caches.delete(key))
+  );
+}
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
-  );
+  event.waitUntil(clearCrsCaches());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+    clearCrsCaches()
       .then(() => self.registration.unregister())
       .then(() => self.clients.matchAll({ type: "window", includeUncontrolled: true }))
       .then((clients) => clients.forEach((client) => client.navigate(client.url)))
