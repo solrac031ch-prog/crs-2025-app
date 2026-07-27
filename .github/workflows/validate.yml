@@ -48,6 +48,9 @@ jobs:
       - name: Validar privacidad de Gestión pacientes
         run: node scripts/check-patient-privacy.mjs
 
+      - name: Validar frontera de datos operativos
+        run: node scripts/check-operational-data-boundary.mjs
+
       - name: Validar archivos locales referenciados por index.html
         shell: python
         run: |
