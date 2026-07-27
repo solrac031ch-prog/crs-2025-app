@@ -55,6 +55,14 @@ No guarda ni exporta casos clínicos. Gestión de pacientes pertenece a `gestion
 
 Si Drive no está disponible, no debe dejar nombres, RUN, teléfonos ni resúmenes clínicos como respaldo persistente en el navegador. También purga las claves históricas de almacenamiento local.
 
+No debe inyectar su hoja visual; los estilos `patient-*` pertenecen a `gestion-pacientes-core.css`.
+
+### `gestion-pacientes-core.css`
+
+Dueño de los estilos de Gestión prioritaria de pacientes: hero, filtros, tabla, estados, tarjetas y comportamiento responsivo.
+
+Se carga desde `<head>` antes del módulo clínico de pacientes.
+
 ### `gestion-panel-final.js`
 
 Dueño de las vistas visuales de Gestión, Noticias, Educación, Paper, Procedimientos y accesos del equipo de Urgencia.
@@ -92,6 +100,7 @@ Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y norma
 ```text
 index.html
   -> gestion-panel-final.css (estilos de Gestión)
+  -> gestion-pacientes-core.css (estilos de Gestión pacientes)
   -> gestion-pacientes-core.js (gestión clínica segura)
   -> app-protocol-data.js (dataset clínico CRS)
   -> app-operational-data.js (datos no clínicos)
@@ -117,6 +126,7 @@ index.html
 - No volver a incrustar el dataset de protocolos dentro de `app.js`.
 - No volver a incrustar datos estáticos de Ley de Urgencias/notificación obligatoria en `app.js` o `app-forms.js`.
 - No volver a inyectar estilos `gf-*` desde `gestion-panel-final.js`.
+- No volver a inyectar estilos `patient-*` desde `gestion-pacientes-core.js`.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
 - `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
 - El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
@@ -126,7 +136,7 @@ index.html
 
 ## Deuda técnica priorizada
 
-1. Mover progresivamente a CSS los estilos todavía inyectados por módulos como `gestion-pacientes-core.js` y Jefatura.
+1. Mover progresivamente a CSS los estilos todavía inyectados por módulos de Jefatura y otros módulos secundarios.
 2. Añadir pruebas de navegador/end-to-end para rutas y formularios críticos.
 3. Seguir separando datasets menores de UI sólo cuando reduzca acoplamiento real.
 4. Desplegar `crs_login_email` en todas las instalaciones sólo si se decide mantener el ingreso por alias de usuario.
