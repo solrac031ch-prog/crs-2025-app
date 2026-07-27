@@ -82,7 +82,7 @@
   }
 
   function apiUrl() {
-    return String(window.CRS_GOOGLE_AUTH_CONFIG?.appsScriptUrl || "").trim();
+    return String(window.CRS_PATIENT_CASES_CONFIG?.appsScriptUrl || window.CRS_GOOGLE_AUTH_CONFIG?.appsScriptUrl || "").trim();
   }
 
   async function apiPost(action, payload = {}) {
@@ -315,7 +315,6 @@
   }, true);
 
   async function route() {
-    await refreshAuth();
     if (location.hash === "#/gestion/pacientes") await renderPage();
   }
 
