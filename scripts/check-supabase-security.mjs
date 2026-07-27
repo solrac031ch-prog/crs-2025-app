@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import path from 'node:path';
 
 const failures = [];
 
@@ -38,12 +37,28 @@ for (const table of protectedTables) {
 const requiredHardening = [
   /revoke\s+all\s+on\s+function\s+public\.crs_is_admin\(\)\s+from\s+public/i,
   /revoke\s+all\s+on\s+function\s+public\.crs_login_email\(text\)\s+from\s+public/i,
+  /revoke\s+all\s+on\s+function\s+public\.crs_touch_updated_at\(\)\s+from\s+public/i,
   /grant\s+execute\s+on\s+function\s+public\.crs_is_admin\(\)\s+to\s+anon,\s*authenticated/i,
   /grant\s+execute\s+on\s+function\s+public\.crs_login_email\(text\)\s+to\s+anon,\s*authenticated/i
 ];
 
 for (const pattern of requiredHardening) {
   if (!pattern.test(hardening)) failures.push(`supabase-security-hardening.sql: falta una regla obligatoria (${pattern}).`);
+}
+
+const guardedFunctions = [
+  'public.crs_allowed_admin_role(text)',
+  'public.crs_is_admin()',
+  'public.crs_login_email(text)',
+  'public.crs_touch_updated_at()'
+];
+
+for (const signature of guardedFunctions) {
+  const escaped = signature.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const guard = new RegExp(`to_regprocedure\\(['\"]${escaped}['\"]\\)`, 'i');
+  if (!guard.test(hardening)) {
+    failures.push(`supabase-security-hardening.sql: ${signature} debe comprobar existencia antes de cambiar permisos.`);
+  }
 }
 
 if (!/bucket_id\s*=\s*'crs-public'\s+and\s+public\.crs_is_admin\(\)/i.test(setup)) {
