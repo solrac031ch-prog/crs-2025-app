@@ -6,14 +6,31 @@ function read(path) {
 
 const errors = [];
 
+const index = read('index.html');
 const config = read('supabase-config.js');
 const chiefHelper = read('supabase-jefatura-panel.js');
 const chiefController = read('supabase-admin-users.js');
 const backend = read('supabase-backend.js');
+const loginCompat = read('supabase-login-compat.js');
 const gestion = read('gestion-panel-final.js');
 
 if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
   errors.push('supabase-admin-users.js debe exponer CRS_SUPABASE_JEFATURA.');
+}
+
+const backendIndex = index.indexOf('./supabase-backend.js');
+const compatIndex = index.indexOf('./supabase-login-compat.js');
+const chiefIndex = index.indexOf('./supabase-admin-users.js');
+if (backendIndex < 0 || compatIndex < 0 || chiefIndex < 0 || !(backendIndex < compatIndex && compatIndex < chiefIndex)) {
+  errors.push('index.html debe cargar backend, compatibilidad de correo y luego Jefatura, en ese orden.');
+}
+
+if (!/functionName\s*===\s*["']crs_login_email["']/.test(loginCompat) || !/includes\(["']@["']\)/.test(loginCompat)) {
+  errors.push('supabase-login-compat.js debe limitarse a resolver correos para crs_login_email.');
+}
+
+if (/signInWithPassword|signInWithOtp|signOut\s*\(/.test(loginCompat)) {
+  errors.push('supabase-login-compat.js no debe iniciar ni cerrar sesiones.');
 }
 
 if (/addEventListener\(["']hashchange["']/.test(chiefHelper)) {
