@@ -43,3 +43,4 @@ replaceOnce(
 );
 
 console.log('Estabilización de rutas, Gestión y arranque aplicada.');
+// commit de disparo: el workflow ya existe en la rama.
