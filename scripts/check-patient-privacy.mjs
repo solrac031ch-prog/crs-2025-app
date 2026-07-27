@@ -36,8 +36,8 @@ if (/guardado localmente|Modo respaldo local/i.test(source)) {
 
 const appIndex = index.indexOf('./app.js');
 const patientIndex = index.indexOf('./gestion-pacientes-core.js');
-if (appIndex < 0 || patientIndex < 0 || patientIndex <= appIndex) {
-  errors.push('gestion-pacientes-core.js debe cargar después de app.js para interceptar el flujo legado.');
+if (appIndex < 0 || patientIndex < 0 || patientIndex >= appIndex) {
+  errors.push('gestion-pacientes-core.js debe cargar antes de app.js para registrar primero la protección del submit prioritario.');
 }
 
 for (const error of errors) console.error(`ERROR: ${error}`);
