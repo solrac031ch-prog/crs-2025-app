@@ -1,0 +1,37 @@
+name: Extraer datos clínicos de protocolos
+
+on:
+  push:
+    branches: ["agent/extract-protocol-data"]
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar rama
+        uses: actions/checkout@v4
+        with:
+          ref: agent/extract-protocol-data
+          fetch-depth: 0
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Extraer protocolos
+        run: node scripts/extract-protocol-data.mjs
+
+      - name: Guardar resultado
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js app-protocol-data.js
+          git commit -m "Separar datos clínicos de protocolos"
+          git push origin HEAD:agent/extract-protocol-data
