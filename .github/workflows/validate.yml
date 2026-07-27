@@ -33,6 +33,9 @@ jobs:
       - name: Validar límites de arquitectura
         run: node scripts/check-architecture.mjs
 
+      - name: Validar seguridad Supabase
+        run: node scripts/check-supabase-security.mjs
+
       - name: Validar archivos locales referenciados por index.html
         shell: python
         run: |
