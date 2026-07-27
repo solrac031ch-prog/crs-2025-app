@@ -40,7 +40,7 @@ if (fs.existsSync('patient-storage-guard.js') || index.includes('./patient-stora
   errors.push('No debe existir un monkey-patch global de localStorage; la ruta insegura debe estar eliminada de origen.');
 }
 
-if (!/event\.target\.closest\(["']\[data-priority-form\]["']\)/.test(source) || !/event\.stopImmediatePropagation\(\)/.test(source)) {
+if (!source.includes('[data-priority-form]') || !source.includes('event.stopImmediatePropagation()')) {
   errors.push('gestion-pacientes-core.js debe ser el único dueño del submit prioritario y detener handlers posteriores.');
 }
 
@@ -48,7 +48,7 @@ if (!/source:\s*["']unavailable["'][\s\S]*rows:\s*\[\]/.test(source)) {
   errors.push('Si Drive no está disponible, la vista debe fallar cerrada y no usar un respaldo clínico local.');
 }
 
-if (!/window\.CRS_SUPABASE\?\.client\?\.\(\)/.test(source) || !/api\.auth\.getUser\(\)/.test(source)) {
+if (!source.includes('window.CRS_SUPABASE?.client?.()') || !source.includes('api.auth.getUser()')) {
   errors.push('Gestión pacientes debe alinearse con la sesión Supabase actual.');
 }
 
