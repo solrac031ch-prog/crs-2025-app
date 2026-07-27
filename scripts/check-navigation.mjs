@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const read = (path) => fs.readFileSync(path, 'utf8');
 const index = read('index.html');
 const app = read('app.js');
+const forms = read('app-forms.js');
 const router = read('app-router.js');
 const gestion = read('gestion-panel-final.js');
 const patients = read('gestion-pacientes-core.js');
@@ -68,7 +69,7 @@ const formRouteMarkers = [
   'parts[1] === "formularios"'
 ];
 for (const marker of formRouteMarkers) {
-  if (!app.includes(marker)) errors.push(`Falta contrato de navegación de formularios: ${marker}.`);
+  if (!forms.includes(marker)) errors.push(`Falta contrato de navegación de formularios: ${marker}.`);
 }
 
 if (!router.includes('window.addEventListener("hashchange", renderRoute)')) {
@@ -80,14 +81,15 @@ if (!router.includes('window.location.hash = "#/inicio"')) {
 if (/function\s+renderRoute\s*\(|addEventListener\(["']hashchange["']/.test(app)) {
   errors.push('app.js no debe recuperar responsabilidades de enrutamiento.');
 }
-if (/serviceWorker\.register\s*\(/.test(app) || /serviceWorker\.register\s*\(/.test(router)) {
-  errors.push('CRS mantiene el Service Worker desactivado; app.js y app-router.js no deben registrarlo.');
+if (/serviceWorker\.register\s*\(/.test(app) || /serviceWorker\.register\s*\(/.test(forms) || /serviceWorker\.register\s*\(/.test(router)) {
+  errors.push('CRS mantiene el Service Worker desactivado; los módulos principales no deben registrarlo.');
 }
 
 const appIndex = index.indexOf('./app.js');
+const formsIndex = index.indexOf('./app-forms.js');
 const routerIndex = index.indexOf('./app-router.js');
-if (appIndex < 0 || routerIndex < 0 || routerIndex <= appIndex) {
-  errors.push('index.html debe cargar app-router.js después de app.js.');
+if (appIndex < 0 || formsIndex < 0 || routerIndex < 0 || formsIndex <= appIndex || routerIndex <= formsIndex) {
+  errors.push('index.html debe cargar app.js → app-forms.js → app-router.js en ese orden.');
 }
 
 if (!index.includes('pages.jefatura=document.querySelector("#chiefPage")')) {
@@ -99,4 +101,4 @@ if (!index.includes('pages["equipo-urgencia"]=document.querySelector("#doctorsPa
 
 for (const error of errors) console.error(`ERROR: ${error}`);
 if (errors.length) process.exit(1);
-console.log('Contrato de navegación CRS OK. Router separado y Service Worker desactivado.');
+console.log('Contrato de navegación CRS OK. Router y formularios separados; Service Worker desactivado.');
