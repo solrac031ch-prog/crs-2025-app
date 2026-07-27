@@ -12,6 +12,7 @@ Este documento define responsabilidades para evitar que la app vuelva a crecer m
 6. **Los datos clínicos identificables no se persisten en el navegador.** Gestión de pacientes debe fallar cerrada si el almacenamiento remoto no está disponible.
 7. **Datos clínicos y lógica visual se versionan por separado.** Las refactorizaciones no deben reescribir contenido clínico mientras cambian arquitectura.
 8. **Los estilos estáticos viven en CSS.** JavaScript no debe inyectar hojas de estilo completas cuando pueden cargarse desde `index.html`.
+9. **Las rutas críticas se prueban también en un navegador real.** Las guardas estáticas no sustituyen la verificación de render e interacción en Chromium.
 
 ## Responsabilidades actuales
 
@@ -111,6 +112,16 @@ Se carga desde `<head>` y debe mantenerse separado del flujo Auth (`PASSWORD_REC
 
 Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y normalizar pequeños textos, pero no debe renderizar Jefatura directamente.
 
+### `tests/e2e/navigation.spec.js`
+
+Smoke test de navegador. Abre la app mediante un servidor HTTP local y valida en Chromium las rutas principales, la vista activa y la carga de las hojas CSS separadas.
+
+No usa datos clínicos reales ni necesita escribir en Supabase o Drive.
+
+### `.github/workflows/e2e.yml`
+
+Ejecuta el smoke test de Playwright en pull requests y en `main`. Instala Chromium y levanta la app localmente mediante la configuración de Playwright.
+
 ## Flujo esperado
 
 ```text
@@ -152,12 +163,13 @@ index.html
 - El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
 - Los `redirectTo` de recuperación/confirmación no deben incluir `#/jefatura`, porque Supabase necesita controlar el retorno de Auth.
 - Los cambios clínicos deben mantenerse separados de refactorizaciones técnicas siempre que sea posible.
-- Todo PR debe pasar `.github/workflows/validate.yml`.
+- Las rutas principales deben seguir verdes en `tests/e2e/navigation.spec.js`.
+- Todo PR debe pasar `.github/workflows/validate.yml` y `.github/workflows/e2e.yml`.
 
 ## Deuda técnica priorizada
 
-1. Mover progresivamente a CSS los estilos todavía inyectados por módulos secundarios restantes.
-2. Añadir pruebas de navegador/end-to-end para rutas y formularios críticos.
+1. Ampliar gradualmente las pruebas de navegador a formularios críticos sin usar datos reales de pacientes.
+2. Mover progresivamente a CSS los estilos todavía inyectados por módulos secundarios restantes.
 3. Seguir separando datasets menores de UI sólo cuando reduzca acoplamiento real.
 4. Desplegar `crs_login_email` en todas las instalaciones sólo si se decide mantener el ingreso por alias de usuario.
 5. Revisar periódicamente datos sensibles/operativos antes de publicar el repositorio en forma pública.
