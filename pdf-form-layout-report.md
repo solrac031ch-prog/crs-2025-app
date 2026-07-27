@@ -2,6 +2,30 @@
 
 PDF disponibles en `form-docs`: examenes-hph-editable.pdf, examenes-hph-rellenable.pdf, examenes-hph.pdf, ley-urgencia-activacion-rellenable.pdf, ley-urgencia-activacion.pdf, ley-urgencia-consentimiento-rellenable.pdf, ley-urgencia-consentimiento.pdf, mayo.pdf, medicamentos-uso-ocasional-rellenable.pdf, medicamentos-uso-ocasional.pdf, telefonos-hph.pdf, transfusion-editable.pdf, transfusion-rellenable.pdf, transfusion.pdf
 
+## examenes-hph.pdf
+- Campos detectados: 0
+- Página 1: 1901.0 x 2799.0 pt
+
+## examenes-hph-editable.pdf
+- Campos detectados: 16
+- Página 1: 612.0 x 842.0 pt
+  - `paciente_nombre` (Text): rect=[180.0, 112.0, 330.0, 132.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: paciente RUN Fecha
+  - `paciente_run` (Text): rect=[430.0, 112.0, 540.0, 132.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: 
+  - `paciente_edad` (Text): rect=[180.0, 143.0, 330.0, 163.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: paciente RUN Fecha Medico
+  - `fecha` (Text): rect=[430.0, 143.0, 540.0, 163.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: 
+  - `ubicacion` (Text): rect=[180.0, 174.0, 330.0, 194.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: Fecha Medico
+  - `medico` (Text): rect=[430.0, 174.0, 540.0, 194.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: 
+  - `hemograma` (CheckBox): rect=[54.0, 245.0, 66.0, 257.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Examenes Hemograma Perfil Electrolitos
+  - `perfil_bioquimico` (CheckBox): rect=[54.0, 267.0, 66.0, 279.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Examenes Hemograma Perfil Electrolitos Funcion
+  - `elp` (CheckBox): rect=[54.0, 289.0, 66.0, 301.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Hemograma Perfil Electrolitos Funcion Pruebas
+  - `creatinina` (CheckBox): rect=[54.0, 311.0, 66.0, 323.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Perfil Electrolitos Funcion Pruebas Coagulacion
+  - `pruebas_hepaticas` (CheckBox): rect=[54.0, 333.0, 66.0, 345.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Electrolitos Funcion Pruebas Coagulacion Gases
+  - `coagulacion` (CheckBox): rect=[54.0, 355.0, 66.0, 367.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Funcion Pruebas Coagulacion Gases Orina
+  - `gases_lactato` (CheckBox): rect=[54.0, 377.0, 66.0, 389.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Pruebas Coagulacion Gases Orina Otros examenes
+  - `orina_urocultivo` (CheckBox): rect=[54.0, 399.0, 66.0, 411.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Coagulacion Gases Orina Otros examenes Indicacion /
+  - `otros_examenes` (Text): rect=[180.0, 411.0, 540.0, 431.0] tamaño=360.0x20.0 fuente=Helv 10.0 | cerca: urocultivo clinico
+  - `observaciones` (Text): rect=[54.0, 442.0, 540.0, 492.0] tamaño=486.0x50.0 fuente=Helv 10.0 | cerca: Orina completa / urocultivo Otros examenes Observaciones Indicacion / contexto clinico
+
 ## examenes-hph-rellenable.pdf
 - Campos detectados: 183
 - Página 1: 1901.0 x 2799.0 pt
@@ -188,6 +212,30 @@ PDF disponibles en `form-docs`: examenes-hph-editable.pdf, examenes-hph-rellenab
   - `6` (Text): rect=[1395.0, 2720.0, 1447.0, 2754.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
   - `leucocitos_fecales` (Text): rect=[1395.0, 2835.0, 1449.0, 2869.0] tamaño=54.0x34.0 fuente=Helv 28.0 | cerca: 
   - `hemorragias_ocultas` (Text): rect=[1395.0, 2896.0, 1449.0, 2930.0] tamaño=54.0x34.0 fuente=Helv 28.0 | cerca: 
+
+## transfusion.pdf
+- Campos detectados: 0
+- Página 1: 1788.0 x 2698.0 pt
+
+## transfusion-editable.pdf
+- Campos detectados: 16
+- Página 1: 612.0 x 842.0 pt
+  - `paciente_nombre` (Text): rect=[180.0, 112.0, 330.0, 132.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: paciente RUN Fecha
+  - `paciente_run` (Text): rect=[430.0, 112.0, 540.0, 132.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: 
+  - `paciente_edad` (Text): rect=[180.0, 143.0, 330.0, 163.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: paciente RUN Fecha Medico
+  - `fecha` (Text): rect=[430.0, 143.0, 540.0, 163.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: 
+  - `ubicacion` (Text): rect=[180.0, 174.0, 330.0, 194.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: Fecha Medico
+  - `medico` (Text): rect=[430.0, 174.0, 540.0, 194.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: 
+  - `globulos_rojos` (CheckBox): rect=[54.0, 245.0, 66.0, 257.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Solicitud Globulos Plaquetas Plasma
+  - `plaquetas` (CheckBox): rect=[54.0, 267.0, 66.0, 279.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Solicitud Globulos Plaquetas Plasma Crioprecipitado
+  - `plasma` (CheckBox): rect=[54.0, 289.0, 66.0, 301.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Globulos Plaquetas Plasma Crioprecipitado Unidades
+  - `crio` (CheckBox): rect=[54.0, 311.0, 66.0, 323.0] tamaño=12.0x12.0 fuente=Helv 10.0 | cerca: Plaquetas Plasma Crioprecipitado Unidades
+  - `unidades` (Text): rect=[180.0, 323.0, 330.0, 343.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: congelado Grupo/Rh
+  - `grupo_rh` (Text): rect=[430.0, 323.0, 540.0, 343.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: 
+  - `diagnostico` (Text): rect=[180.0, 354.0, 540.0, 374.0] tamaño=360.0x20.0 fuente=Helv 10.0 | cerca: Grupo/Rh observaciones antecedentes, indicacion especial o reaccion adversa
+  - `hb_hto` (Text): rect=[180.0, 415.0, 330.0, 435.0] tamaño=150.0x20.0 fuente=Helv 10.0 | cerca: observaciones Hora antecedentes, indicacion especial o reaccion adversa
+  - `hora` (Text): rect=[430.0, 415.0, 540.0, 435.0] tamaño=110.0x20.0 fuente=Helv 10.0 | cerca: indicada
+  - `observaciones` (Text): rect=[54.0, 416.0, 540.0, 466.0] tamaño=486.0x50.0 fuente=Helv 10.0 | cerca: Control y observaciones Hb / Hto Hora indicada Riesgos, antecedentes, indicacion especial
 
 ## transfusion-rellenable.pdf
 - Campos detectados: 46
