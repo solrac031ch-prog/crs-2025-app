@@ -11,6 +11,7 @@ Este documento define responsabilidades para evitar que la app vuelva a crecer m
 5. **Los parches de compatibilidad deben retirarse cuando la lógica puede vivir en su módulo dueño.** No se modifica un cliente o API global para resolver un caso local.
 6. **Los datos clínicos identificables no se persisten en el navegador.** Gestión de pacientes debe fallar cerrada si el almacenamiento remoto no está disponible.
 7. **Datos clínicos y lógica visual se versionan por separado.** Las refactorizaciones no deben reescribir contenido clínico mientras cambian arquitectura.
+8. **Los estilos estáticos viven en CSS.** JavaScript no debe inyectar hojas de estilo completas cuando pueden cargarse desde `index.html`.
 
 ## Responsabilidades actuales
 
@@ -58,7 +59,13 @@ Si Drive no está disponible, no debe dejar nombres, RUN, teléfonos ni resúmen
 
 Dueño de las vistas visuales de Gestión, Noticias, Educación, Paper, Procedimientos y accesos del equipo de Urgencia.
 
-No debe administrar autenticación ni usuarios.
+No debe administrar autenticación, usuarios ni inyectar su hoja de estilos.
+
+### `gestion-panel-final.css`
+
+Dueño de los estilos `gf-*` usados por `gestion-panel-final.js`, incluidos sus breakpoints responsivos.
+
+Se carga desde `<head>` y debe mantenerse separado de la lógica de render.
 
 ### `supabase-backend.js`
 
@@ -84,6 +91,7 @@ Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y norma
 
 ```text
 index.html
+  -> gestion-panel-final.css (estilos de Gestión)
   -> gestion-pacientes-core.js (gestión clínica segura)
   -> app-protocol-data.js (dataset clínico CRS)
   -> app-operational-data.js (datos no clínicos)
@@ -108,6 +116,7 @@ index.html
 - No reintroducir persistencia clínica identificable en `localStorage`.
 - No volver a incrustar el dataset de protocolos dentro de `app.js`.
 - No volver a incrustar datos estáticos de Ley de Urgencias/notificación obligatoria en `app.js` o `app-forms.js`.
+- No volver a inyectar estilos `gf-*` desde `gestion-panel-final.js`.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
 - `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
 - El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
@@ -117,7 +126,7 @@ index.html
 
 ## Deuda técnica priorizada
 
-1. Reducir estilos inyectados desde JavaScript y moverlos progresivamente a CSS.
+1. Mover progresivamente a CSS los estilos todavía inyectados por módulos como `gestion-pacientes-core.js` y Jefatura.
 2. Añadir pruebas de navegador/end-to-end para rutas y formularios críticos.
 3. Seguir separando datasets menores de UI sólo cuando reduzca acoplamiento real.
 4. Desplegar `crs_login_email` en todas las instalaciones sólo si se decide mantener el ingreso por alias de usuario.
