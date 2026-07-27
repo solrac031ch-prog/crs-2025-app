@@ -167,8 +167,8 @@
         await sendForgotPassword(form?.querySelector("[name='login']")?.value || "");
       }
       if (cancel) {
-        closeRecoveryForm();
         if (recoveryActive) await client()?.auth?.signOut?.();
+        closeRecoveryForm();
         goToJefatura();
       }
     } catch (error) {
