@@ -20,19 +20,27 @@ Dueño del dataset estático de protocolos CRS. Contiene títulos, categorías, 
 
 Los cambios de contenido clínico deben hacerse aquí en PRs separados de las refactorizaciones técnicas.
 
-### `app.js`
-
-Núcleo visual/base de la aplicación. Consume `window.CRS_PROTOCOLS`, normaliza los protocolos y mantiene los renderizadores base de especialidades, documentos, directorio y cierre de derivación.
-
-No debe volver a incrustar el arreglo `protocols` ni recuperar responsabilidades ya separadas a datos operativos, formularios, router o gestión local de pacientes.
-
 ### `app-operational-data.js`
 
 Dueño de datos operativos no clínicos extraídos de `app.js`: documentos/enlaces, formularios externos, rotativa de llamados, directorio telefónico y enlaces de educación.
 
+### `app-forms-data.js`
+
+Dueño de los datos estáticos usados por Formularios: patologías de notificación obligatoria, grupos y sinónimos de búsqueda de Ley de Urgencias, PDF del Decreto 34 y catálogo de formularios de turno.
+
+No renderiza interfaz ni controla rutas. Consume únicamente enlaces ya definidos en `app-operational-data.js`.
+
+### `app.js`
+
+Núcleo visual/base de la aplicación. Consume `window.CRS_PROTOCOLS`, `window.CRS_APP_OPERATIONAL` y `window.CRS_FORMS_DATA`, normaliza los protocolos y mantiene los renderizadores base de especialidades, documentos, directorio y cierre de derivación.
+
+No debe volver a incrustar los datasets ya separados ni recuperar responsabilidades de formularios, router o gestión local de pacientes.
+
 ### `app-forms.js`
 
 Dueño de la UI y rutas internas de Formularios, Ley de Urgencias y notificación obligatoria.
+
+Consume los datos preparados por `app-forms-data.js`; no debe volver a contener los listados estáticos de patologías, grupos o sinónimos.
 
 ### `app-router.js`
 
@@ -79,8 +87,9 @@ index.html
   -> gestion-pacientes-core.js (gestión clínica segura)
   -> app-protocol-data.js (dataset clínico CRS)
   -> app-operational-data.js (datos no clínicos)
+  -> app-forms-data.js (datos de formularios/Ley de Urgencias)
   -> app.js (núcleo visual/base)
-  -> app-forms.js (formularios y Ley de Urgencias)
+  -> app-forms.js (UI de formularios y Ley de Urgencias)
   -> app-router.js (router base)
   -> Supabase SDK
   -> supabase-config.js (config/bootstrap)
@@ -98,6 +107,7 @@ index.html
 - No borrar todos los caches del origen.
 - No reintroducir persistencia clínica identificable en `localStorage`.
 - No volver a incrustar el dataset de protocolos dentro de `app.js`.
+- No volver a incrustar datos estáticos de Ley de Urgencias/notificación obligatoria en `app.js` o `app-forms.js`.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
 - `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
 - El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
@@ -107,8 +117,8 @@ index.html
 
 ## Deuda técnica priorizada
 
-1. Separar los demás datasets estáticos todavía mezclados con `app.js`, manteniendo contenido clínico intacto.
-2. Reducir estilos inyectados desde JavaScript y moverlos progresivamente a CSS.
-3. Añadir pruebas de navegador/end-to-end para rutas y formularios críticos.
+1. Reducir estilos inyectados desde JavaScript y moverlos progresivamente a CSS.
+2. Añadir pruebas de navegador/end-to-end para rutas y formularios críticos.
+3. Seguir separando datasets menores de UI sólo cuando reduzca acoplamiento real.
 4. Desplegar `crs_login_email` en todas las instalaciones sólo si se decide mantener el ingreso por alias de usuario.
 5. Revisar periódicamente datos sensibles/operativos antes de publicar el repositorio en forma pública.
