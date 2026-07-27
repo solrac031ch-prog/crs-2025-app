@@ -8,7 +8,11 @@ import fitz
 ROOT = Path('.')
 FORM_DIR = ROOT / 'form-docs'
 TARGETS = [
+    'examenes-hph.pdf',
+    'examenes-hph-editable.pdf',
     'examenes-hph-rellenable.pdf',
+    'transfusion.pdf',
+    'transfusion-editable.pdf',
     'transfusion-rellenable.pdf',
     'ley-urgencia-activacion-rellenable.pdf',
     'ley-urgencia-consentimiento-rellenable.pdf',
