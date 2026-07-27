@@ -28,7 +28,13 @@ No debe administrar autenticación ni usuarios.
 
 Capa de acceso a datos remotos y operaciones CRUD de contenido/documentos/flujos. Expone `window.CRS_SUPABASE`.
 
-No debe convertirse en un segundo router general.
+No debe convertirse en un segundo router general ni administrar login o usuarios.
+
+### `supabase-login-compat.js`
+
+Compatibilidad temporal para instalaciones donde no existe la función SQL `crs_login_email`. Permite que un correo electrónico pase directamente al controlador de autenticación; los nombres de usuario siguen requiriendo la función SQL.
+
+No inicia sesiones ni renderiza Jefatura.
 
 ### `supabase-admin-users.js`
 
@@ -47,12 +53,13 @@ Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y norma
 ```text
 index.html
   -> app.js (UI base)
-  -> gestion-panel-final.js (vistas de gestión/contenido)
   -> Supabase SDK
   -> supabase-config.js (config/bootstrap)
+  -> supabase-backend.js (cliente, datos y CRUD)
+  -> supabase-login-compat.js (correo sin RPC, temporal)
   -> supabase-admin-users.js (Jefatura)
-  -> supabase-backend.js (datos/CRUD)
-  -> supabase-jefatura-panel.js (recuperación de clave)
+  -> gestion-panel-final.js (vistas de gestión/contenido)
+  -> supabase-jefatura-panel.js (recuperación de clave, carga dinámica)
 ```
 
 ## Reglas para cambios nuevos
@@ -62,12 +69,14 @@ index.html
 - No modificar `navigator.serviceWorker.register` globalmente.
 - No borrar todos los caches del origen.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
+- `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
+- `supabase-login-compat.js` sólo puede resolver correos; no puede iniciar o cerrar sesiones.
 - Los cambios clínicos deben mantenerse separados de refactorizaciones técnicas siempre que sea posible.
 - Todo PR debe pasar `.github/workflows/validate.yml`.
 
 ## Deuda técnica priorizada
 
-1. Convertir el scheduler doble de `gestion-panel-final.js` en un render cancelable/debounced.
+1. Crear `crs_login_email` en todas las instalaciones de Supabase y retirar la compatibilidad temporal cuando los nombres de usuario estén disponibles en producción.
 2. Separar datos clínicos estáticos de `app.js` hacia módulos de datos.
 3. Reducir estilos inyectados desde JavaScript y moverlos progresivamente a CSS.
 4. Añadir pruebas de navegación para rutas críticas.
