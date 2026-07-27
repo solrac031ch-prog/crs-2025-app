@@ -29,6 +29,16 @@ jobs:
       - name: Inspeccionar formularios
         run: python scripts/inspect-pdf-forms.py
 
+      - name: Render diagnóstico
+        run: python scripts/render-pdf-form-debug.py
+
+      - name: Subir imágenes diagnósticas
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-form-debug
+          path: pdf-debug-renders/*.png
+          if-no-files-found: error
+
       - name: Guardar reporte
         shell: bash
         run: |
@@ -36,7 +46,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "4189828+github-actions[bot]@users.noreply.github.com"
           git add pdf-form-layout-report.json pdf-form-layout-report.md
-          git commit -m "Inspeccionar geometría de PDFs rellenables"
+          git diff --cached --quiet || git commit -m "Inspeccionar geometría de PDFs rellenables"
           git push origin HEAD:agent/fix-production-stability-pdf-v2
-
-# disparo explícito: workflow ya disponible en la rama
