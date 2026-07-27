@@ -13,7 +13,6 @@
     if (pageName === "formularios") renderFormsRoute(parts.slice(1));
     if (pageName === "telefonos") renderPhones();
     if (pageName === "educacion") renderEducation();
-    if (pageName === "gestion") renderManagement();
   
     window.scrollTo(0, 0);
   }
@@ -61,25 +60,9 @@
       form?.querySelector("input")?.focus();
     }
   
-    const exportCases = event.target.closest("[data-export-cases]");
-    if (exportCases) {
-      if (exportCases.dataset.exportCases === "csv") exportPriorityCasesCsv();
-      if (exportCases.dataset.exportCases === "word") exportPriorityCasesWord();
-    }
-  
   });
   
   document.addEventListener("input", (event) => {
-    const caseDone = event.target.closest("[data-case-done]");
-    if (caseDone) {
-      const cases = priorityCases().map((item) => (
-        item.id === caseDone.dataset.caseDone ? { ...item, status: caseDone.checked ? "Gestionado" : "Pendiente" } : item
-      ));
-      savePriorityCases(cases);
-      if (activeRouteName() === "gestion") renderManagement();
-      return;
-    }
-  
     const input = event.target.closest("[data-law-search-form] input[name='q']");
     if (!input) return;
   
@@ -92,26 +75,6 @@
   });
   
   document.addEventListener("submit", (event) => {
-    const priorityForm = event.target.closest("[data-priority-form]");
-    if (priorityForm) {
-      event.preventDefault();
-      const protocol = findProtocolBySlug(priorityForm.dataset.priorityForm);
-      if (!protocol) return;
-      const data = new FormData(priorityForm);
-      savePriorityCase(protocol, {
-        patientName: data.get("patientName").trim(),
-        rut: data.get("rut").trim(),
-        phone: data.get("phone").trim(),
-        summary: data.get("summary").trim(),
-        need: data.get("need").trim()
-      });
-      const status = priorityForm.closest(".priority-panel")?.querySelector(".priority-status");
-      if (status) status.textContent = "Caso guardado en Gestion prioritaria.";
-      priorityForm.reset();
-      priorityForm.hidden = true;
-      return;
-    }
-  
     const form = event.target.closest("[data-law-search-form]");
     if (form) {
       event.preventDefault();

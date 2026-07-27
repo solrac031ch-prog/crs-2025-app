@@ -727,7 +727,6 @@ const turnForms = [
 
 const priorityEmail = "gestionaltaseahph@gmail.com";
 const publishedBaseUrl = "https://solrac031ch-prog.github.io/crs-2025-app/";
-const priorityCasesStorageKey = "crsPriorityCases";
 const categoryOrder = ["Regla general", "Flujo", "CRS", "Poli choque", "Hospitalizados", "Protocolo"];
 
 const state = {
@@ -764,7 +763,6 @@ const visitDocumentAction = document.querySelector("#visitDocumentAction");
 const turnFormsList = document.querySelector("#turnFormsList");
 const phonesContent = document.querySelector("#phonesContent");
 const educationContent = document.querySelector("#educationContent");
-const managementContent = document.querySelector("#managementContent");
 const formsTitle = document.querySelector("#formsTitle");
 
 const textRepairPatterns = [
@@ -1276,95 +1274,6 @@ function priorityMailto(protocol) {
   return `mailto:${priorityEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-function priorityCases() {
-  try {
-    return JSON.parse(localStorage.getItem(priorityCasesStorageKey) || "[]");
-  } catch (_) {
-    return [];
-  }
-}
-
-function savePriorityCases(cases) {
-  localStorage.setItem(priorityCasesStorageKey, JSON.stringify(cases));
-}
-
-function savePriorityCase(protocol, values) {
-  const cases = priorityCases();
-  const now = new Date();
-  const item = {
-    id: `${now.getTime()}`,
-    createdAt: now.toISOString(),
-    status: "Pendiente",
-    flow: protocol.title,
-    route: `${publishedBaseUrl}#/especialidad/${protocol.slug}`,
-    patientName: values.patientName,
-    rut: values.rut,
-    phone: values.phone,
-    summary: values.summary,
-    need: values.need
-  };
-  cases.unshift(item);
-  savePriorityCases(cases);
-  return item;
-}
-
-function downloadTextFile(filename, text, type = "text/plain;charset=utf-8") {
-  const blob = new Blob([text], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-function csvCell(value) {
-  return `"${String(value || "").replaceAll('"', '""')}"`;
-}
-
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function exportPriorityCasesCsv() {
-  const headers = ["Fecha", "Estado", "Flujo", "Paciente", "RUN", "Telefono", "Resumen", "Necesita", "Enlace"];
-  const rows = priorityCases().map((item) => [
-    new Date(item.createdAt).toLocaleString("es-CL"),
-    item.status,
-    item.flow,
-    item.patientName,
-    item.rut,
-    item.phone,
-    item.summary,
-    item.need,
-    item.route
-  ]);
-  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(";")).join("\n");
-  downloadTextFile("casos-gestion-prioritaria.csv", `\ufeff${csv}`, "text/csv;charset=utf-8");
-}
-
-function exportPriorityCasesWord() {
-  const rows = priorityCases().map((item) => `
-    <tr>
-      <td>${new Date(item.createdAt).toLocaleString("es-CL")}</td>
-      <td>${escapeHtml(item.status)}</td>
-      <td>${escapeHtml(item.flow)}</td>
-      <td>${escapeHtml(item.patientName)}<br>${escapeHtml(item.rut)}<br>${escapeHtml(item.phone)}</td>
-      <td>${escapeHtml(item.summary)}</td>
-      <td>${escapeHtml(item.need)}</td>
-    </tr>
-  `).join("");
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Casos gestion prioritaria</title><style>body{font-family:Arial,sans-serif}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:8px;vertical-align:top}th{background:#eef4f3}</style></head><body><h1>Casos con gestion prioritaria</h1><table><thead><tr><th>Fecha</th><th>Estado</th><th>Flujo</th><th>Paciente</th><th>Resumen</th><th>Necesita</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
-  downloadTextFile("casos-gestion-prioritaria.doc", html, "application/msword;charset=utf-8");
-}
-
 function appendPriorityManagement(parent, protocol) {
   const panel = document.createElement("section");
   panel.className = "priority-panel";
@@ -1377,7 +1286,7 @@ function appendPriorityManagement(parent, protocol) {
   title.textContent = "¿Requiere gestión prioritaria?";
 
   const text = document.createElement("p");
-  text.textContent = "Si requiere priorizacion, registra los datos minimos del paciente. La app guardara el caso en este dispositivo y tambien puede abrir un correo prellenado.";
+  text.textContent = "Si requiere priorización, registra los datos mínimos del paciente. El caso se enviará a la planilla segura de Gestión y no quedará almacenado en este dispositivo.";
 
   const actions = document.createElement("div");
   actions.className = "priority-actions";
@@ -1840,38 +1749,4 @@ function renderEducation() {
     panel.append(title, description, action);
     educationContent.append(panel);
   });
-}
-
-function renderManagement() {
-  const cases = priorityCases();
-  managementContent.innerHTML = "";
-
-  const toolbar = document.createElement("section");
-  toolbar.className = "management-toolbar";
-  toolbar.innerHTML = `
-    <div><strong>${cases.length} caso${cases.length === 1 ? "" : "s"} guardado${cases.length === 1 ? "" : "s"}</strong><p>Registro local para jefatura. Exporta a Excel compatible o Word para revision y checklist.</p></div>
-    <div class="priority-actions">
-      <button class="priority-button primary" type="button" data-export-cases="csv">Exportar Excel</button>
-      <button class="priority-button secondary" type="button" data-export-cases="word">Exportar Word</button>
-    </div>
-  `;
-
-  const list = document.createElement("div");
-  list.className = "case-list";
-
-  if (!cases.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty";
-    empty.textContent = "Aun no hay casos guardados. Se agregan desde cada flujo al marcar gestion prioritaria.";
-    list.append(empty);
-  } else {
-    cases.forEach((item) => {
-      const card = document.createElement("article");
-      card.className = "case-card";
-      card.innerHTML = `<div><span class="detail-label">${new Date(item.createdAt).toLocaleString("es-CL")} · ${escapeHtml(item.status)}</span><h2>${escapeHtml(item.patientName)}</h2><p><strong>RUN:</strong> ${escapeHtml(item.rut)} · <strong>Telefono:</strong> ${escapeHtml(item.phone)}</p><p><strong>Flujo:</strong> ${escapeHtml(item.flow)}</p><p>${escapeHtml(item.summary)}</p><p><strong>Necesita:</strong> ${escapeHtml(item.need)}</p></div><label class="case-check"><input type="checkbox" data-case-done="${escapeHtml(item.id)}" ${item.status === "Gestionado" ? "checked" : ""}> Gestionado</label>`;
-      list.append(card);
-    });
-  }
-
-  managementContent.append(toolbar, list);
 }
