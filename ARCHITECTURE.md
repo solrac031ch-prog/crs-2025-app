@@ -7,7 +7,7 @@ Este documento define responsabilidades para evitar que la app vuelva a crecer m
 1. **Un dueño por responsabilidad.** Un módulo puede consumir otro, pero no debe duplicar su ciclo de vida.
 2. **Las rutas se renderizan una sola vez por cambio.** Los reintentos sólo se justifican para datos remotos y deben ser cancelables.
 3. **Supabase es backend, no router.** Los módulos Supabase pueden aportar datos o acciones, pero no deben competir con el router visual.
-4. **Jefatura tiene un solo controlador.** `supabase-admin-users.js` es el dueño del render y estado del panel restringido.
+4. **Jefatura tiene un solo controlador.** `supabase-admin-users.js` es el dueño del render, autenticación y estado del panel restringido.
 5. **Los parches de compatibilidad deben ser temporales y explícitos.** No se agregan listeners globales para corregir un problema local.
 
 ## Responsabilidades actuales
@@ -24,11 +24,11 @@ Dueño de las vistas visuales de Gestión, Noticias, Educación, Paper, Procedim
 
 No debe administrar autenticación ni usuarios.
 
-### `supabase-backend.js`
+### `supabase-data.js`
 
-Capa de acceso a datos remotos y operaciones CRUD de contenido/documentos/flujos. Expone `window.CRS_SUPABASE`.
+Capa única de acceso remoto y operaciones CRUD de contenido, documentos, flujos y archivos. Expone `window.CRS_SUPABASE`.
 
-No debe convertirse en un segundo router general.
+Puede consultar la sesión actual para autorizar una escritura, pero no inicia ni cierra sesiones, no crea usuarios y no renderiza el panel de Jefatura.
 
 ### `supabase-admin-users.js`
 
@@ -42,17 +42,21 @@ Extensión pequeña para recuperación de contraseña. No controla el ciclo de r
 
 Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y normalizar pequeños textos, pero no debe renderizar Jefatura directamente.
 
+### `supabase-backend.js`
+
+Archivo monolítico legado. Ya no se carga desde `index.html`; se conserva temporalmente sólo como referencia de rollback hasta completar pruebas manuales.
+
 ## Flujo esperado
 
 ```text
 index.html
   -> app.js (UI base)
-  -> gestion-panel-final.js (vistas de gestión/contenido)
   -> Supabase SDK
   -> supabase-config.js (config/bootstrap)
-  -> supabase-admin-users.js (Jefatura)
-  -> supabase-backend.js (datos/CRUD)
-  -> supabase-jefatura-panel.js (recuperación de clave)
+  -> supabase-data.js (cliente, datos y CRUD)
+  -> supabase-admin-users.js (autenticación y Jefatura)
+  -> gestion-panel-final.js (vistas de gestión/contenido)
+  -> supabase-jefatura-panel.js (recuperación de clave, carga dinámica)
 ```
 
 ## Reglas para cambios nuevos
@@ -62,12 +66,14 @@ index.html
 - No modificar `navigator.serviceWorker.register` globalmente.
 - No borrar todos los caches del origen.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
+- `supabase-data.js` no puede contener formularios o acciones de login, logout o administración de usuarios.
+- `supabase-admin-users.js` debe consumir el cliente compartido de `window.CRS_SUPABASE`.
 - Los cambios clínicos deben mantenerse separados de refactorizaciones técnicas siempre que sea posible.
 - Todo PR debe pasar `.github/workflows/validate.yml`.
 
 ## Deuda técnica priorizada
 
-1. Convertir el scheduler doble de `gestion-panel-final.js` en un render cancelable/debounced.
+1. Probar manualmente login, publicación y archivado con la nueva capa de datos; después eliminar `supabase-backend.js`.
 2. Separar datos clínicos estáticos de `app.js` hacia módulos de datos.
 3. Reducir estilos inyectados desde JavaScript y moverlos progresivamente a CSS.
 4. Añadir pruebas de navegación para rutas críticas.
