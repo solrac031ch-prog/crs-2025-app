@@ -10,14 +10,21 @@ Este documento define responsabilidades para evitar que la app vuelva a crecer m
 4. **Jefatura tiene un solo controlador.** `supabase-admin-users.js` es el dueño del render y estado del panel restringido.
 5. **Los parches de compatibilidad deben retirarse cuando la lógica puede vivir en su módulo dueño.** No se modifica un cliente o API global para resolver un caso local.
 6. **Los datos clínicos identificables no se persisten en el navegador.** Gestión de pacientes debe fallar cerrada si el almacenamiento remoto no está disponible.
+7. **Datos clínicos y lógica visual se versionan por separado.** Las refactorizaciones no deben reescribir contenido clínico mientras cambian arquitectura.
 
 ## Responsabilidades actuales
 
+### `app-protocol-data.js`
+
+Dueño del dataset estático de protocolos CRS. Contiene títulos, categorías, campos, flujos, advertencias, patologías y referencias tal como estaban históricamente en `app.js`.
+
+Los cambios de contenido clínico deben hacerse aquí en PRs separados de las refactorizaciones técnicas.
+
 ### `app.js`
 
-Núcleo clínico histórico. Mantiene los protocolos CRS y los renderizadores base de especialidades, documentos, directorio y cierre de derivación.
+Núcleo visual/base de la aplicación. Consume `window.CRS_PROTOCOLS`, normaliza los protocolos y mantiene los renderizadores base de especialidades, documentos, directorio y cierre de derivación.
 
-No debe recuperar responsabilidades ya separadas a datos operativos, formularios, router o gestión local de pacientes.
+No debe volver a incrustar el arreglo `protocols` ni recuperar responsabilidades ya separadas a datos operativos, formularios, router o gestión local de pacientes.
 
 ### `app-operational-data.js`
 
@@ -70,8 +77,9 @@ Configuración y bootstrap de Supabase. Puede cargar el fallback del SDK y norma
 ```text
 index.html
   -> gestion-pacientes-core.js (gestión clínica segura)
+  -> app-protocol-data.js (dataset clínico CRS)
   -> app-operational-data.js (datos no clínicos)
-  -> app.js (núcleo clínico/base)
+  -> app.js (núcleo visual/base)
   -> app-forms.js (formularios y Ley de Urgencias)
   -> app-router.js (router base)
   -> Supabase SDK
@@ -89,6 +97,7 @@ index.html
 - No modificar `navigator.serviceWorker.register` globalmente.
 - No borrar todos los caches del origen.
 - No reintroducir persistencia clínica identificable en `localStorage`.
+- No volver a incrustar el dataset de protocolos dentro de `app.js`.
 - Toda escritura Supabase debe quedar protegida por RLS/rol en servidor.
 - `supabase-backend.js` no puede contener login, logout ni administración de usuarios.
 - El controlador de Jefatura debe aceptar correo directamente, sin monkey-patching de `api.rpc`.
@@ -98,7 +107,7 @@ index.html
 
 ## Deuda técnica priorizada
 
-1. Separar progresivamente los datos clínicos estáticos de `app.js` sin modificar su contenido.
+1. Separar los demás datasets estáticos todavía mezclados con `app.js`, manteniendo contenido clínico intacto.
 2. Reducir estilos inyectados desde JavaScript y moverlos progresivamente a CSS.
 3. Añadir pruebas de navegador/end-to-end para rutas y formularios críticos.
 4. Desplegar `crs_login_email` en todas las instalaciones sólo si se decide mantener el ingreso por alias de usuario.
