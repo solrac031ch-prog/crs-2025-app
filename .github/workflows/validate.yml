@@ -31,7 +31,11 @@ jobs:
           done < <(find . -type f -name '*.js' -not -path './node_modules/*' -print0)
 
       - name: Validar sintaxis Apps Script
-        run: node --check apps-script/gestion-pacientes.gs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp apps-script/gestion-pacientes.gs /tmp/gestion-pacientes.js
+          node --check /tmp/gestion-pacientes.js
 
       - name: Validar límites de arquitectura
         run: node scripts/check-architecture.mjs
