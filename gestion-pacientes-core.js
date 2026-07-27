@@ -197,16 +197,6 @@
     return result;
   }
 
-  function addStyle() {
-    if ($("#gestion-pacientes-core-style")) return;
-    const style = document.createElement("style");
-    style.id = "gestion-pacientes-core-style";
-    style.textContent = `
-      .patient-chip{border-left-color:#0891b2!important}.patient-shell{display:grid;gap:14px}.patient-hero{display:grid;gap:12px;padding:clamp(20px,4vw,34px);border-radius:16px;background:linear-gradient(135deg,#0f172a,#075985 54%,#0f766e);color:#fff;box-shadow:0 24px 60px rgba(15,23,42,.22)}.patient-hero h2{margin:0;color:#fff;font-size:clamp(2rem,5vw,3.3rem);line-height:1}.patient-hero p{margin:0;color:#dff7ff;max-width:900px;line-height:1.45}.patient-card{display:grid;gap:10px;padding:16px;border:1px solid #dfe8e4;border-left:6px solid #0891b2;border-radius:14px;background:#fff;box-shadow:0 12px 28px rgba(15,23,42,.08)}.patient-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.patient-actions{display:flex;gap:10px;flex-wrap:wrap}.patient-note{padding:12px;border:1px solid #bae6fd;border-radius:10px;background:#f0f9ff;color:#075985;font-weight:750}.patient-warn{padding:12px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#7f1d1d;font-weight:750}.patient-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end}.patient-filter label,.case-update-form label{display:grid;gap:5px;font-weight:850;color:#24312d}.patient-filter input,.patient-filter select,.case-update-form input,.case-update-form select,.case-update-form textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #cbd5d1;border-radius:8px;background:#fff;color:#10201c}.case-update-form{display:grid;gap:8px;min-width:280px}.case-update-form textarea{min-height:74px}.patient-table-wrap{overflow:auto;border:1px solid #dfe8e4;border-radius:12px;background:#fff}.patient-table{width:100%;border-collapse:collapse;min-width:1180px}.patient-table th,.patient-table td{padding:9px 10px;border-bottom:1px solid #e5ebe8;text-align:left;vertical-align:top}.patient-table th{background:#f6f8f7;color:#44504b;text-transform:uppercase;font-size:.76rem}.patient-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-weight:900;font-size:.78rem}.patient-status.pendiente{background:#fff7ed;color:#9a3412}.patient-status.gestion{background:#eff6ff;color:#1d4ed8}.patient-status.resuelto{background:#ecfdf5;color:#047857}.patient-status.noresuelto{background:#fff1f2;color:#be123c}.patient-kpi{font-size:1.9rem;font-weight:950;color:#10201c}.patient-small{font-size:.86rem;color:#64748b;line-height:1.32}@media(max-width:700px){.patient-actions{display:grid}.patient-table{min-width:980px}.document-button,.back-link{width:100%;justify-content:center}}
-    `;
-    document.head.append(style);
-  }
-
   function dateInRange(dateValue, mode) {
     if (!mode || mode === "todos") return true;
     const date = new Date(`${String(dateValue || "").slice(0, 10)}T00:00:00`);
@@ -267,7 +257,6 @@
   }
 
   async function renderPage() {
-    addStyle();
     await refreshAuth();
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === "managementPage"));
     const title = $("#managementTitle");
@@ -326,7 +315,6 @@
   }, true);
 
   async function route() {
-    addStyle();
     await refreshAuth();
     if (location.hash === "#/gestion/pacientes") await renderPage();
   }
