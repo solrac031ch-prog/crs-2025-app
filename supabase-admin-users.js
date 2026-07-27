@@ -10,7 +10,7 @@
 
   const allowedRoles = new Set(["creador", "jefe", "jefatura", "disenador", "diseñador", "admin"]);
   const userAdminRoles = new Set(["creador", "disenador", "diseñador", "admin"]);
-  let renderTimer = 0;
+  let renderTimer = null;
   let rendering = false;
   let authProvisionClient = null;
 
@@ -25,6 +25,7 @@
   const clean = (value) => String(value || "").trim();
   const norm = (value) => clean(value).toLowerCase();
   const roleKey = (value) => norm(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const appBaseUrl = () => `${location.origin}${location.pathname}`;
 
   function client() {
     return window.CRS_SUPABASE?.client?.() || null;
@@ -55,6 +56,15 @@
     return data?.user || null;
   }
 
+  function errorMessage(error) {
+    return String(error?.message || error || "Error desconocido");
+  }
+
+  function missingColumn(error, column) {
+    const msg = errorMessage(error);
+    return new RegExp(`column\\s+[^\\s.]+\\.${column}\\s+does not exist|column\\s+${column}\\s+does not exist|Could not find.*${column}.*column`, "i").test(msg);
+  }
+
   function addStyle() {
     if ($("#crs-global-access-style")) return;
     const style = document.createElement("style");
@@ -66,8 +76,7 @@
   }
 
   function toast(message, isError = false) {
-    const old = document.querySelector(".sb-toast");
-    if (old) old.remove();
+    document.querySelector(".sb-toast")?.remove();
     const box = document.createElement("div");
     box.className = `sb-toast${isError ? " error" : ""}`;
     box.textContent = message;
@@ -76,44 +85,45 @@
   }
 
   function friendlyError(error) {
-    const msg = String(error?.message || error || "Error desconocido");
-    if (/crs_login_email|function|schema cache/i.test(msg)) return "Falta ejecutar el SQL actualizado en Supabase para activar ingreso con usuario.";
-    if (/Invalid login credentials/i.test(msg)) return "Usuario/correo o clave incorrectos.";
-    if (/row-level security|permission denied/i.test(msg)) return "Tu usuario no tiene permiso activo para este modulo.";
+    const msg = errorMessage(error);
+    if (/crs_login_email|function.*does not exist|schema cache/i.test(msg)) return "Para entrar por nombre de usuario falta el alias de login en Supabase. Usa tu correo completo.";
+    if (/Invalid login credentials/i.test(msg)) return "Correo/usuario o clave incorrectos.";
+    if (/row-level security|permission denied/i.test(msg)) return "Tu usuario no tiene permiso activo para este módulo.";
     if (/password/i.test(msg) && /short|weak|least/i.test(msg)) return "La clave debe tener al menos 6 caracteres.";
     return msg;
   }
 
   function heroHtml() {
-    return `<section class="crs-access-hero"><h2>Modulo Jefatura global</h2><p>Ingreso restringido para creador, disenador y jefes. Desde aqui se pueden publicar y modificar contenidos globales de la app.</p></section>`;
+    return `<section class="crs-access-hero"><h2>Módulo Jefatura global</h2><p>Ingreso restringido para creador, diseñador y jefes. Desde aquí se pueden publicar y modificar contenidos globales de la app.</p></section>`;
   }
 
   function loginHtml() {
-    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid"><article class="crs-access-card full"><h3>Iniciar sesion</h3><div class="crs-access-ok">Puedes entrar con tu correo o con tu nombre de usuario.</div><form data-crs-login><label>Correo o usuario<input name="login" type="text" required autocomplete="username" placeholder="correo@hospital.cl o usuario"></label><label>Clave<input name="password" type="password" required autocomplete="current-password"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article></section></div>`;
+    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid"><article class="crs-access-card full"><h3>Iniciar sesión</h3><div class="crs-access-ok">El correo es la forma de ingreso recomendada. El nombre de usuario funciona cuando el alias está habilitado en Supabase.</div><form data-crs-login><label>Correo o usuario<input name="login" type="text" required autocomplete="username" placeholder="correo@hospital.cl"></label><label>Clave<input name="password" type="password" required autocomplete="current-password"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article></section></div>`;
   }
 
   function deniedHtml(user, reason) {
-    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid"><article class="crs-access-card full red"><h3>Acceso no autorizado</h3><div class="crs-access-error">${esc(reason || "Este usuario no tiene rol activo para Jefatura global.")}</div><p class="crs-access-mini">Sesion actual: ${esc(user?.email || "sin correo")}</p><button class="delete-button" type="button" data-crs-signout>Cerrar sesion</button></article></section></div>`;
+    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid"><article class="crs-access-card full red"><h3>Acceso no autorizado</h3><div class="crs-access-error">${esc(reason || "Este usuario no tiene rol activo para Jefatura global.")}</div><p class="crs-access-mini">Sesión actual: ${esc(user?.email || "sin correo")}</p><button class="delete-button" type="button" data-crs-signout>Cerrar sesión</button></article></section></div>`;
   }
 
   function statusCard(user, profile) {
-    return `<article class="crs-access-card full"><h3>Sesion activa</h3><div class="crs-access-ok">${esc(profile.display_name || user.email)} · rol ${esc(profile.role)} · usuario ${esc(profile.username || "sin usuario")}</div><div class="crs-access-actions"><button class="document-button" type="button" data-crs-refresh>Actualizar</button><button class="delete-button" type="button" data-crs-signout>Cerrar sesion</button></div><h3>Publicaciones globales recientes</h3><div data-crs-global-list><div class="crs-access-mini">Cargando...</div></div><h3>Usuarios con permiso</h3><div data-crs-admin-list><div class="crs-access-mini">Cargando...</div></div></article>`;
+    const alias = profile.username ? ` · usuario ${esc(profile.username)}` : "";
+    return `<article class="crs-access-card full"><h3>Sesión activa</h3><div class="crs-access-ok">${esc(profile.display_name || user.email)} · rol ${esc(profile.role)}${alias}</div><div class="crs-access-actions"><button class="document-button" type="button" data-crs-refresh>Actualizar</button><button class="delete-button" type="button" data-crs-signout>Cerrar sesión</button></div><h3>Publicaciones globales recientes</h3><div data-crs-global-list><div class="crs-access-mini">Cargando...</div></div><h3>Usuarios con permiso</h3><div data-crs-admin-list><div class="crs-access-mini">Cargando...</div></div></article>`;
   }
 
   function paperCard() {
-    return `<article class="crs-access-card amber"><h3>Paper del mes</h3><form data-content="paper"><label>Mes<input name="month" type="month" required></label><label>Titulo opcional<input name="title" placeholder="Se puede extraer del PDF"></label><label>Abstract opcional<textarea name="description"></textarea></label><label>PDF / archivo<input name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"></label><label>Link<input name="url" type="url"></label><button class="document-button" type="submit">Publicar paper</button></form></article>`;
+    return `<article class="crs-access-card amber"><h3>Paper del mes</h3><form data-content="paper"><label>Mes<input name="month" type="month" required></label><label>Título opcional<input name="title" placeholder="Se puede extraer del PDF"></label><label>Abstract opcional<textarea name="description"></textarea></label><label>PDF / archivo<input name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"></label><label>Link<input name="url" type="url"></label><button class="document-button" type="submit">Publicar paper</button></form></article>`;
   }
 
   function newsCard() {
-    return `<article class="crs-access-card purple"><h3>Noticias / Educacion</h3><form data-content="mixed"><label>Tipo<select name="kind"><option value="news">Noticia</option><option value="education">Educacion</option></select></label><label>Titulo<input name="title" required></label><label>Texto<textarea name="description"></textarea></label><label>Enlace<input name="eventUrl" type="url"></label><label>Imagen, poster o archivo<input name="file" type="file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.txt"></label><label>Link material<input name="url" type="url"></label><button class="document-button" type="submit">Publicar</button></form></article>`;
+    return `<article class="crs-access-card purple"><h3>Noticias / Educación</h3><form data-content="mixed"><label>Tipo<select name="kind"><option value="news">Noticia</option><option value="education">Educación</option></select></label><label>Título<input name="title" required></label><label>Texto<textarea name="description"></textarea></label><label>Enlace<input name="eventUrl" type="url"></label><label>Imagen, póster o archivo<input name="file" type="file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.txt"></label><label>Link material<input name="url" type="url"></label><button class="document-button" type="submit">Publicar</button></form></article>`;
   }
 
   function procedureCard() {
-    return `<article class="crs-access-card red"><h3>Procedimiento medico</h3><form data-content="procedure"><label>Titulo<input name="title" required></label><label>Descripcion<textarea name="description"></textarea></label><label>Video / archivo<input name="file" type="file" accept="video/*,.pdf,.ppt,.pptx"></label><label>Link de video opcional<input name="url" type="url"></label><button class="document-button" type="submit">Subir procedimiento</button></form></article>`;
+    return `<article class="crs-access-card red"><h3>Procedimiento médico</h3><form data-content="procedure"><label>Título<input name="title" required></label><label>Descripción<textarea name="description"></textarea></label><label>Video / archivo<input name="file" type="file" accept="video/*,.pdf,.ppt,.pptx"></label><label>Link de video opcional<input name="url" type="url"></label><button class="document-button" type="submit">Subir procedimiento</button></form></article>`;
   }
 
   function callCard(type, title, description) {
-    return `<article class="crs-access-card teal"><h3>${esc(title)}</h3><p>${esc(description)}</p><form data-upload-call data-call-type="${esc(type)}"><label>Titulo<input name="title" required></label><label>Archivo<input name="file" type="file"></label><label>Link opcional<input name="url" type="url"></label><button class="document-button" type="submit">Publicar globalmente</button></form></article>`;
+    return `<article class="crs-access-card teal"><h3>${esc(title)}</h3><p>${esc(description)}</p><form data-upload-call data-call-type="${esc(type)}"><label>Título<input name="title" required></label><label>Archivo<input name="file" type="file"></label><label>Link opcional<input name="url" type="url"></label><button class="document-button" type="submit">Publicar globalmente</button></form></article>`;
   }
 
   function baseDocumentCard(key, title) {
@@ -121,47 +131,56 @@
   }
 
   function newFlowCard() {
-    return `<article class="crs-access-card red"><h3>Nuevo flujo / protocolo</h3><form data-new-flow><label>Tipo<select name="category"><option>Flujo</option><option>CRS</option><option>Poli choque</option><option>Hospitalizados</option><option>Protocolo</option></select></label><label>Titulo<input name="title" required></label><label>Resumen<textarea name="summary"></textarea></label><label>Archivo<input name="file" type="file"></label><label>Link<input name="url" type="url"></label><button class="document-button" type="submit">Guardar flujo</button></form></article>`;
+    return `<article class="crs-access-card red"><h3>Nuevo flujo / protocolo</h3><form data-new-flow><label>Tipo<select name="category"><option>Flujo</option><option>CRS</option><option>Poli choque</option><option>Hospitalizados</option><option>Protocolo</option></select></label><label>Título<input name="title" required></label><label>Resumen<textarea name="summary"></textarea></label><label>Archivo<input name="file" type="file"></label><label>Link<input name="url" type="url"></label><button class="document-button" type="submit">Guardar flujo</button></form></article>`;
   }
 
   function usersCard(profile) {
     if (!userAdminRoles.has(roleKey(profile.role))) return "";
-    return `<article class="crs-access-card full"><h3>Crear usuarios</h3><p>Crea usuarios para jefes y disenadores. Luego pueden entrar con usuario o correo y clave.</p><form data-chief-create-user><label>Correo<input name="email" type="email" required autocomplete="off"></label><label>Usuario<input name="username" required autocomplete="off" placeholder="ej: jefe_turno"></label><label>Nombre<input name="nombre" required autocomplete="off"></label><label>Rol<select name="rol"><option value="jefe">Jefe</option><option value="disenador">Disenador</option><option value="creador">Creador</option></select></label><label>Clave temporal<input name="password" type="password" minlength="6" required autocomplete="new-password"></label><button class="document-button" type="submit">Crear / actualizar usuario</button></form></article>`;
+    return `<article class="crs-access-card full"><h3>Crear usuarios</h3><p>Crea accesos para jefes y diseñadores. El correo siempre funciona; el nombre de usuario es opcional.</p><form data-chief-create-user><label>Correo<input name="email" type="email" required autocomplete="off"></label><label>Usuario opcional<input name="username" autocomplete="off" placeholder="ej: jefe_turno"></label><label>Nombre<input name="nombre" required autocomplete="off"></label><label>Rol<select name="rol"><option value="jefe">Jefe</option><option value="disenador">Diseñador</option><option value="creador">Creador</option></select></label><label>Clave temporal<input name="password" type="password" minlength="6" required autocomplete="new-password"></label><button class="document-button" type="submit">Crear / actualizar usuario</button></form></article>`;
   }
 
   function panelHtml(user, profile) {
-    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid">${statusCard(user, profile)}${paperCard()}${newsCard()}${procedureCard()}${callCard("especialistas", "Especialistas de llamado", "Documento o planilla vigente de especialistas.")}${callCard("uhd", "UHD", "Disponibilidad o documento vigente de UHD.")}${baseDocumentCard("medicamentosUsoOcasional", "Medicamentos de uso ocasional")}${baseDocumentCard("leyUrgencias", "Ley de Urgencias")}${baseDocumentCard("notificacionObligatoria", "Notificacion obligatoria")}${newFlowCard()}${usersCard(profile)}</section></div>`;
+    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid">${statusCard(user, profile)}${paperCard()}${newsCard()}${procedureCard()}${callCard("especialistas", "Especialistas de llamado", "Documento o planilla vigente de especialistas.")}${callCard("uhd", "UHD", "Disponibilidad o documento vigente de UHD.")}${baseDocumentCard("medicamentosUsoOcasional", "Medicamentos de uso ocasional")}${baseDocumentCard("leyUrgencias", "Ley de Urgencias")}${baseDocumentCard("notificacionObligatoria", "Notificación obligatoria")}${newFlowCard()}${usersCard(profile)}</section></div>`;
   }
 
   async function resolveLoginEmail(loginValue) {
     const api = client();
     const value = clean(loginValue);
     if (!value) throw new Error("Escribe tu correo o usuario.");
+    if (value.includes("@")) return norm(value);
     const { data, error } = await api.rpc("crs_login_email", { login_text: value });
     if (error) throw error;
     if (!data) throw new Error("Usuario no autorizado o inactivo.");
-    return String(data).trim().toLowerCase();
+    return norm(data);
   }
 
   async function signIn(form) {
     const api = client();
-    if (!api) throw new Error("Supabase no esta conectado.");
+    if (!api) throw new Error("Supabase no está conectado.");
     const data = new FormData(form);
     const email = await resolveLoginEmail(data.get("login"));
     const password = String(data.get("password") || "");
     if (!password) throw new Error("Escribe tu clave.");
     const { error } = await api.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    toast("Sesion iniciada.");
+    toast("Sesión iniciada.");
     scheduleRender(30);
+  }
+
+  async function selectProfile(api, email) {
+    let result = await api.from(tables.admins).select("email,username,display_name,role,active").eq("email", norm(email)).maybeSingle();
+    if (result.error && missingColumn(result.error, "username")) {
+      result = await api.from(tables.admins).select("email,display_name,role,active").eq("email", norm(email)).maybeSingle();
+      if (result.data) result.data.username = null;
+    }
+    return result;
   }
 
   async function getProfile(user) {
     const api = client();
-    const { data, error } = await api.from(tables.admins).select("email,username,display_name,role,active").eq("email", norm(user.email)).maybeSingle();
+    const { data, error } = await selectProfile(api, user.email);
     if (error) throw error;
-    if (!data) return null;
-    return data;
+    return data || null;
   }
 
   async function renderGlobalList() {
@@ -185,14 +204,18 @@
     ].sort((a, b) => String(b.updated_at || b.created_at).localeCompare(String(a.updated_at || a.created_at))).slice(0, 12);
     box.innerHTML = rows.length
       ? `<div class="crs-access-list">${rows.map((item) => `<div class="crs-access-row"><span><strong>${esc(item.title)}</strong><br><span class="crs-access-mini">${esc(item.label)} · ${esc(item.status)}</span></span><button class="delete-button" type="button" data-sb-archive="${esc(item.type)}" data-sb-id="${esc(item.id)}">Ocultar</button></div>`).join("")}</div>`
-      : `<div class="crs-access-warn">Aun no hay publicaciones globales.</div>`;
+      : `<div class="crs-access-warn">Aún no hay publicaciones globales.</div>`;
   }
 
   async function fetchAdmins() {
     const api = client();
-    const { data, error } = await api.from(tables.admins).select("email,username,display_name,role,active").order("email");
-    if (error) throw error;
-    return data || [];
+    let result = await api.from(tables.admins).select("email,username,display_name,role,active").order("email");
+    if (result.error && missingColumn(result.error, "username")) {
+      result = await api.from(tables.admins).select("email,display_name,role,active").order("email");
+      if (result.data) result.data = result.data.map((row) => ({ ...row, username: null }));
+    }
+    if (result.error) throw result.error;
+    return result.data || [];
   }
 
   async function renderAdminList(profile, user) {
@@ -209,7 +232,8 @@
             const manage = userAdminRoles.has(roleKey(profile.role));
             const action = self ? `<span class="crs-access-mini">Tu usuario</span>` : manage ? `<button class="${active ? "delete-button" : "document-button"}" type="button" data-chief-admin-active="${active ? "false" : "true"}" data-chief-admin-email="${esc(email)}">${active ? "Desactivar" : "Reactivar"}</button>` : "";
             const reset = manage ? `<button class="document-button" type="button" data-chief-reset-password="${esc(email)}">Enviar cambio clave</button>` : "";
-            return `<div class="crs-access-row"><span><strong>${esc(admin.display_name || email)}</strong><br><span class="crs-access-mini">${esc(email)} · usuario ${esc(admin.username || "sin usuario")} · ${esc(admin.role || "jefe")} · ${active ? "activo" : "inactivo"}</span></span><span class="crs-access-actions">${reset}${action}</span></div>`;
+            const alias = admin.username ? ` · usuario ${esc(admin.username)}` : "";
+            return `<div class="crs-access-row"><span><strong>${esc(admin.display_name || email)}</strong><br><span class="crs-access-mini">${esc(email)}${alias} · ${esc(admin.role || "jefe")} · ${active ? "activo" : "inactivo"}</span></span><span class="crs-access-actions">${reset}${action}</span></div>`;
           }).join("")}</div>`
         : `<div class="crs-access-warn">No hay usuarios registrados.</div>`;
     } catch (error) {
@@ -220,15 +244,23 @@
   async function createAuthUser({ email, password, name, role, username }) {
     const auth = provisionClient();
     if (!auth) throw new Error("No se pudo cargar Supabase Auth.");
+    const metadata = { display_name: name, role };
+    if (username) metadata.username = username;
     const { error } = await auth.auth.signUp({
       email,
       password,
-      options: {
-        data: { display_name: name, role, username },
-        emailRedirectTo: `${location.origin}${location.pathname}#/jefatura`
-      }
+      options: { data: metadata, emailRedirectTo: appBaseUrl() }
     });
-    if (error && !/already|registered|exists|duplicate/i.test(String(error.message || error))) throw error;
+    if (error && !/already|registered|exists|duplicate/i.test(errorMessage(error))) throw error;
+  }
+
+  async function upsertAdmin(api, payload) {
+    let result = await api.from(tables.admins).upsert(payload, { onConflict: "email" });
+    if (result.error && payload.username && missingColumn(result.error, "username")) {
+      const { username: _username, ...legacyPayload } = payload;
+      result = await api.from(tables.admins).upsert(legacyPayload, { onConflict: "email" });
+    }
+    return result;
   }
 
   async function createUser(form) {
@@ -239,20 +271,16 @@
     const name = clean(data.get("nombre"));
     const role = roleKey(data.get("rol") || "jefe");
     const password = String(data.get("password") || "");
-    if (!email || !username || !name || !password) throw new Error("Completa correo, usuario, nombre, rol y clave.");
+    if (!email || !name || !password) throw new Error("Completa correo, nombre, rol y clave.");
     if (password.length < 6) throw new Error("La clave debe tener al menos 6 caracteres.");
     if (!allowedRoles.has(role)) throw new Error("Rol no permitido para Jefatura global.");
     await createAuthUser({ email, password, name, role, username });
-    const { error } = await api.from(tables.admins).upsert({
-      email,
-      username,
-      display_name: name,
-      role,
-      active: true
-    }, { onConflict: "email" });
+    const payload = { email, display_name: name, role, active: true };
+    if (username) payload.username = username;
+    const { error } = await upsertAdmin(api, payload);
     if (error) throw error;
     form.reset();
-    toast("Usuario listo. Puede entrar con correo o usuario y clave.");
+    toast("Usuario listo. Puede entrar con su correo y clave.");
     scheduleRender(80);
   }
 
@@ -268,15 +296,15 @@
 
   async function sendPasswordReset(email) {
     const api = client();
-    const { error } = await api.auth.resetPasswordForEmail(norm(email), { redirectTo: `${location.origin}${location.pathname}#/jefatura` });
+    const { error } = await api.auth.resetPasswordForEmail(norm(email), { redirectTo: appBaseUrl() });
     if (error) throw error;
-    toast("Se envio un enlace para cambiar clave.");
+    toast("Se envió un enlace para cambiar la clave.");
   }
 
   async function signOut() {
     const api = client();
     await api?.auth?.signOut?.();
-    toast("Sesion cerrada.");
+    toast("Sesión cerrada.");
     scheduleRender(30);
   }
 
@@ -313,12 +341,12 @@
     renderTimer = setTimeout(render, delay);
   }
 
-  document.addEventListener("submit", async (ev) => {
-    const login = ev.target.closest?.("[data-crs-login]");
-    const create = ev.target.closest?.("[data-chief-create-user]");
+  document.addEventListener("submit", async (event) => {
+    const login = event.target.closest?.("[data-crs-login]");
+    const create = event.target.closest?.("[data-chief-create-user]");
     if (!login && !create) return;
-    ev.preventDefault();
-    ev.stopImmediatePropagation();
+    event.preventDefault();
+    event.stopImmediatePropagation();
     try {
       if (login) await signIn(login);
       if (create) await createUser(create);
@@ -328,14 +356,14 @@
     }
   }, true);
 
-  document.addEventListener("click", async (ev) => {
-    const signout = ev.target.closest?.("[data-crs-signout]");
-    const refresh = ev.target.closest?.("[data-crs-refresh]");
-    const toggle = ev.target.closest?.("[data-chief-admin-active]");
-    const reset = ev.target.closest?.("[data-chief-reset-password]");
+  document.addEventListener("click", async (event) => {
+    const signout = event.target.closest?.("[data-crs-signout]");
+    const refresh = event.target.closest?.("[data-crs-refresh]");
+    const toggle = event.target.closest?.("[data-chief-admin-active]");
+    const reset = event.target.closest?.("[data-chief-reset-password]");
     if (!signout && !refresh && !toggle && !reset) return;
-    ev.preventDefault();
-    ev.stopImmediatePropagation();
+    event.preventDefault();
+    event.stopImmediatePropagation();
     try {
       if (signout) await signOut();
       if (refresh) scheduleRender(10);
@@ -357,11 +385,15 @@
   window.CRS_SUPABASE_JEFATURA = { render, scheduleRender };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => { observer.observe(document.body, { childList: true, subtree: true }); scheduleRender(80); }, { once: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      observer.observe(document.body, { childList: true, subtree: true });
+      scheduleRender(80);
+    }, { once: true });
   } else {
     observer.observe(document.body, { childList: true, subtree: true });
     scheduleRender(80);
   }
+
   window.addEventListener("hashchange", () => scheduleRender(60));
   window.addEventListener("crs:supabase-ready", () => scheduleRender(80));
 })();
