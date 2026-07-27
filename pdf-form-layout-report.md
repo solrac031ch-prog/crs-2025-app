@@ -1,0 +1,321 @@
+# Inspección geométrica de PDFs rellenables
+
+PDF disponibles en `form-docs`: examenes-hph-editable.pdf, examenes-hph-rellenable.pdf, examenes-hph.pdf, ley-urgencia-activacion-rellenable.pdf, ley-urgencia-activacion.pdf, ley-urgencia-consentimiento-rellenable.pdf, ley-urgencia-consentimiento.pdf, mayo.pdf, medicamentos-uso-ocasional-rellenable.pdf, medicamentos-uso-ocasional.pdf, telefonos-hph.pdf, transfusion-editable.pdf, transfusion-rellenable.pdf, transfusion.pdf
+
+## examenes-hph-rellenable.pdf
+- Campos detectados: 183
+- Página 1: 1901.0 x 2799.0 pt
+  - `fecha` (Text): rect=[1410.0, 310.0, 1800.0, 348.0] tamaño=390.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `nombre` (Text): rect=[250.0, 382.0, 1800.0, 424.0] tamaño=1550.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `edad` (Text): rect=[190.0, 455.0, 530.0, 493.0] tamaño=340.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `fecha_nacimiento` (Text): rect=[645.0, 455.0, 980.0, 493.0] tamaño=335.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `rut` (Text): rect=[1085.0, 455.0, 1375.0, 493.0] tamaño=290.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `ficha` (Text): rect=[1470.0, 455.0, 1800.0, 493.0] tamaño=330.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `servicio` (Text): rect=[275.0, 522.0, 975.0, 560.0] tamaño=700.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `fono` (Text): rect=[1080.0, 522.0, 1360.0, 560.0] tamaño=280.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `prevision` (Text): rect=[1445.0, 522.0, 1800.0, 560.0] tamaño=355.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `direccion` (Text): rect=[295.0, 595.0, 990.0, 633.0] tamaño=695.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `villa_poblacion` (Text): rect=[1030.0, 595.0, 1365.0, 633.0] tamaño=335.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `comuna` (Text): rect=[1450.0, 595.0, 1800.0, 633.0] tamaño=350.0x38.0 fuente=Helv 28.0 | cerca: 
+  - `diagnostico` (Text): rect=[295.0, 658.0, 990.0, 700.0] tamaño=695.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `otros_quimicos` (Text): rect=[110.0, 2100.0, 990.0, 2142.0] tamaño=880.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `tipo_muestra_micro` (Text): rect=[300.0, 2307.0, 950.0, 2349.0] tamaño=650.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `zona_cuerpo` (Text): rect=[305.0, 2390.0, 955.0, 2432.0] tamaño=650.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `tipo_muestra_final` (Text): rect=[110.0, 2658.0, 990.0, 2700.0] tamaño=880.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `otros_microbiologicos` (Text): rect=[1070.0, 2595.0, 1770.0, 2637.0] tamaño=700.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `medico_timbre` (Text): rect=[610.0, 2708.0, 1430.0, 2750.0] tamaño=820.0x42.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[105.0, 770.0, 155.0, 796.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[105.0, 798.0, 155.0, 824.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[105.0, 826.0, 155.0, 852.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[105.0, 854.0, 155.0, 880.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[105.0, 882.0, 155.0, 908.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[105.0, 910.0, 155.0, 936.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[105.0, 938.0, 155.0, 964.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `8` (Text): rect=[105.0, 966.0, 155.0, 992.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `9` (Text): rect=[105.0, 994.0, 155.0, 1020.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `10` (Text): rect=[105.0, 1022.0, 155.0, 1048.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `11` (Text): rect=[105.0, 1050.0, 155.0, 1076.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `12` (Text): rect=[105.0, 1078.0, 155.0, 1104.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `13` (Text): rect=[105.0, 1106.0, 155.0, 1132.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `14` (Text): rect=[105.0, 1134.0, 155.0, 1160.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `15` (Text): rect=[105.0, 1162.0, 155.0, 1188.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `16` (Text): rect=[105.0, 1190.0, 155.0, 1216.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `17` (Text): rect=[105.0, 1218.0, 155.0, 1244.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `18` (Text): rect=[105.0, 1246.0, 155.0, 1272.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `19` (Text): rect=[105.0, 1274.0, 155.0, 1300.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `20` (Text): rect=[105.0, 1302.0, 155.0, 1328.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `21` (Text): rect=[105.0, 1330.0, 155.0, 1356.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `22` (Text): rect=[105.0, 1358.0, 155.0, 1384.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `23` (Text): rect=[105.0, 1386.0, 155.0, 1412.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `24` (Text): rect=[105.0, 1414.0, 155.0, 1440.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `25` (Text): rect=[105.0, 1442.0, 155.0, 1468.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `26` (Text): rect=[105.0, 1470.0, 155.0, 1496.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `27` (Text): rect=[105.0, 1498.0, 155.0, 1524.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `28` (Text): rect=[105.0, 1526.0, 155.0, 1552.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `29` (Text): rect=[105.0, 1554.0, 155.0, 1580.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `30` (Text): rect=[105.0, 1582.0, 155.0, 1608.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `31` (Text): rect=[105.0, 1610.0, 155.0, 1636.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `32` (Text): rect=[105.0, 1638.0, 155.0, 1664.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `33` (Text): rect=[105.0, 1666.0, 155.0, 1692.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `34` (Text): rect=[105.0, 1694.0, 155.0, 1720.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `35` (Text): rect=[105.0, 1722.0, 155.0, 1748.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `36` (Text): rect=[105.0, 1750.0, 155.0, 1776.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `37` (Text): rect=[105.0, 1778.0, 155.0, 1804.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `38` (Text): rect=[105.0, 1806.0, 155.0, 1832.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `39` (Text): rect=[105.0, 1834.0, 155.0, 1860.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `40` (Text): rect=[105.0, 1862.0, 155.0, 1888.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `41` (Text): rect=[105.0, 1890.0, 155.0, 1916.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `42` (Text): rect=[105.0, 1918.0, 155.0, 1944.0] tamaño=50.0x26.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[535.0, 768.0, 587.0, 796.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[535.0, 799.0, 587.0, 827.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[535.0, 830.0, 587.0, 858.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[535.0, 861.0, 587.0, 889.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[535.0, 892.0, 587.0, 920.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[535.0, 923.0, 587.0, 951.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[535.0, 954.0, 587.0, 982.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `8` (Text): rect=[535.0, 985.0, 587.0, 1013.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `9` (Text): rect=[535.0, 1016.0, 587.0, 1044.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `10` (Text): rect=[535.0, 1047.0, 587.0, 1075.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `11` (Text): rect=[535.0, 1078.0, 587.0, 1106.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `12` (Text): rect=[535.0, 1109.0, 587.0, 1137.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `13` (Text): rect=[535.0, 1140.0, 587.0, 1168.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `14` (Text): rect=[535.0, 1171.0, 587.0, 1199.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `15` (Text): rect=[535.0, 1202.0, 587.0, 1230.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `16` (Text): rect=[535.0, 1233.0, 587.0, 1261.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `17` (Text): rect=[535.0, 1264.0, 587.0, 1292.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `18` (Text): rect=[535.0, 1295.0, 587.0, 1323.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `19` (Text): rect=[535.0, 1326.0, 587.0, 1354.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `20` (Text): rect=[535.0, 1357.0, 587.0, 1385.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[535.0, 1512.0, 587.0, 1540.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[535.0, 1543.0, 587.0, 1571.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[535.0, 1574.0, 587.0, 1602.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[535.0, 1732.0, 587.0, 1760.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[535.0, 1763.0, 587.0, 1791.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[535.0, 1794.0, 587.0, 1822.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[535.0, 1825.0, 587.0, 1853.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[535.0, 1856.0, 587.0, 1884.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[535.0, 1887.0, 587.0, 1915.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[985.0, 765.0, 1037.0, 793.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[985.0, 796.0, 1037.0, 824.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[985.0, 827.0, 1037.0, 855.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[985.0, 858.0, 1037.0, 886.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[985.0, 889.0, 1037.0, 917.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[985.0, 920.0, 1037.0, 948.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[985.0, 951.0, 1037.0, 979.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `8` (Text): rect=[985.0, 982.0, 1037.0, 1010.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `9` (Text): rect=[985.0, 1013.0, 1037.0, 1041.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `10` (Text): rect=[985.0, 1044.0, 1037.0, 1072.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `11` (Text): rect=[985.0, 1075.0, 1037.0, 1103.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `12` (Text): rect=[985.0, 1106.0, 1037.0, 1134.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `13` (Text): rect=[985.0, 1137.0, 1037.0, 1165.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[985.0, 1403.0, 1037.0, 1431.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[985.0, 1434.0, 1037.0, 1462.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[985.0, 1465.0, 1037.0, 1493.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[985.0, 1496.0, 1037.0, 1524.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[985.0, 1527.0, 1037.0, 1555.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[985.0, 1558.0, 1037.0, 1586.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[985.0, 1589.0, 1037.0, 1617.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `8` (Text): rect=[985.0, 1620.0, 1037.0, 1648.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `9` (Text): rect=[985.0, 1651.0, 1037.0, 1679.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `10` (Text): rect=[985.0, 1682.0, 1037.0, 1710.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `11` (Text): rect=[985.0, 1713.0, 1037.0, 1741.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `12` (Text): rect=[985.0, 1744.0, 1037.0, 1772.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `13` (Text): rect=[985.0, 1775.0, 1037.0, 1803.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `14` (Text): rect=[985.0, 1806.0, 1037.0, 1834.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `15` (Text): rect=[985.0, 1837.0, 1037.0, 1865.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `16` (Text): rect=[985.0, 1868.0, 1037.0, 1896.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `17` (Text): rect=[985.0, 1899.0, 1037.0, 1927.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `18` (Text): rect=[985.0, 1930.0, 1037.0, 1958.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[1395.0, 755.0, 1447.0, 783.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[1395.0, 787.0, 1447.0, 815.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[1395.0, 819.0, 1447.0, 847.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[1395.0, 851.0, 1447.0, 879.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[1395.0, 883.0, 1447.0, 911.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[1395.0, 915.0, 1447.0, 943.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[1395.0, 947.0, 1447.0, 975.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `8` (Text): rect=[1395.0, 979.0, 1447.0, 1007.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `9` (Text): rect=[1395.0, 1011.0, 1447.0, 1039.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `10` (Text): rect=[1395.0, 1043.0, 1447.0, 1071.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `11` (Text): rect=[1395.0, 1075.0, 1447.0, 1103.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `12` (Text): rect=[1395.0, 1107.0, 1447.0, 1135.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `13` (Text): rect=[1395.0, 1139.0, 1447.0, 1167.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `14` (Text): rect=[1395.0, 1171.0, 1447.0, 1199.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `15` (Text): rect=[1395.0, 1203.0, 1447.0, 1231.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `16` (Text): rect=[1395.0, 1235.0, 1447.0, 1263.0] tamaño=52.0x28.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[1395.0, 1418.0, 1447.0, 1452.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[1395.0, 1458.0, 1447.0, 1492.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[1395.0, 1498.0, 1447.0, 1532.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[1395.0, 1538.0, 1447.0, 1572.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[1395.0, 1578.0, 1447.0, 1612.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[1395.0, 1618.0, 1447.0, 1652.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `perfil_gases_elp` (Text): rect=[1395.0, 1795.0, 1449.0, 1829.0] tamaño=54.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[105.0, 2520.0, 157.0, 2554.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[105.0, 2560.0, 157.0, 2594.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[105.0, 2600.0, 157.0, 2634.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[105.0, 2640.0, 157.0, 2674.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[105.0, 2680.0, 157.0, 2714.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[105.0, 2720.0, 157.0, 2754.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[105.0, 2760.0, 157.0, 2794.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `8` (Text): rect=[105.0, 2800.0, 157.0, 2834.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `9` (Text): rect=[105.0, 2840.0, 157.0, 2874.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `10` (Text): rect=[105.0, 2880.0, 157.0, 2914.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `11` (Text): rect=[105.0, 2920.0, 157.0, 2954.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `12` (Text): rect=[105.0, 2960.0, 157.0, 2994.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `13` (Text): rect=[105.0, 3000.0, 157.0, 3034.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[560.0, 2520.0, 612.0, 2554.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[560.0, 2560.0, 612.0, 2594.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[560.0, 2600.0, 612.0, 2634.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[560.0, 2640.0, 612.0, 2674.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[560.0, 2680.0, 612.0, 2714.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[560.0, 2720.0, 612.0, 2754.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[560.0, 2760.0, 612.0, 2794.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `8` (Text): rect=[560.0, 2800.0, 612.0, 2834.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `9` (Text): rect=[560.0, 2840.0, 612.0, 2874.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `10` (Text): rect=[560.0, 2880.0, 612.0, 2914.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `11` (Text): rect=[560.0, 2920.0, 612.0, 2954.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[985.0, 2520.0, 1037.0, 2554.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[985.0, 2560.0, 1037.0, 2594.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[985.0, 2600.0, 1037.0, 2634.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[985.0, 2640.0, 1037.0, 2674.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[985.0, 2680.0, 1037.0, 2714.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[985.0, 2720.0, 1037.0, 2754.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `7` (Text): rect=[985.0, 2760.0, 1037.0, 2794.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[1395.0, 2520.0, 1447.0, 2554.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[1395.0, 2560.0, 1447.0, 2594.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[1395.0, 2600.0, 1447.0, 2634.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[1395.0, 2640.0, 1447.0, 2674.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `5` (Text): rect=[1395.0, 2680.0, 1447.0, 2714.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `6` (Text): rect=[1395.0, 2720.0, 1447.0, 2754.0] tamaño=52.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `leucocitos_fecales` (Text): rect=[1395.0, 2835.0, 1449.0, 2869.0] tamaño=54.0x34.0 fuente=Helv 28.0 | cerca: 
+  - `hemorragias_ocultas` (Text): rect=[1395.0, 2896.0, 1449.0, 2930.0] tamaño=54.0x34.0 fuente=Helv 28.0 | cerca: 
+
+## transfusion-rellenable.pdf
+- Campos detectados: 46
+- Página 1: 1788.0 x 2698.0 pt
+  - `etiqueta_umt` (Text): rect=[160.0, 390.0, 620.0, 660.0] tamaño=460.0x270.0 fuente=Helv 28.0 | cerca: 
+  - `grupo_sanguineo_umt` (Text): rect=[1280.0, 250.0, 1490.0, 435.0] tamaño=210.0x185.0 fuente=Helv 28.0 | cerca: 
+  - `fecha_hora` (Text): rect=[1160.0, 575.0, 1660.0, 633.0] tamaño=500.0x58.0 fuente=Helv 28.0 | cerca: 
+  - `apellido_paterno` (Text): rect=[160.0, 770.0, 590.0, 822.0] tamaño=430.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `apellido_materno` (Text): rect=[590.0, 770.0, 1030.0, 822.0] tamaño=440.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `nombres` (Text): rect=[1030.0, 770.0, 1670.0, 822.0] tamaño=640.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `servicio` (Text): rect=[160.0, 900.0, 420.0, 952.0] tamaño=260.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `sala_pabellon` (Text): rect=[435.0, 900.0, 785.0, 952.0] tamaño=350.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `cama` (Text): rect=[800.0, 900.0, 1015.0, 952.0] tamaño=215.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `rut` (Text): rect=[1035.0, 900.0, 1265.0, 952.0] tamaño=230.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `ficha` (Text): rect=[1275.0, 900.0, 1485.0, 952.0] tamaño=210.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `motivo` (Text): rect=[160.0, 1050.0, 1015.0, 1102.0] tamaño=855.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `sexo` (Text): rect=[1035.0, 1050.0, 1150.0, 1102.0] tamaño=115.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `edad` (Text): rect=[1160.0, 1050.0, 1270.0, 1102.0] tamaño=110.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `peso` (Text): rect=[1280.0, 1050.0, 1405.0, 1102.0] tamaño=125.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `diagnostico` (Text): rect=[160.0, 1195.0, 1660.0, 1253.0] tamaño=1500.0x58.0 fuente=Helv 28.0 | cerca: 
+  - `hto` (Text): rect=[165.0, 1380.0, 295.0, 1432.0] tamaño=130.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `hb` (Text): rect=[440.0, 1380.0, 625.0, 1432.0] tamaño=185.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `recuento_pq` (Text): rect=[800.0, 1380.0, 1020.0, 1432.0] tamaño=220.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `tp` (Text): rect=[1140.0, 1380.0, 1230.0, 1432.0] tamaño=90.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `inr` (Text): rect=[1270.0, 1380.0, 1355.0, 1432.0] tamaño=85.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `ttpk` (Text): rect=[1395.0, 1380.0, 1475.0, 1432.0] tamaño=80.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `fibrinogeno` (Text): rect=[1540.0, 1380.0, 1625.0, 1432.0] tamaño=85.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `globulos_rojos_cantidad` (Text): rect=[440.0, 1590.0, 625.0, 1642.0] tamaño=185.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `plasma_fresco_cantidad` (Text): rect=[440.0, 1740.0, 625.0, 1792.0] tamaño=185.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `plaquetas_cantidad` (Text): rect=[440.0, 1860.0, 625.0, 1912.0] tamaño=185.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `crioprecipitado_cantidad` (Text): rect=[440.0, 1995.0, 625.0, 2047.0] tamaño=185.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[300.0, 2160.0, 430.0, 2206.0] tamaño=130.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[300.0, 2215.0, 430.0, 2261.0] tamaño=130.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[300.0, 2270.0, 430.0, 2316.0] tamaño=130.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[300.0, 2325.0, 430.0, 2371.0] tamaño=130.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[1035.0, 1745.0, 1245.0, 1791.0] tamaño=210.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[1035.0, 1845.0, 1245.0, 1891.0] tamaño=210.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[1035.0, 1945.0, 1245.0, 1991.0] tamaño=210.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `4` (Text): rect=[1035.0, 2045.0, 1245.0, 2091.0] tamaño=210.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `1` (Text): rect=[1160.0, 2135.0, 1250.0, 2181.0] tamaño=90.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `2` (Text): rect=[1160.0, 2190.0, 1250.0, 2236.0] tamaño=90.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `3` (Text): rect=[1160.0, 2245.0, 1250.0, 2291.0] tamaño=90.0x46.0 fuente=Helv 28.0 | cerca: 
+  - `transfusiones_previas` (Text): rect=[635.0, 2385.0, 805.0, 2437.0] tamaño=170.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `reacciones_si` (Text): rect=[1170.0, 2385.0, 1275.0, 2437.0] tamaño=105.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `reacciones_no` (Text): rect=[1280.0, 2385.0, 1410.0, 2437.0] tamaño=130.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `tipo_reaccion` (Text): rect=[1410.0, 2385.0, 1670.0, 2437.0] tamaño=260.0x52.0 fuente=Helv 28.0 | cerca: 
+  - `medico_solicitante` (Text): rect=[160.0, 2530.0, 1050.0, 2588.0] tamaño=890.0x58.0 fuente=Helv 28.0 | cerca: 
+  - `firma_codigo` (Text): rect=[1160.0, 2530.0, 1660.0, 2588.0] tamaño=500.0x58.0 fuente=Helv 28.0 | cerca: 
+  - `responsable_toma_muestra` (Text): rect=[160.0, 2645.0, 1050.0, 2703.0] tamaño=890.0x58.0 fuente=Helv 28.0 | cerca: 
+  - `firma` (Text): rect=[1160.0, 2720.0, 1660.0, 2778.0] tamaño=500.0x58.0 fuente=Helv 28.0 | cerca: 
+
+## ley-urgencia-activacion-rellenable.pdf
+- Campos detectados: 36
+- Página 1: 612.0 x 792.0 pt
+  - `fecha_hora_certificacion` (Text): rect=[168.0, 211.0, 318.0, 225.0] tamaño=150.0x14.0 fuente=Helv 8.0 | cerca: ESTABLECIMIENTO Certificación: ………………………………………………. Establecimiento: ……………………………………………………………………………………
+  - `establecimiento` (Text): rect=[158.0, 235.0, 348.0, 249.0] tamaño=190.0x14.0 fuente=Helv 8.0 | cerca: Certificación: ………………………………………………. Establecimiento: …………………………………………………………………………………… ……………………………. Comuna: ………………………………………………… PACIENTE
+  - `region_establecimiento` (Text): rect=[125.0, 259.0, 230.0, 273.0] tamaño=105.0x14.0 fuente=Helv 8.0 | cerca: Establecimiento: …………………………………………………………………………………… Región: ……………………………. DATOS DEL PACIENTE RUN: …………………………………………
+  - `comuna_establecimiento` (Text): rect=[338.0, 259.0, 443.0, 273.0] tamaño=105.0x14.0 fuente=Helv 8.0 | cerca: …………………………………………………………………………………… Comuna: …………………………………………………
+  - `run_paciente` (Text): rect=[121.0, 302.0, 226.0, 316.0] tamaño=105.0x14.0 fuente=Helv 8.0 | cerca: DATOS DEL PACIENTE RUN: ………………………………………… Nombre Completo: …………………………………………………………………………………………………………………………………………………………. Sexo Paciente: Masculino O
+  - `nombre_paciente` (Text): rect=[170.0, 323.0, 480.0, 337.0] tamaño=310.0x14.0 fuente=Helv 8.0 | cerca: ………………………………………… Completo: …………………………………………………………………………………………………………………………………………………………. Masculino O Femenino O nacimiento: ………………………………………………………………………………………………………………….
+  - `sexo_masculino` (CheckBox): rect=[210.0, 334.0, 219.0, 343.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ………………………………………… …………………………………………………………………………………………………………………………………………………………. O Femenino O …………………………………………………………………………………………………………………. ………………………………………………………………………………………………………………………………………….
+  - `sexo_femenino` (CheckBox): rect=[254.0, 334.0, 263.0, 343.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: …………………………………………………………………………………………………………………………………………………………. Femenino O …………………………………………………………………………………………………………………. ………………………………………………………………………………………………………………………………………….
+  - `fecha_nacimiento` (Text): rect=[184.0, 358.0, 404.0, 372.0] tamaño=220.0x14.0 fuente=Helv 8.0 | cerca: …………………………………………………………………………………………………………………………………………………………. Masculino O Femenino O nacimiento: …………………………………………………………………………………………………………………. …………………………………………………………………………………………………………………………………………. ………………………………………………………………………………………………………………………………………
+  - `comuna_paciente` (Text): rect=[125.0, 368.0, 407.0, 382.0] tamaño=282.0x14.0 fuente=Helv 8.0 | cerca: Sexo Paciente: Masculino O Femenino O Fecha de nacimiento: …………………………………………………………………………………………………………………. Comuna: ………………………………………………………………………………………………………………………………………….
+  - `direccion_paciente` (Text): rect=[125.0, 392.0, 405.0, 406.0] tamaño=280.0x14.0 fuente=Helv 8.0 | cerca: Fecha de nacimiento: …………………………………………………………………………………………………………………. Comuna: …………………………………………………………………………………………………………………………………………. Dirección: ……………………………………………………………………………………………………………………………………… Previsión Fonasa: SI O
+  - `fonasa_si` (CheckBox): rect=[166.0, 418.0, 175.0, 427.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………… Fonasa: SI O NO O Isapre: SI O NO O
+  - `fonasa_no` (CheckBox): rect=[209.0, 418.0, 218.0, 427.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………… NO O NO O
+  - `tramo_a` (CheckBox): rect=[324.0, 418.0, 333.0, 427.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………… Tramo: A O B O C Nombre de la Isapre
+  - `tramo_b` (CheckBox): rect=[352.0, 418.0, 361.0, 427.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………… O B O C O D O Nombre de la Isapre
+  - `tramo_c` (CheckBox): rect=[380.0, 418.0, 389.0, 427.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………… O C O D O Isapre …………………
+  - `tramo_d` (CheckBox): rect=[408.0, 418.0, 417.0, 427.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………… D O …………………
+  - `isapre_si` (CheckBox): rect=[164.0, 438.0, 173.0, 447.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: Fonasa: SI O NO O Isapre: SI O NO O ……………………………………….
+  - `isapre_no` (CheckBox): rect=[209.0, 438.0, 218.0, 447.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: NO O NO O ……………………………………….
+  - `nombre_isapre` (Text): rect=[326.0, 437.0, 416.0, 451.0] tamaño=90.0x14.0 fuente=Helv 8.0 | cerca: Tramo: A O B O C O D O Nombre de la
+  - `region_paciente` (Text): rect=[125.0, 462.0, 215.0, 476.0] tamaño=90.0x14.0 fuente=Helv 8.0 | cerca: Previsión Isapre: SI O NO O Región: ………………………………………. Fono: ………………………………………. DATOS DE
+  - `fono_paciente` (Text): rect=[116.0, 486.0, 206.0, 500.0] tamaño=90.0x14.0 fuente=Helv 8.0 | cerca: Región: ………………………………………. Fono: ………………………………………. DATOS DE ATENCIÓN
+  - `fecha_hora_atencion` (Text): rect=[180.0, 535.0, 495.0, 549.0] tamaño=315.0x14.0 fuente=Helv 8.0 | cerca: ATENCIÓN Atención: ………………………………………………………………………………………………………………………………………………… consulta: ………………………………………………………………………………………………………………………………………………….
+  - `motivo_consulta` (Text): rect=[168.0, 559.0, 493.0, 573.0] tamaño=325.0x14.0 fuente=Helv 8.0 | cerca: Atención: ………………………………………………………………………………………………………………………………………………… consulta: …………………………………………………………………………………………………………………………………………………. Principal: 1 …………………………………………………………………………………………………………………………………………………………………………………………………….
+  - `diagnostico_principal` (Text): rect=[85.0, 585.0, 495.0, 607.0] tamaño=410.0x22.0 fuente=Helv 8.0 | cerca: Motivo de consulta: …………………………………………………………………………………………………………………………………………………. Diagnóstico Principal: 1 ……………………………………………………………………………………………………………………………………………………………………………………………………. Tipo de paciente: Adulto
+  - `tipo_adulto` (CheckBox): rect=[192.0, 619.0, 201.0, 628.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………………………………………………………………………. Adulto O Pediátrico NO O SI la respuesta
+  - `tipo_pediatrico` (CheckBox): rect=[281.0, 619.0, 290.0, 628.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………………………………………………………………………. O Neonatal O respuesta es SI, indique cuál …………………………………………………………………….
+  - `tipo_neonatal` (CheckBox): rect=[367.0, 619.0, 376.0, 628.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: ……………………………………………………………………………………………………………………………………………………………………………………………………. …………………………………………………………………….
+  - `ges_si` (CheckBox): rect=[151.0, 657.0, 160.0, 666.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: paciente: Adulto O GES: SI O NO O Médico que certifica ………………………………………………………………………………………
+  - `ges_no` (CheckBox): rect=[197.0, 657.0, 206.0, 666.0] tamaño=9.0x9.0 fuente=ZaDb 0.0 | cerca: Adulto O Pediátrico NO O SI la respuesta certifica ………………………………………………………………………………………
+  - `patologia_ges_cual` (Text): rect=[342.0, 656.0, 467.0, 670.0] tamaño=125.0x14.0 fuente=Helv 8.0 | cerca: O cuál ……………………………………………………………………. ………………………………………………………………………………………
+  - `run_medico_certifica` (Text): rect=[220.0, 680.0, 355.0, 694.0] tamaño=135.0x14.0 fuente=Helv 8.0 | cerca: O SI la respuesta es SI, indique cuál ……………………………………………………………………. ……………………………………………………………………………………… títulos V
+- Página 2: 612.0 x 792.0 pt
+  - `nombre_medico_certifica` (Text): rect=[85.0, 158.0, 510.0, 172.0] tamaño=425.0x14.0 fuente=Helv 8.0 | cerca: Nombre Médico que certifica ……………………………………………………………………………………………………………………………………………………………………………………………………………
+  - `declaracion_hora` (Text): rect=[130.0, 275.0, 174.0, 289.0] tamaño=44.0x14.0 fuente=Helv 8.0 | cerca: DECLARACIÓN ESTADO DE EMERGENCIA Siendo las ______ hrs. del día _______, emergencia
+  - `declaracion_dia` (Text): rect=[210.0, 275.0, 264.0, 289.0] tamaño=54.0x14.0 fuente=Helv 8.0 | cerca: EMERGENCIA día _______, el Médico Cirujano que suscribe, muerte y/o riesgo de
+  - `firma_medico` (Text): rect=[154.0, 384.0, 389.0, 402.0] tamaño=235.0x18.0 fuente=Helv 8.0 | cerca: Médico: _______________________________________________________________
+- Página 3: 612.0 x 792.0 pt
+
+## ley-urgencia-consentimiento-rellenable.pdf
+- Campos detectados: 12
+- Página 1: 612.0 x 792.0 pt
+  - `diagnostico_situacion_salud` (Text): rect=[66.19, 154.57, 551.32, 203.37] tamaño=485.13x48.8 fuente=Helv 8.0 | cerca: 
+  - `motivos_traslado_derivacion` (Text): rect=[66.19, 232.03, 551.32, 269.98] tamaño=485.13x37.95 fuente=Helv 8.0 | cerca: 
+  - `profesional_deriva` (Text): rect=[254.22, 317.23, 540.03, 331.17] tamaño=285.81x13.94 fuente=Helv 8.0 | cerca: 
+  - `personal_acompana` (Text): rect=[254.97, 334.27, 539.28, 348.21] tamaño=284.31x13.94 fuente=Helv 8.0 | cerca: 
+  - `acompanante_paciente` (Text): rect=[352.0, 351.31, 540.03, 365.25] tamaño=188.03x13.94 fuente=Helv 8.0 | cerca: 
+  - `institucion_traslado` (Text): rect=[237.68, 368.35, 540.03, 382.29] tamaño=302.35x13.94 fuente=Helv 8.0 | cerca: 
+  - `lugar_fecha` (Text): rect=[66.19, 683.59, 291.83, 700.64] tamaño=225.64x17.05 fuente=Helv 8.0 | cerca: 
+  - `firma_paciente` (Text): rect=[329.44, 683.59, 531.01, 700.64] tamaño=201.57x17.05 fuente=Helv 8.0 | cerca: 
+  - `firma_representante_legal` (Text): rect=[61.68, 737.04, 264.75, 755.63] tamaño=203.07x18.59 fuente=Helv 8.0 | cerca: 
+  - `firma_profesionales` (Text): rect=[329.44, 737.04, 531.01, 755.63] tamaño=201.57x18.59 fuente=Helv 8.0 | cerca: 
+  - `consiente_traslado` (CheckBox): rect=[467.83, 617.6, 478.83, 628.6] tamaño=11.0x11.0 fuente=ZaDb 0.0 | cerca: 
+  - `rechaza_traslado` (CheckBox): rect=[467.83, 637.74, 478.83, 648.74] tamaño=11.0x11.0 fuente=ZaDb 0.0 | cerca: 
+
+## medicamentos-uso-ocasional-rellenable.pdf
+- Campos detectados: 18
+- Página 1: 612.0 x 792.0 pt
+  - `unidad_clinica_solicitante` (Text): rect=[235.0, 143.0, 515.0, 157.0] tamaño=280.0x14.0 fuente=Helv 8.0 | cerca: ANEXO 2: FORMULARIO SOLICITUD ADQUISICION FÁRMACO NO CONSIDERADO EN ARSENAL FARMACOLÓGICO (USO
+  - `nombre_paciente` (Text): rect=[202.0, 166.0, 515.0, 180.0] tamaño=313.0x14.0 fuente=Helv 8.0 | cerca: SOLICITANTE:_______________________________________________________________ PACIENTE:_________________________________________________________________________ CLÍNICA:_________________________________SALA__________________CAMA_________________ DIAGNOSTICO:_______________________________________________________________________________
+  - `ficha_clinica` (Text): rect=[175.0, 189.0, 350.0, 203.0] tamaño=175.0x14.0 fuente=Helv 8.0 | cerca: PACIENTE:_________________________________________________________________________ CLÍNICA:_________________________________SALA__________________CAMA_________________ DIAGNOSTICO:_______________________________________________________________________________ (PRINCIPAL Y EL QUE JUSTIFIQUE USO DE MEDICAMENTO):
+  - `sala` (Text): rect=[374.0, 189.0, 456.0, 203.0] tamaño=82.0x14.0 fuente=Helv 8.0 | cerca: PACIENTE:_________________________________________________________________________ CLÍNICA:_________________________________SALA__________________CAMA_________________ DIAGNOSTICO:_______________________________________________________________________________ MEDICAMENTO):
+  - `cama` (Text): rect=[487.0, 189.0, 522.0, 203.0] tamaño=35.0x14.0 fuente=Helv 8.0 | cerca: PACIENTE:_________________________________________________________________________ CLÍNICA:_________________________________SALA__________________CAMA_________________ DIAGNOSTICO:_______________________________________________________________________________
+  - `diagnostico` (Text): rect=[174.0, 212.0, 522.0, 226.0] tamaño=348.0x14.0 fuente=Helv 8.0 | cerca: CLÍNICA:_________________________________SALA__________________CAMA_________________ DIAGNOSTICO:_______________________________________________________________________________ (PRINCIPAL Y EL QUE JUSTIFIQUE USO DE MEDICAMENTO): FUNDAMENTO CLINICO
+  - `fundamento_clinico` (Text): rect=[99.0, 258.0, 529.0, 336.0] tamaño=430.0x78.0 fuente=Helv 8.0 | cerca: (PRINCIPAL Y EL QUE JUSTIFIQUE USO DE MEDICAMENTO): FUNDAMENTO CLINICO DE USO:
+  - `nombre_medicamento` (Text): rect=[250.0, 361.0, 524.0, 375.0] tamaño=274.0x14.0 fuente=Helv 8.0 | cerca: ______________________________________________________________________________________________ MEDICAMENTO: __________________________________________________________________ _______________________________________________________(CM-AM-FA, ETC) _________________________________________________________________________________
+  - `forma_farmaceutica` (Text): rect=[221.0, 384.0, 456.0, 398.0] tamaño=235.0x14.0 fuente=Helv 8.0 | cerca: MEDICAMENTO: __________________________________________________________________ FARMACEUTICA: _______________________________________________________(CM-AM-FA, _________________________________________________________________________________
+  - `dosis_diaria` (Text): rect=[160.0, 407.0, 530.0, 421.0] tamaño=370.0x14.0 fuente=Helv 8.0 | cerca: FORMA FARMACEUTICA: _______________________________________________________(CM-AM-FA, ETC) DIARIA: _________________________________________________________________________________ DURACION DEL TRATAMIENTO:___________________________________________________________________
+  - `duracion_tratamiento` (Text): rect=[160.0, 441.0, 468.0, 455.0] tamaño=308.0x14.0 fuente=Helv 8.0 | cerca: DIARIA: _________________________________________________________________________________ DURACION DEL TRATAMIENTO:___________________________________________________________________ TOTAL:__________________________________________________________________________________ NOMBRE Y FIRMA MEDICO SOLICITANTE: ______________________________________________________
+  - `dosis_total` (Text): rect=[154.0, 464.0, 531.0, 478.0] tamaño=377.0x14.0 fuente=Helv 8.0 | cerca: DURACION DEL TRATAMIENTO:___________________________________________________________________ DOSIS TOTAL:__________________________________________________________________________________ NOMBRE Y FIRMA MEDICO SOLICITANTE: ______________________________________________________
+  - `medico_solicitante` (Text): rect=[320.0, 487.0, 515.0, 501.0] tamaño=195.0x14.0 fuente=Helv 8.0 | cerca: TOTAL:__________________________________________________________________________________ ______________________________________________________ SOLICITUD:_________________________________________________________________________
+  - `fecha_solicitud` (Text): rect=[196.0, 522.0, 524.0, 536.0] tamaño=328.0x14.0 fuente=Helv 8.0 | cerca: FIRMA MEDICO SOLICITANTE: ______________________________________________________ SOLICITUD:_________________________________________________________________________
+  - `vb_jefe_cr` (Text): rect=[324.0, 579.0, 448.0, 593.0] tamaño=124.0x14.0 fuente=Helv 8.0 | cerca: RESPONSABILIDAD: ______________________________________Fecha:
+  - `fecha_jefe_cr` (Text): rect=[99.0, 591.0, 187.0, 605.0] tamaño=88.0x14.0 fuente=Helv 8.0 | cerca: VºBº JEFE CENTRO DE ___________________
+  - `vb_subdirector_administrativo` (Text): rect=[316.0, 648.0, 444.0, 662.0] tamaño=128.0x14.0 fuente=Helv 8.0 | cerca: ADMINISTRATIVO: _____________________________________Fecha:
+  - `fecha_subdirector` (Text): rect=[99.0, 659.0, 187.0, 673.0] tamaño=88.0x14.0 fuente=Helv 8.0 | cerca: VºBº SUBDIRECTOR ___________________
+
