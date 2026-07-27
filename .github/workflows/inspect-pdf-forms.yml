@@ -38,3 +38,5 @@ jobs:
           git add pdf-form-layout-report.json pdf-form-layout-report.md
           git commit -m "Inspeccionar geometría de PDFs rellenables"
           git push origin HEAD:agent/fix-production-stability-pdf-v2
+
+# disparo explícito: workflow ya disponible en la rama
