@@ -1,8 +1,12 @@
 import fs from 'node:fs';
 
-const path = 'gestion-pacientes-core.js';
-const source = fs.readFileSync(path, 'utf8');
-const before = `  async function apiPost(action, payload = {}) {
+function replaceOnce(path, before, after) {
+  const source = fs.readFileSync(path, 'utf8');
+  if (!source.includes(before)) throw new Error(`No se encontró bloque esperado en ${path}`);
+  fs.writeFileSync(path, source.replace(before, after));
+}
+
+replaceOnce('gestion-pacientes-core.js', `  async function apiPost(action, payload = {}) {
     await refreshAuth();
     const url = apiUrl();
     if (!url) return { ok: false, error: "Falta configurar appsScriptUrl." };
@@ -20,9 +24,7 @@ const before = `  async function apiPost(action, payload = {}) {
     } catch (error) {
       return { ok: false, error: error?.message || "No se pudo conectar con el servicio de gestión." };
     }
-  }`;
-
-const after = `  async function apiPost(action, payload = {}) {
+  }`, `  async function apiPost(action, payload = {}) {
     await refreshAuth();
     const url = apiUrl();
     if (!url) return { ok: false, error: "Falta configurar appsScriptUrl." };
@@ -42,13 +44,7 @@ const after = `  async function apiPost(action, payload = {}) {
         method: "POST",
         redirect: "follow",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action,
-          email: user.email,
-          accessToken,
-          supabaseAnonKey: anonKey,
-          ...payload
-        })
+        body: JSON.stringify({ action, email: user.email, accessToken, supabaseAnonKey: anonKey, ...payload })
       });
       const data = await response.json();
       if (data?.error === "Acción no reconocida") {
@@ -58,8 +54,17 @@ const after = `  async function apiPost(action, payload = {}) {
     } catch (error) {
       return { ok: false, error: error?.message || "No se pudo conectar con el servicio de gestión." };
     }
-  }`;
+  }`);
 
-if (!source.includes(before)) throw new Error('No se encontró apiPost esperado; no se aplica parche automático.');
-fs.writeFileSync(path, source.replace(before, after));
+replaceOnce('index.html', '<script src="./gestion-pacientes-core.js?v=5"></script>', '<script src="./gestion-pacientes-core.js?v=6"></script>');
+
+replaceOnce('.github/workflows/validate.yml', `      - name: Validar privacidad de Gestión pacientes
+        run: node scripts/check-patient-privacy.mjs
+`, `      - name: Validar privacidad de Gestión pacientes
+        run: node scripts/check-patient-privacy.mjs
+
+      - name: Validar contrato seguro de Gestión pacientes
+        run: node scripts/check-patient-backend-contract.mjs
+`);
+
 console.log('Contrato seguro de Gestión pacientes aplicado.');
