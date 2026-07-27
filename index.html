@@ -32,12 +32,11 @@
     <script>
       window.CRS_DISABLE_SERVICE_WORKER = true;
       if ("serviceWorker" in navigator) {
-        const appBase = new URL("./", location.href).href;
-        navigator.serviceWorker.getRegistrations?.()
-          .then((items) => Promise.all(items
-            .filter((item) => String(item.scope || "").startsWith(appBase))
-            .map((item) => item.unregister())))
-          .catch((error) => console.warn("No se pudo limpiar el service worker de CRS HPH", error));
+        navigator.serviceWorker.getRegistrations?.().then((items) => {
+          items
+            .filter((item) => item.scope.includes("/crs-2025-app/"))
+            .forEach((item) => item.unregister());
+        }).catch(() => {});
       }
     </script>
     <header class="topbar">
@@ -108,7 +107,7 @@
     <script src="./directorio-telefonico.js?v=2"></script>
     <script src="./contenido-web.js?v=2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=15"></script>
+    <script src="./supabase-config.js?v=16"></script>
     <script src="./supabase-admin-users.js?v=2"></script>
     <script src="./supabase-backend.js?v=5"></script>
     <script src="./gestion-panel-final.js?v=9"></script>
