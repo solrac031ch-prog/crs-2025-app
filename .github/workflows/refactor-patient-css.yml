@@ -1,0 +1,37 @@
+name: Extraer CSS de Gestión pacientes
+
+on:
+  push:
+    branches: ["agent/extract-patient-css"]
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar rama
+        uses: actions/checkout@v4
+        with:
+          ref: agent/extract-patient-css
+          fetch-depth: 0
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Extraer CSS
+        run: node scripts/extract-patient-css.mjs
+
+      - name: Guardar resultado
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gestion-pacientes-core.js gestion-pacientes-core.css
+          git commit -m "Separar estilos de Gestión pacientes"
+          git push origin HEAD:agent/extract-patient-css
