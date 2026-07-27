@@ -20,10 +20,6 @@ window.CRS_SUPABASE_CONFIG = {
     return location.hash.split("?")[0] || "#/inicio";
   }
 
-  function isJefaturaRoute() {
-    return route() === "#/jefatura";
-  }
-
   function fireSupabaseReady() {
     try {
       window.dispatchEvent(new Event("crs:supabase-ready"));
@@ -43,13 +39,11 @@ window.CRS_SUPABASE_CONFIG = {
     script.onload = () => {
       supabaseFallbackLoading = false;
       fireSupabaseReady();
-      setTimeout(() => {
-        window.CRS_SUPABASE?.renderPublicRoute?.();
-        window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0);
-      }, 80);
+      window.CRS_SUPABASE?.renderPublicRoute?.();
     };
     script.onerror = () => {
       supabaseFallbackLoading = false;
+      console.error("No se pudo cargar Supabase desde CDN ni fallback.");
     };
     document.head.append(script);
   }
@@ -61,14 +55,9 @@ window.CRS_SUPABASE_CONFIG = {
   function loadSupabaseJefaturaPanel() {
     if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
     const script = document.createElement("script");
-    script.src = "./supabase-jefatura-panel.js?v=11";
+    script.src = "./supabase-jefatura-panel.js?v=12";
     script.dataset.supabaseJefaturaPanel = "true";
     (document.body || document.documentElement).append(script);
-  }
-
-  function scheduleCanonicalJefatura(delay = 30) {
-    if (!isJefaturaRoute()) return;
-    setTimeout(() => window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0), delay);
   }
 
   function normalizeSupabaseCopy() {
@@ -97,12 +86,10 @@ window.CRS_SUPABASE_CONFIG = {
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(40);
     scheduleNormalizeCopy(260);
-    scheduleCanonicalJefatura(80);
   }
 
   window.addEventListener("crs:supabase-ready", () => {
     window.CRS_SUPABASE?.renderPublicRoute?.();
-    scheduleCanonicalJefatura(30);
   });
 
   window.addEventListener("hashchange", () => {
@@ -110,7 +97,6 @@ window.CRS_SUPABASE_CONFIG = {
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(20);
     scheduleNormalizeCopy(220);
-    scheduleCanonicalJefatura(40);
   });
 
   if (document.readyState === "loading") {
@@ -123,6 +109,5 @@ window.CRS_SUPABASE_CONFIG = {
     ensureSupabaseClient();
     loadSupabaseJefaturaPanel();
     scheduleNormalizeCopy(80);
-    scheduleCanonicalJefatura(80);
   }, { once: true });
 })();

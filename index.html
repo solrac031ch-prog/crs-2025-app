@@ -32,13 +32,11 @@
     <script>
       window.CRS_DISABLE_SERVICE_WORKER = true;
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations?.().then((items) => items.forEach((item) => item.unregister())).catch(() => {});
-        try {
-          navigator.serviceWorker.register = () => Promise.resolve({ unregister: () => Promise.resolve(true) });
-        } catch (_) {}
-      }
-      if ("caches" in window) {
-        caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).catch(() => {});
+        navigator.serviceWorker.getRegistrations?.().then((items) => {
+          items
+            .filter((item) => item.scope.includes("/crs-2025-app/"))
+            .forEach((item) => item.unregister());
+        }).catch(() => {});
       }
     </script>
     <header class="topbar">
@@ -109,7 +107,7 @@
     <script src="./directorio-telefonico.js?v=2"></script>
     <script src="./contenido-web.js?v=2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabase-config.js?v=15"></script>
+    <script src="./supabase-config.js?v=16"></script>
     <script src="./supabase-admin-users.js?v=2"></script>
     <script src="./supabase-backend.js?v=5"></script>
     <script src="./gestion-panel-final.js?v=9"></script>
