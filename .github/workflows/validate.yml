@@ -45,6 +45,9 @@ jobs:
       - name: Validar alcance de caché
         run: node scripts/check-cache-scope.mjs
 
+      - name: Validar privacidad de Gestión pacientes
+        run: node scripts/check-patient-privacy.mjs
+
       - name: Validar archivos locales referenciados por index.html
         shell: python
         run: |
