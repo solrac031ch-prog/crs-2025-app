@@ -54,6 +54,9 @@ jobs:
       - name: Validar frontera de formularios
         run: node scripts/check-forms-boundary.mjs
 
+      - name: Validar frontera de datos de formularios
+        run: node scripts/check-forms-data-boundary.mjs
+
       - name: Validar frontera de datos clínicos
         run: node scripts/check-protocol-data-boundary.mjs
 
