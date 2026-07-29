@@ -20,7 +20,7 @@ const CRS_PATIENT_HEADERS = [
 ];
 
 function doGet() {
-  return json_({ ok: true, service: 'MASTER Urgencias HPH', version: 3 });
+  return json_({ ok: true, service: 'MASTER Urgencias HPH', version: 4 });
 }
 
 function doPost(e) {
@@ -28,23 +28,65 @@ function doPost(e) {
     const body = parseBody_(e);
     const action = String(body.action || '').trim();
 
-    if (action === 'savePublicPatientCase') {
-      return json_(savePublicPatientCase_(body.case || {}, body.serviceCode));
+    // El formulario público no depende de una sesión de Jefatura.
+    // La segunda condición mantiene compatibilidad si el navegador o un
+    // formulario anterior omiten/modifican el nombre de la acción.
+    const isPublicSubmission =
+      action === 'savePublicPatientCase' ||
+      (
+        !body.accessToken &&
+        body.case &&
+        typeof body.case === 'object' &&
+        String(body.serviceCode || '').trim()
+      );
+
+    if (isPublicSubmission) {
+      return json_(
+        savePublicPatientCase_(
+          body.case || {},
+          body.serviceCode || ''
+        )
+      );
     }
 
     if (action === 'login') {
-      return json_({ ok: false, error: 'El ingreso Google legacy está desactivado. Usa Jefatura con Supabase.' });
+      return json_({
+        ok: false,
+        error: 'El ingreso Google legacy está desactivado. Usa Jefatura con Supabase.'
+      });
     }
 
     const auth = authorizeSupabase_(body);
-    if (action === 'listPatientCases') return json_(listPatientCases_(auth));
-    if (action === 'savePatientCase') return json_(savePatientCase_(body.case || {}, auth));
-    if (action === 'updatePatientCase') return json_(updatePatientCase_(String(body.id || ''), body.patch || {}, auth));
 
-    return json_({ ok: false, error: 'Acción no reconocida', action: action });
+    if (action === 'listPatientCases') {
+      return json_(listPatientCases_(auth));
+    }
+
+    if (action === 'savePatientCase') {
+      return json_(savePatientCase_(body.case || {}, auth));
+    }
+
+    if (action === 'updatePatientCase') {
+      return json_(
+        updatePatientCase_(
+          String(body.id || ''),
+          body.patch || {},
+          auth
+        )
+      );
+    }
+
+    return json_({
+      ok: false,
+      error: 'Acción no reconocida',
+      action: action
+    });
   } catch (error) {
     console.error(error && error.stack ? error.stack : error);
-    return json_({ ok: false, error: friendlyError_(error) });
+    return json_({
+      ok: false,
+      error: friendlyError_(error)
+    });
   }
 }
 
@@ -268,7 +310,7 @@ function nextCaseNumber_(sheet) {
   const values = sheet.getRange(2, column, lastRow - 1, 1).getDisplayValues();
   let max = 0;
   values.forEach(function(row) {
-    const match = String(row[0] || '').match(new RegExp('^GA-' + year + '-(\\d+)$'));
+    const match = String(row[0] || '').match(new RegExp('^GA-' + year + '-(\d+)$'));
     if (match) max = Math.max(max, Number(match[1]));
   });
   return prefix + String(max + 1).padStart(6, '0');
@@ -334,4 +376,8 @@ function friendlyError_(error) {
 
 function json_(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function autorizarMaster() {
+  getOrCreatePatientSheet_();
 }
