@@ -16,6 +16,12 @@
       .trim();
   }
 
+  function notifyReady(mode) {
+    window.dispatchEvent(new CustomEvent("crs:ui-section-ready", {
+      detail: { route: ROUTE, mode }
+    }));
+  }
+
   function cardTitle(card) {
     return normalized(card?.querySelector("h3")?.textContent || "");
   }
@@ -64,6 +70,7 @@
     const button = form.querySelector('button[type="submit"]');
     if (title) title.textContent = "Acceso de Jefatura";
     if (button) button.textContent = "Ingresar";
+    notifyReady("login");
     return true;
   }
 
@@ -91,13 +98,16 @@
   }
 
   function organizePanel(shell) {
-    if (shell.dataset.jefaturaOrganized === "true") return;
+    if (shell.dataset.jefaturaOrganized === "true") {
+      notifyReady("panel");
+      return true;
+    }
     const grid = shell.querySelector(".crs-access-grid");
-    if (!grid) return;
+    if (!grid) return false;
 
     const cards = $$(":scope > .crs-access-card", grid);
     const statusCard = cards.find((card) => card.querySelector("[data-crs-global-list]"));
-    if (!statusCard) return;
+    if (!statusCard) return false;
 
     const sessionInfo = statusCard.querySelector(".crs-access-ok");
     const sessionActions = statusCard.querySelector(".crs-access-actions");
@@ -155,6 +165,8 @@
     dashboard.append(top, quick, sections);
     grid.replaceWith(dashboard);
     shell.dataset.jefaturaOrganized = "true";
+    notifyReady("panel");
+    return true;
   }
 
   function enhance() {
@@ -163,10 +175,11 @@
     if (!shell) return;
     renamePanel(shell);
     if (cleanLogin(shell)) return;
-    organizePanel(shell);
+    if (organizePanel(shell)) return;
+    if (shell.querySelector(".crs-access-error,.crs-access-warn")) notifyReady("message");
   }
 
-  function schedule(delay = 30) {
+  function schedule(delay = 20) {
     window.clearTimeout(timer);
     timer = window.setTimeout(enhance, delay);
   }
@@ -178,20 +191,28 @@
     if (target) target.open = true;
   }, true);
 
-  const observer = new MutationObserver((mutations) => {
-    if (currentRoute() !== ROUTE) return;
-    if (!mutations.some((mutation) => mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) return;
-    schedule(40);
+  function needsEnhancement() {
+    if (currentRoute() !== ROUTE) return false;
+    const shell = document.querySelector("[data-crs-access-shell]");
+    if (!shell) return false;
+    if (shell.querySelector("[data-crs-login]")) return !shell.classList.contains("jefatura-login-clean");
+    if (shell.querySelector("[data-crs-global-list]")) return shell.dataset.jefaturaOrganized !== "true";
+    return false;
+  }
+
+  const observer = new MutationObserver(() => {
+    if (needsEnhancement()) schedule(10);
   });
 
   function start() {
-    observer.observe(document.body, { childList: true, subtree: true });
+    const content = document.querySelector("#chiefContent");
+    if (content) observer.observe(content, { childList: true, subtree: true });
     schedule(10);
   }
 
-  window.addEventListener("hashchange", () => schedule(30));
-  window.addEventListener("crs:supabase-ready", () => schedule(60));
-  window.addEventListener("crs:auth-changed", () => schedule(60));
+  window.addEventListener("hashchange", () => schedule(10));
+  window.addEventListener("crs:supabase-ready", () => schedule(20));
+  window.addEventListener("crs:auth-changed", () => schedule(20));
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start, { once: true });
