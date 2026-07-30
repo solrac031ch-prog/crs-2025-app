@@ -164,11 +164,20 @@
 
   const observer = new MutationObserver(enhanceForgotPassword);
 
+  function loadOrganizedPanel() {
+    if (document.querySelector('script[data-jefatura-centro-gestion]')) return;
+    const script = document.createElement("script");
+    script.src = "./jefatura-centro-gestion.js?v=1";
+    script.dataset.jefaturaCentroGestion = "true";
+    document.head.append(script);
+  }
+
   function boot() {
     if (document.body) observer.observe(document.body, { childList: true, subtree: true });
     listenForRecovery();
     showUrlAuthError();
     enhanceForgotPassword();
+    loadOrganizedPanel();
   }
 
   window.CRS_SUPABASE_JEFATURA_LEGACY_DISABLED = true;
