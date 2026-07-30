@@ -130,7 +130,7 @@
           <div class="edu-podcast-copy">
             <span class="edu-podcast-label">● Disponible en Spotify</span>
             <h3>Los Urgencistas</h3>
-            <p>Podcast docente del equipo vinculado al Hospital Padre Hurtado. El reproductor oficial de Spotify muestra la portada original del programa y sus episodios vigentes.</p>
+            <p>Podcast docente del equipo vinculado al Hospital Padre Hurtado.</p>
             <div class="edu-podcast-actions"><a class="edu-spotify-button" href="${SPOTIFY_URL}" target="_blank" rel="noopener noreferrer">Abrir en Spotify</a></div>
           </div>
           <div class="edu-podcast-player">
