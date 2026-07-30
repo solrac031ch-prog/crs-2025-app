@@ -13,6 +13,7 @@
     "#/equipo-urgencia"
   ]);
 
+  const UHD_SCOPE_KEY = "crsPatientUhdScopeV2";
   let settleTimer = 0;
   let fallbackTimer = 0;
   let routeToken = 0;
@@ -34,7 +35,11 @@
   function publicPageReady(current) {
     const active = document.querySelector(".page.active");
     const content = active?.querySelector("#managementContent,#educationContent,#doctorsContent");
-    return Boolean(content?.dataset.gfReadyRoute === current && content.querySelector(".gf-shell"));
+    if (!content || content.dataset.gfReadyRoute !== current) return false;
+    const selector = current === "#/educacion"
+      ? ".edu-uniform-shell,.gf-shell"
+      : ".gf-shell";
+    return Boolean(content.querySelector(selector));
   }
 
   function isReady(current) {
@@ -60,7 +65,7 @@
     window.clearTimeout(fallbackTimer);
   }
 
-  function tryReveal(delay = 12) {
+  function tryReveal(delay = 10) {
     const token = routeToken;
     window.clearTimeout(settleTimer);
     settleTimer = window.setTimeout(() => {
@@ -76,6 +81,7 @@
     routeToken += 1;
     const token = routeToken;
     const current = route();
+    const previousReadyRoute = document.documentElement.dataset.uiReadyRoute || "";
     window.clearTimeout(settleTimer);
     window.clearTimeout(fallbackTimer);
 
@@ -84,14 +90,19 @@
       return;
     }
 
+    if (previousReadyRoute === current && isReady(current)) {
+      reveal(token);
+      return;
+    }
+
     document.documentElement.dataset.uiStabilizing = "true";
     document.documentElement.dataset.uiReadyRoute = "";
-    tryReveal(8);
-    fallbackTimer = window.setTimeout(() => reveal(token), 650);
+    tryReveal(6);
+    fallbackTimer = window.setTimeout(() => reveal(token), 320);
   }
 
   const observer = new MutationObserver(() => {
-    if (document.documentElement.dataset.uiStabilizing === "true") tryReveal(18);
+    if (document.documentElement.dataset.uiStabilizing === "true") tryReveal(12);
   });
 
   function start() {
@@ -100,9 +111,15 @@
     stage();
   }
 
+  document.addEventListener("click", (event) => {
+    if (event.target.closest?.('[data-patient-type="uhd"]')) {
+      sessionStorage.setItem(UHD_SCOPE_KEY, "all");
+    }
+  }, true);
+
   window.addEventListener("hashchange", stage, true);
-  window.addEventListener("crs:ui-section-ready", () => tryReveal(4));
-  window.addEventListener("crs:supabase-ready", () => tryReveal(8));
+  window.addEventListener("crs:ui-section-ready", () => tryReveal(2));
+  window.addEventListener("crs:supabase-ready", () => tryReveal(5));
   window.addEventListener("crs:auth-changed", () => {
     if (route() === "#/jefatura" || route().startsWith("#/gestion")) stage();
   });
