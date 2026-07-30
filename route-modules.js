@@ -115,7 +115,7 @@
       ensureSupabase()
     ]);
     await loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
-    if (educationRoute) await loadScript("educacion-uniforme", "./educacion-uniforme.js", 1);
+    if (educationRoute) await loadScript("educacion-uniforme", "./educacion-uniforme.js", 2);
   }
 
   async function ensureForms(current) {
