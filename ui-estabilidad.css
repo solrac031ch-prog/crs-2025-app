@@ -19,12 +19,19 @@ body,
   display: none !important;
 }
 
+#specialtiesPage.active,
 #managementPage.active,
 #chiefPage.active,
 #educationPage.active,
 #doctorsPage.active {
   position: relative;
   min-height: 70vh;
+}
+
+#managementPage.active,
+#chiefPage.active,
+#educationPage.active,
+#doctorsPage.active {
   padding-top: clamp(24px, 3vw, 40px);
 }
 
@@ -38,6 +45,12 @@ body,
   transition: none;
 }
 
+html[data-ui-stabilizing="true"] #specialtiesPage.active > * {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 html[data-ui-stabilizing="true"] #managementContent,
 html[data-ui-stabilizing="true"] #chiefContent,
 html[data-ui-stabilizing="true"] #educationContent,
@@ -47,6 +60,7 @@ html[data-ui-stabilizing="true"] #doctorsContent {
   pointer-events: none;
 }
 
+html[data-ui-stabilizing="true"] #specialtiesPage.active::after,
 html[data-ui-stabilizing="true"] #managementPage.active::after,
 html[data-ui-stabilizing="true"] #chiefPage.active::after,
 html[data-ui-stabilizing="true"] #educationPage.active::after,
@@ -90,7 +104,8 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
 .edu-uniform-shell,
 .gf-shell,
 .uhd-shell,
-[data-crs-access-shell] {
+[data-crs-access-shell],
+#specialtiesPage.specialty-stable {
   margin-top: 0 !important;
   overflow-anchor: none;
 }
@@ -122,6 +137,7 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
     padding-top: 18px;
   }
 
+  #specialtiesPage.active,
   #managementContent,
   #chiefContent,
   #educationContent,
