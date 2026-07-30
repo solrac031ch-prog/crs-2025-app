@@ -1,0 +1,60 @@
+html[data-ui-stabilizing="true"] #managementContent,
+html[data-ui-stabilizing="true"] #chiefContent,
+html[data-ui-stabilizing="true"] #educationContent,
+html[data-ui-stabilizing="true"] #doctorsContent,
+html[data-ui-stabilizing="true"] #turnFormsList,
+html[data-ui-stabilizing="true"] #phonesContent,
+html[data-ui-stabilizing="true"] #specialtyGroups,
+html[data-ui-stabilizing="true"] #protocolDetail {
+  visibility: hidden;
+  opacity: 0;
+}
+
+#managementContent,
+#chiefContent,
+#educationContent,
+#doctorsContent,
+#turnFormsList,
+#phonesContent,
+#specialtyGroups,
+#protocolDetail {
+  min-height: 220px;
+  transition: opacity .12s ease;
+}
+
+#managementPage.active,
+#chiefPage.active,
+#educationPage.active,
+#doctorsPage.active {
+  min-height: 70vh;
+}
+
+html[data-ui-stabilizing="true"] #managementPage.active::after,
+html[data-ui-stabilizing="true"] #chiefPage.active::after,
+html[data-ui-stabilizing="true"] #educationPage.active::after,
+html[data-ui-stabilizing="true"] #doctorsPage.active::after {
+  content: "Cargando…";
+  display: block;
+  width: min(520px, 100%);
+  margin: 18px auto 0;
+  padding: 18px;
+  border: 1px solid #dce7e2;
+  border-radius: 14px;
+  background: #f8fbfa;
+  color: #52615c;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #managementContent,
+  #chiefContent,
+  #educationContent,
+  #doctorsContent,
+  #turnFormsList,
+  #phonesContent,
+  #specialtyGroups,
+  #protocolDetail {
+    transition: none;
+  }
+}
