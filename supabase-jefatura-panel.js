@@ -42,8 +42,6 @@
     const api = client();
     if (!api) throw new Error("Supabase no está conectado.");
     const email = await resolveLoginEmail(loginValue);
-    // No usar #/jefatura como redirectTo: Supabase necesita controlar el fragmento
-    // de la URL durante el retorno del enlace de recuperación.
     const redirectTo = `${location.origin}${location.pathname}`;
     const { error } = await api.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) throw error;
@@ -120,9 +118,7 @@
     const api = client();
     if (!api || authSubscription) return;
     const { data } = api.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setTimeout(showRecoveryForm, 0);
-      }
+      if (event === "PASSWORD_RECOVERY") setTimeout(showRecoveryForm, 0);
     });
     authSubscription = data?.subscription || true;
   }
@@ -162,23 +158,21 @@
     }
   }, true);
 
-  const observer = new MutationObserver(enhanceForgotPassword);
-
-  function loadOrganizedPanel() {
-    if (document.querySelector('script[data-jefatura-centro-gestion]')) return;
-    const script = document.createElement("script");
-    script.src = "./jefatura-centro-gestion.js?v=1";
-    script.dataset.jefaturaCentroGestion = "true";
-    document.head.append(script);
-  }
+  const observer = new MutationObserver(() => enhanceForgotPassword());
 
   function boot() {
-    if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    const content = document.querySelector("#chiefContent");
+    if (content) observer.observe(content, { childList: true, subtree: true });
     listenForRecovery();
     showUrlAuthError();
     enhanceForgotPassword();
-    loadOrganizedPanel();
   }
+
+  window.addEventListener("hashchange", () => setTimeout(enhanceForgotPassword, 20));
+  window.addEventListener("crs:supabase-ready", () => {
+    listenForRecovery();
+    setTimeout(enhanceForgotPassword, 20);
+  });
 
   window.CRS_SUPABASE_JEFATURA_LEGACY_DISABLED = true;
 
