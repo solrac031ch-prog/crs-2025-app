@@ -22,6 +22,12 @@
     procedure: ["#991b1b", "#115e59", "Procedimiento"]
   };
 
+  function notifyReady(current) {
+    window.dispatchEvent(new CustomEvent("crs:ui-section-ready", {
+      detail: { route: current }
+    }));
+  }
+
   function activate(pageId, activeRoute = "", eyebrowText = "") {
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === pageId));
     $$('[data-route-link]').forEach((link) => link.classList.toggle("active", Boolean(activeRoute) && link.dataset.routeLink === activeRoute));
@@ -59,12 +65,9 @@
   function card(item, kind) {
     const [a, b, label] = VISUALS[kind] || VISUALS.news;
     const image = visualImage(item, kind);
-    const href = item.eventUrl || item.url || "";
     const media = `<div class="gf-media" style="--gf-a:${a};--gf-b:${b}">${image ? `<img src="${esc(image)}" alt="" loading="lazy">` : ""}<span class="gf-tag">${esc(label)}</span><strong>${esc(item.title || label)}</strong></div>`;
     const body = `<div class="gf-body"><h3>${esc(item.title || label)}</h3><p>${esc(item.description || "")}</p>${action(item, "Abrir")}</div>`;
-    return href
-      ? `<article class="gf-card">${media}${body}</article>`
-      : `<article class="gf-card">${media}${body}</article>`;
+    return `<article class="gf-card">${media}${body}</article>`;
   }
 
   function monthLabel(item) {
@@ -85,7 +88,7 @@
   function withTimeout(promise, ms = 1200) {
     return Promise.race([
       promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Supabase tardo demasiado; usando contenido local.")), ms))
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Supabase tardó demasiado; usando contenido local.")), ms))
     ]);
   }
 
@@ -110,52 +113,64 @@
     const latest = papers[0];
     const older = papers.slice(1);
     const featured = latest
-      ? `<main class="gf-paper-main"><article class="gf-paper-featured"><span class="gf-tag">${esc(monthLabel(latest))}</span><h2>${esc(latest.title)}</h2><div class="gf-abstract"><strong>Abstract</strong><p>${esc(latest.description || "Al publicar el PDF desde Jefatura, la app intentara extraer el abstract automaticamente.")}</p></div><div class="gf-actions">${action(latest, "Abrir paper")}</div></article></main>`
-      : `<main class="gf-paper-main"><div class="gf-empty">Aun no hay paper del mes publicado. Cuando Jefatura suba un PDF, aqui se mostrara el titulo y abstract.</div></main>`;
+      ? `<main class="gf-paper-main"><article class="gf-paper-featured"><span class="gf-tag">${esc(monthLabel(latest))}</span><h2>${esc(latest.title)}</h2><div class="gf-abstract"><strong>Abstract</strong><p>${esc(latest.description || "Al publicar el PDF desde Jefatura, la app intentará extraer el abstract automáticamente.")}</p></div><div class="gf-actions">${action(latest, "Abrir paper")}</div></article></main>`
+      : `<main class="gf-paper-main"><div class="gf-empty">Aún no hay paper del mes publicado.</div></main>`;
     const repo = older.length
       ? `<div class="gf-repo-list">${older.map((paper) => `<a class="gf-repo-item" href="${esc(paper.url || "#/paper")}" ${paper.url ? `target="_blank" rel="noopener noreferrer"` : ""}><strong>${esc(paper.title)}</strong><span>${esc(monthLabel(paper))}</span></a>`).join("")}</div>`
       : `<div class="gf-empty">Sin papers previos.</div>`;
     return `<section class="gf-paper-layout">${featured}<aside class="gf-repo"><h2>Repositorio</h2>${repo}</aside></section>`;
   }
 
-  function pageShell(title, text, body, pageId = "managementPage", activeRoute = "") {
+  function pageShell(title, text, body, pageId = "managementPage", activeRoute = "", ready = false) {
     activate(pageId, activeRoute, title);
     const titleEl = pageId === "educationPage" ? $("#educationTitle") : $("#managementTitle");
     const contentEl = pageId === "educationPage" ? $("#educationContent") : $("#managementContent");
     if (titleEl) titleEl.textContent = title;
-    if (contentEl) contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>${body}</div>`;
+    if (!contentEl) return;
+    contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>${body}</div>`;
+    if (ready) {
+      contentEl.dataset.gfReadyRoute = route();
+      notifyReady(route());
+    } else {
+      delete contentEl.dataset.gfReadyRoute;
+    }
   }
 
   async function renderList(kind, title, text, empty, pageId = "managementPage", activeRoute = "") {
     const expectedRoute = route();
-    pageShell(title, text, listBody(staticContent(kind), kind, empty), pageId, activeRoute);
-    const items = await remoteContent(kind);
-    if (route() !== expectedRoute || !items) return;
-    pageShell(title, text, listBody(items, kind, empty), pageId, activeRoute);
+    pageShell(title, text, `<div class="gf-empty">Cargando contenido…</div>`, pageId, activeRoute, false);
+    const localItems = staticContent(kind);
+    const remoteItems = await remoteContent(kind);
+    if (route() !== expectedRoute) return;
+    const items = remoteItems || localItems;
+    pageShell(title, text, listBody(items, kind, empty), pageId, activeRoute, true);
   }
 
   async function renderPaper() {
     const expectedRoute = route();
-    pageShell("Paper del mes", "Lectura destacada con titulo, abstract y repositorio mensual al lado derecho.", paperBody(staticContent("paper")));
-    const papers = await remoteContent("paper");
-    if (route() !== expectedRoute || !papers) return;
-    pageShell("Paper del mes", "Lectura destacada con titulo, abstract y repositorio mensual al lado derecho.", paperBody(papers));
+    pageShell("Paper del mes", "Lectura destacada con título, abstract y repositorio mensual.", `<div class="gf-empty">Cargando paper…</div>`, "managementPage", "", false);
+    const localPapers = staticContent("paper");
+    const remotePapers = await remoteContent("paper");
+    if (route() !== expectedRoute) return;
+    pageShell("Paper del mes", "Lectura destacada con título, abstract y repositorio mensual.", paperBody(remotePapers || localPapers), "managementPage", "", true);
   }
 
   function renderGestion() {
     activate("managementPage", "gestion", "Seguimiento operativo");
     const title = $("#managementTitle");
     const contentEl = $("#managementContent");
-    if (title) title.textContent = "Gestion";
+    if (title) title.textContent = "Gestión";
     if (!contentEl) return;
-    contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>Gestion de casos</h2><p>Panel operativo para seguimiento de pacientes y tareas prioritarias.</p></section><section class="gf-grid"><a class="gf-home-card teal" href="#/gestion/pacientes"><strong>Gestion pacientes</strong><span>Seguimiento de casos prioritarios para jefatura.</span></a></section></div>`;
+    contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>Gestión de casos</h2><p>Panel operativo para seguimiento de pacientes y tareas prioritarias.</p></section><section class="gf-grid"><a class="gf-home-card teal" href="#/gestion/pacientes"><strong>Gestión pacientes</strong><span>Seguimiento de casos prioritarios para jefatura.</span></a></section></div>`;
   }
 
   function renderUrgencia() {
     activate("doctorsPage", "gestion", "Equipo Urgencia");
     const contentEl = $("#doctorsContent");
     if (!contentEl) return;
-    contentEl.innerHTML = `<div class="gf-shell"><div class="gf-route"><a class="back-link" href="#/inicio">Inicio</a><a class="back-link" href="#/gestion">Gestion</a></div><section class="gf-hero"><h2>Equipo Urgencia</h2><p>Accesos de lectura para el equipo durante el turno.</p><div class="gf-actions"><a class="document-button" href="#/especialidades">Flujos clinicos</a><a class="document-button" href="#/llamados">Especialistas / UHD</a><a class="document-button" href="#/visita">Visita diaria</a><a class="document-button" href="#/formularios">Formularios</a><a class="document-button" href="#/telefonos">Directorio</a></div></section></div>`;
+    contentEl.innerHTML = `<div class="gf-shell"><div class="gf-route"><a class="back-link" href="#/inicio">Inicio</a><a class="back-link" href="#/gestion">Gestión</a></div><section class="gf-hero"><h2>Equipo Urgencia</h2><p>Accesos de lectura para el equipo durante el turno.</p><div class="gf-actions"><a class="document-button" href="#/especialidades">Flujos clínicos</a><a class="document-button" href="#/llamados">Especialistas / UHD</a><a class="document-button" href="#/visita">Visita diaria</a><a class="document-button" href="#/formularios">Formularios</a><a class="document-button" href="#/telefonos">Directorio</a></div></section></div>`;
+    contentEl.dataset.gfReadyRoute = route();
+    notifyReady(route());
   }
 
   function renderJefaturaShell() {
@@ -172,10 +187,10 @@
     if (current === "#/gestion") return renderGestion();
     if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) return renderUrgencia();
     if (current === "#/jefatura") return renderJefaturaShell();
-    if (current === "#/noticias") return renderList("news", "Noticias", "Avisos y publicaciones vigentes con una tarjeta visual destacada.", "Aun no hay noticias publicadas.");
-    if (current === "#/educacion") return renderList("education", "Educacion medica", "Material docente publicado para el equipo.", "Aun no hay material docente publicado.", "educationPage", "educacion");
+    if (current === "#/noticias") return renderList("news", "Noticias", "Avisos y publicaciones vigentes.", "Aún no hay noticias publicadas.");
+    if (current === "#/educacion") return renderList("education", "Educación médica", "Material docente publicado para el equipo.", "Aún no hay material docente publicado.", "educationPage", "educacion");
     if (current === "#/paper") return renderPaper();
-    if (current === "#/procedimientos") return renderList("procedure", "Procedimientos medicos", "Repositorio visual de procedimientos y material practico.", "Aun no hay procedimientos publicados.");
+    if (current === "#/procedimientos") return renderList("procedure", "Procedimientos médicos", "Repositorio visual de procedimientos y material práctico.", "Aún no hay procedimientos publicados.");
   }
 
   let renderTimer = null;
