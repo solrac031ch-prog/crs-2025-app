@@ -8,25 +8,11 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   let timer = 0;
   let renderToken = 0;
+  let cachedChief = null;
+  let chiefPromise = null;
 
   function route() {
     return String(location.hash || "#/inicio").split("?")[0];
-  }
-
-  function loadUhdModule() {
-    if (!document.querySelector('link[data-gestion-uhd-style]')) {
-      const style = document.createElement("link");
-      style.rel = "stylesheet";
-      style.href = "./gestion-uhd-citados.css?v=1";
-      style.dataset.gestionUhdStyle = "true";
-      document.head.append(style);
-    }
-    if (!document.querySelector('script[data-gestion-uhd-module]')) {
-      const script = document.createElement("script");
-      script.src = "./gestion-uhd-citados.js?v=1";
-      script.dataset.gestionUhdModule = "true";
-      document.head.append(script);
-    }
   }
 
   function activateManagementPage() {
@@ -36,12 +22,28 @@
     });
   }
 
+  function notifyReady(detail) {
+    window.dispatchEvent(new CustomEvent("crs:ui-section-ready", { detail }));
+  }
+
+  function invalidateChief() {
+    cachedChief = null;
+    chiefPromise = null;
+  }
+
   async function chiefState() {
-    const api = window.CRS_PATIENT_CASES;
-    try {
-      await api?.refreshAuth?.();
-    } catch (_) {}
-    return Boolean(api?.isChief?.());
+    if (cachedChief !== null) return cachedChief;
+    if (chiefPromise) return chiefPromise;
+    chiefPromise = (async () => {
+      const api = window.CRS_PATIENT_CASES;
+      try {
+        await api?.refreshAuth?.();
+      } catch (_) {}
+      cachedChief = Boolean(api?.isChief?.());
+      chiefPromise = null;
+      return cachedChief;
+    })();
+    return chiefPromise;
   }
 
   function modeButton(mode, label, secondary = false) {
@@ -75,7 +77,10 @@
     if (!content) return;
 
     const stateKey = isChief ? "chief" : "doctor";
-    if (content.dataset.gestionProfiles === stateKey && content.querySelector(".gestion-profiles-shell")) return;
+    if (content.dataset.gestionProfiles === stateKey && content.querySelector(".gestion-profiles-shell")) {
+      notifyReady({ route: LANDING_ROUTE });
+      return;
+    }
     if (title) title.textContent = "Gestión de casos";
 
     const chiefActions = isChief
@@ -110,6 +115,7 @@
         ${uhdEntry(isChief)}
       </div>`;
     content.dataset.gestionProfiles = stateKey;
+    notifyReady({ route: LANDING_ROUTE });
   }
 
   function resetCaseLayout(shell) {
@@ -142,6 +148,7 @@
           </div>
         </section>
       </div>`;
+    notifyReady({ route: CASES_ROUTE, mode: "login" });
   }
 
   async function applyCaseMode() {
@@ -158,6 +165,12 @@
     const mode = requested === "nuevo" || requested === "revision"
       ? requested
       : (isChief ? "revision" : "nuevo");
+    const signature = `${mode}:${isChief ? "chief" : "doctor"}`;
+
+    if (shell.dataset.gestionModeReady === signature) {
+      notifyReady({ route: CASES_ROUTE, mode });
+      return;
+    }
 
     content.dataset.gestionReviewLogin = "false";
     resetCaseLayout(shell);
@@ -178,22 +191,24 @@
         if (heading) heading.textContent = "Revisión de solicitudes";
         if (text) text.textContent = "Seguimiento operativo de casos, responsables, resultados y cierre administrativo.";
       }
-      return;
+    } else {
+      Array.from(shell.children).forEach((child) => {
+        const keep = child.classList.contains("gestion-case-modebar") ||
+          child.classList.contains("route-actions") ||
+          child.classList.contains("patient-hero") ||
+          child === publicCard;
+        if (!keep) child.classList.add("gestion-mode-hidden");
+      });
+      if (hero) {
+        const heading = hero.querySelector("h2");
+        const text = hero.querySelector("p");
+        if (heading) heading.textContent = "Registrar caso nuevo";
+        if (text) text.textContent = "Formulario rápido para crear una solicitud de gestión ambulatoria prioritaria.";
+      }
     }
 
-    Array.from(shell.children).forEach((child) => {
-      const keep = child.classList.contains("gestion-case-modebar") ||
-        child.classList.contains("route-actions") ||
-        child.classList.contains("patient-hero") ||
-        child === publicCard;
-      if (!keep) child.classList.add("gestion-mode-hidden");
-    });
-    if (hero) {
-      const heading = hero.querySelector("h2");
-      const text = hero.querySelector("p");
-      if (heading) heading.textContent = "Registrar caso nuevo";
-      if (text) text.textContent = "Formulario rápido para crear una solicitud de gestión ambulatoria prioritaria.";
-    }
+    shell.dataset.gestionModeReady = signature;
+    notifyReady({ route: CASES_ROUTE, mode });
   }
 
   function renderCurrentRoute() {
@@ -201,9 +216,7 @@
       renderLanding().catch(console.error);
       return;
     }
-    if (route() === CASES_ROUTE) {
-      applyCaseMode().catch(console.error);
-    }
+    if (route() === CASES_ROUTE) applyCaseMode().catch(console.error);
   }
 
   function schedule(delay = 30) {
@@ -218,20 +231,37 @@
     if (!link.hasAttribute("data-gestion-uhd-review")) sessionStorage.removeItem(FILTER_KEY);
   }, true);
 
-  window.addEventListener("hashchange", () => schedule(20));
-  window.addEventListener("crs:supabase-ready", () => schedule(40));
-  window.addEventListener("crs:auth-changed", () => schedule(40));
+  function relevantMutation() {
+    const current = route();
+    const content = $("#managementContent");
+    if (!content) return false;
+    if (current === LANDING_ROUTE) return !content.querySelector(".gestion-profiles-shell");
+    if (current === CASES_ROUTE) {
+      const shell = content.querySelector(".patient-shell");
+      return Boolean(shell && !shell.dataset.gestionModeReady);
+    }
+    return false;
+  }
 
-  const observer = new MutationObserver((mutations) => {
-    if (!mutations.some((mutation) => mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) return;
-    if (route() === LANDING_ROUTE || route() === CASES_ROUTE) schedule(40);
+  const observer = new MutationObserver(() => {
+    if (relevantMutation()) schedule(20);
   });
 
   function start() {
-    loadUhdModule();
-    observer.observe(document.body, { childList: true, subtree: true });
+    const content = $("#managementContent");
+    if (content) observer.observe(content, { childList: true, subtree: true });
     schedule(10);
   }
+
+  window.addEventListener("hashchange", () => schedule(10));
+  window.addEventListener("crs:supabase-ready", () => {
+    invalidateChief();
+    schedule(20);
+  });
+  window.addEventListener("crs:auth-changed", () => {
+    invalidateChief();
+    schedule(20);
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start, { once: true });
