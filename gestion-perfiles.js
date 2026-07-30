@@ -1,6 +1,8 @@
 (() => {
   const MODE_KEY = "crsGestionCasesModeV1";
+  const FILTER_KEY = "crsGestionCasesFilterV1";
   const CASES_ROUTE = "#/gestion/pacientes";
+  const UHD_ROUTE = "#/gestion/uhd-citados";
   const LANDING_ROUTE = "#/gestion";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -9,6 +11,22 @@
 
   function route() {
     return String(location.hash || "#/inicio").split("?")[0];
+  }
+
+  function loadUhdModule() {
+    if (!document.querySelector('link[data-gestion-uhd-style]')) {
+      const style = document.createElement("link");
+      style.rel = "stylesheet";
+      style.href = "./gestion-uhd-citados.css?v=1";
+      style.dataset.gestionUhdStyle = "true";
+      document.head.append(style);
+    }
+    if (!document.querySelector('script[data-gestion-uhd-module]')) {
+      const script = document.createElement("script");
+      script.src = "./gestion-uhd-citados.js?v=1";
+      script.dataset.gestionUhdModule = "true";
+      document.head.append(script);
+    }
   }
 
   function activateManagementPage() {
@@ -28,6 +46,21 @@
 
   function modeButton(mode, label, secondary = false) {
     return `<a class="gestion-profile-button${secondary ? " secondary" : ""}" href="${CASES_ROUTE}" data-gestion-cases-mode="${mode}">${label}</a>`;
+  }
+
+  function uhdEntry(isChief) {
+    return `
+      <section class="gestion-uhd-entry" aria-label="Citaciones para UHD">
+        <div class="gestion-uhd-entry-copy">
+          <span>UHD · citación para el día siguiente</span>
+          <strong>Registrar pacientes que volverán en la mañana</strong>
+          <p>Solo para residentes de San Ramón, La Pintana o La Granja.</p>
+        </div>
+        <div class="gestion-uhd-entry-actions">
+          <a class="gestion-profile-button" href="${UHD_ROUTE}">Registrar citado UHD</a>
+          ${isChief ? `<a class="gestion-profile-button secondary" href="${CASES_ROUTE}" data-gestion-cases-mode="revision" data-gestion-uhd-review="today">Revisar citados de hoy</a>` : ""}
+        </div>
+      </section>`;
   }
 
   async function renderLanding() {
@@ -74,6 +107,7 @@
             ${chiefActions}
           </article>
         </section>
+        ${uhdEntry(isChief)}
       </div>`;
     content.dataset.gestionProfiles = stateKey;
   }
@@ -181,6 +215,7 @@
     const link = event.target.closest?.("[data-gestion-cases-mode]");
     if (!link) return;
     sessionStorage.setItem(MODE_KEY, link.dataset.gestionCasesMode || "nuevo");
+    if (!link.hasAttribute("data-gestion-uhd-review")) sessionStorage.removeItem(FILTER_KEY);
   }, true);
 
   window.addEventListener("hashchange", () => schedule(20));
@@ -193,6 +228,7 @@
   });
 
   function start() {
+    loadUhdModule();
     observer.observe(document.body, { childList: true, subtree: true });
     schedule(10);
   }
