@@ -7,6 +7,7 @@
   const UHD_SCOPE_KEY = "crsPatientUhdScopeV2";
   const DOCTOR_KEY = "crsGestionDoctorShiftV1";
   const ALLOWED_COMMUNES = new Set(["San Ramón", "La Pintana", "La Granja"]);
+  const YES_NO = new Set(["Sí", "No"]);
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   let timer = 0;
@@ -65,6 +66,16 @@
     sessionStorage.setItem(DOCTOR_KEY, JSON.stringify({ name, rut }));
   }
 
+  function binaryQuestion(name, question) {
+    return `<fieldset class="uhd-screening-question full">
+      <legend>${question}</legend>
+      <div class="uhd-binary-options">
+        <label><input type="radio" name="${name}" value="Sí" required><span>Sí</span></label>
+        <label><input type="radio" name="${name}" value="No" required><span>No</span></label>
+      </div>
+    </fieldset>`;
+  }
+
   function formHtml() {
     const doctor = storedDoctor();
     const date = tomorrowISO();
@@ -98,6 +109,12 @@
             <label class="full">Dirección<input name="address" required autocomplete="off" placeholder="Calle, número, villa o población"></label>
             <label>Comuna<select name="commune" required><option value="">Seleccionar</option><option>San Ramón</option><option>La Pintana</option><option>La Granja</option></select></label>
             <label class="full">¿Qué necesita el paciente de UHD?<textarea name="need" required placeholder="Ej: antibiótico EV, curaciones, control clínico, oxigenoterapia..."></textarea></label>
+            <div class="uhd-screening-head full">
+              <strong>Criterios sociales para evaluación UHD</strong>
+              <span>Ambas respuestas son obligatorias y quedarán visibles en el seguimiento.</span>
+            </div>
+            ${binaryQuestion("drugUseAtHome", "¿El paciente consume drogas o vive con alguien que consume drogas?")}
+            ${binaryQuestion("hasCaregiver", "¿El paciente cuenta con una persona que pueda cuidarlo en el domicilio?")}
           </div>
           <details class="uhd-doctor-details" ${doctor ? "" : "open"}>
             <summary>${doctor ? `Médico solicitante: ${esc(doctor.name)} · cambiar` : "Identificación del médico solicitante"}</summary>
@@ -147,12 +164,18 @@
     const address = String(data.get("address") || "").trim();
     const commune = String(data.get("commune") || "").trim();
     const need = String(data.get("need") || "").trim();
+    const drugUseAtHome = String(data.get("drugUseAtHome") || "").trim();
+    const hasCaregiver = String(data.get("hasCaregiver") || "").trim();
     const doctorName = String(data.get("doctorName") || "").trim();
     const doctorRut = String(data.get("doctorRut") || "").trim();
     const presentationDate = String(data.get("presentationDate") || tomorrowISO()).trim();
 
     if (!ALLOWED_COMMUNES.has(commune)) throw new Error("UHD solo recibe pacientes de San Ramón, La Pintana y La Granja.");
+    if (!YES_NO.has(drugUseAtHome) || !YES_NO.has(hasCaregiver)) {
+      throw new Error("Responde las dos preguntas de criterios sociales para UHD.");
+    }
 
+    const socialCriteria = `Consumo de drogas en paciente o conviviente: ${drugUseAtHome}. Cuidador disponible: ${hasCaregiver}.`;
     const item = {
       tipo_solicitud: "UHD",
       paciente: patientName,
@@ -160,8 +183,8 @@
       ubicacion: `${address}, ${commune}`,
       flujo: "UHD - Citado para evaluación",
       motivo: "Paciente dado de alta y citado para presentar a UHD al día siguiente",
-      resumen_clinico: need,
-      gestion_solicitada: `Fecha de presentación UHD: ${presentationDate}. Necesidad: ${need}`,
+      resumen_clinico: `${need}. ${socialCriteria}`,
+      gestion_solicitada: `Fecha de presentación UHD: ${presentationDate}. Necesidad: ${need}. ${socialCriteria}`,
       prioridad: "Alta",
       origen: "MASTER Urgencias HPH - Citación UHD",
       estado: "Pendiente",
@@ -169,6 +192,7 @@
       proximo_paso: `Paciente citado para presentarse a UHD el ${presentationDate}`,
       responsable: "UHD / turno entrante",
       fecha_compromiso: presentationDate,
+      observaciones: `Criterios sociales UHD — ${socialCriteria}`,
       medico_solicitante: doctorName,
       rut_medico: doctorRut,
       registrado_por: doctorName
