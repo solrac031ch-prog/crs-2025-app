@@ -24,13 +24,11 @@
   function jefaturaReady() {
     const shell = document.querySelector("#chiefContent [data-crs-access-shell]");
     if (!shell) return false;
-    if (shell.classList.contains("jefatura-login-clean")) return true;
-    if (shell.querySelector(".crs-access-error,.crs-access-warn")) return true;
-    if (shell.dataset.jefaturaOrganized !== "true") return false;
-
-    const loading = Array.from(shell.querySelectorAll("[data-crs-global-list] .crs-access-mini,[data-crs-admin-list] .crs-access-mini"))
-      .some((node) => /cargando/i.test(String(node.textContent || "")));
-    return !loading;
+    return Boolean(
+      shell.dataset.jefaturaOrganized === "true" ||
+      shell.classList.contains("jefatura-login-clean") ||
+      shell.querySelector(".crs-access-error,.crs-access-warn")
+    );
   }
 
   function publicPageReady(current) {
@@ -62,14 +60,14 @@
     window.clearTimeout(fallbackTimer);
   }
 
-  function tryReveal(delay = 60) {
+  function tryReveal(delay = 12) {
     const token = routeToken;
     window.clearTimeout(settleTimer);
     settleTimer = window.setTimeout(() => {
       if (token !== routeToken) return;
       const current = route();
       if (!DYNAMIC_ROUTES.has(current) || isReady(current)) {
-        requestAnimationFrame(() => requestAnimationFrame(() => reveal(token)));
+        requestAnimationFrame(() => reveal(token));
       }
     }, delay);
   }
@@ -88,12 +86,12 @@
 
     document.documentElement.dataset.uiStabilizing = "true";
     document.documentElement.dataset.uiReadyRoute = "";
-    tryReveal(40);
-    fallbackTimer = window.setTimeout(() => reveal(token), 1800);
+    tryReveal(8);
+    fallbackTimer = window.setTimeout(() => reveal(token), 650);
   }
 
   const observer = new MutationObserver(() => {
-    if (document.documentElement.dataset.uiStabilizing === "true") tryReveal(80);
+    if (document.documentElement.dataset.uiStabilizing === "true") tryReveal(18);
   });
 
   function start() {
@@ -103,8 +101,8 @@
   }
 
   window.addEventListener("hashchange", stage, true);
-  window.addEventListener("crs:ui-section-ready", () => tryReveal(30));
-  window.addEventListener("crs:supabase-ready", () => tryReveal(50));
+  window.addEventListener("crs:ui-section-ready", () => tryReveal(4));
+  window.addEventListener("crs:supabase-ready", () => tryReveal(8));
   window.addEventListener("crs:auth-changed", () => {
     if (route() === "#/jefatura" || route().startsWith("#/gestion")) stage();
   });
