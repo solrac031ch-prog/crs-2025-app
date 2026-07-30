@@ -81,12 +81,12 @@
   async function ensureManagement() {
     await Promise.all([
       loadStyle("gestion-perfiles", "./gestion-perfiles.css", 1),
-      loadStyle("gestion-uhd", "./gestion-uhd-citados.css", 2),
+      loadStyle("gestion-uhd", "./gestion-uhd-citados.css", 3),
       ensureSupabase()
     ]);
     await Promise.all([
       loadScript("gestion-perfiles", "./gestion-perfiles.js", 5),
-      loadScript("gestion-uhd", "./gestion-uhd-citados.js", 5)
+      loadScript("gestion-uhd", "./gestion-uhd-citados.js", 6)
     ]);
   }
 
