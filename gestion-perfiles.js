@@ -42,7 +42,7 @@
     if (!content) return;
 
     const stateKey = isChief ? "chief" : "doctor";
-    if (content.dataset.gestionProfiles === stateKey) return;
+    if (content.dataset.gestionProfiles === stateKey && content.querySelector(".gestion-profiles-shell")) return;
     if (title) title.textContent = "Gestión de casos";
 
     const chiefActions = isChief
