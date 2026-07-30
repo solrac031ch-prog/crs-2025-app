@@ -108,11 +108,11 @@
 
   async function ensurePublicContent() {
     await Promise.all([
-      loadStyle("gestion-panel-final", "./gestion-panel-final.css", 1),
+      loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2),
       loadScript("contenido-web", "./contenido-web.js", 2),
       ensureSupabase()
     ]);
-    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 13);
+    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
   }
 
   async function ensureForms(current) {
@@ -144,8 +144,8 @@
       if (current === "#/especialidades" || current.startsWith("#/especialidad/")) return ensureClinicalProtocols(current);
       if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent();
       if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
-        await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 1);
-        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 13);
+        await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2);
+        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
       }
       if (current === "#/llamados") return ensureSupabase();
       return undefined;
