@@ -70,6 +70,14 @@
     await loadScript("supabase-backend", "./supabase-backend.js", 8);
   }
 
+  async function ensureClinicalProtocols(current) {
+    await Promise.all([
+      loadScript("protocolos-2026-ajustes", "./protocolos-2026-ajustes.js", 4),
+      loadScript("protocolos-agiles", "./protocolos-agiles.js", 6),
+      current === "#/especialidades" ? ensureSupabase() : Promise.resolve()
+    ]);
+  }
+
   async function ensureManagement() {
     await Promise.all([
       loadStyle("gestion-perfiles", "./gestion-perfiles.css", 1),
@@ -89,11 +97,13 @@
       loadStyle("jefatura-centro", "./jefatura-centro-gestion.css", 2),
       ensureSupabase()
     ]);
-    await loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 16, {
-      "data-supabase-jefatura-panel": true
-    });
-    await loadScript("supabase-admin-users", "./supabase-admin-users.js", 6);
-    await loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 4);
+    await Promise.all([
+      loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 16, {
+        "data-supabase-jefatura-panel": true
+      }),
+      loadScript("supabase-admin-users", "./supabase-admin-users.js", 6),
+      loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 4)
+    ]);
   }
 
   async function ensurePublicContent() {
@@ -131,12 +141,13 @@
       if (current === "#/gestion" || current.startsWith("#/gestion/")) return ensureManagement();
       if (current === "#/formularios" || current.startsWith("#/formularios/")) return ensureForms(current);
       if (current === "#/telefonos") return ensurePhoneDirectory();
+      if (current === "#/especialidades" || current.startsWith("#/especialidad/")) return ensureClinicalProtocols(current);
       if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent();
       if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
         await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 1);
         return loadScript("gestion-panel-final", "./gestion-panel-final.js", 13);
       }
-      if (["#/especialidades", "#/llamados"].includes(current)) return ensureSupabase();
+      if (current === "#/llamados") return ensureSupabase();
       return undefined;
     })().catch((error) => {
       routePromises.delete(current);
