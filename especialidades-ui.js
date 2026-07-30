@@ -1,31 +1,26 @@
 (() => {
   const SPECIALTIES_ROUTE = "#/especialidades";
+  const PROTOCOL_PREFIX = "#/especialidad/";
   let loadingPromise = null;
-  let refreshTimer = 0;
 
   function currentRoute() {
     return String(location.hash || "#/inicio").split("?")[0];
   }
 
-  function requestRefresh(attempt = 0) {
-    window.clearTimeout(refreshTimer);
-    refreshTimer = window.setTimeout(() => {
-      if (currentRoute() !== SPECIALTIES_ROUTE) return;
-      const page = document.querySelector("#specialtiesPage.active");
-      const input = document.querySelector("#searchInput");
-      const results = document.querySelector("#specialtyGroups");
-      if (page && input && results?.children.length) {
-        input.dispatchEvent(new Event("input", { bubbles: true }));
-        return;
-      }
-      if (attempt < 6) requestRefresh(attempt + 1);
-    }, attempt === 0 ? 0 : Math.min(60 * attempt, 240));
+  function isSupportedRoute() {
+    const route = currentRoute();
+    return route === SPECIALTIES_ROUTE || route.startsWith(PROTOCOL_PREFIX);
+  }
+
+  function refresh() {
+    if (!isSupportedRoute()) return;
+    window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
   }
 
   function loadStableSpecialties() {
-    if (currentRoute() !== SPECIALTIES_ROUTE) return Promise.resolve();
-    if (window.__CRS_ESPECIALIDADES_ESTABLE_LOADED__) {
-      requestRefresh();
+    if (!isSupportedRoute()) return Promise.resolve();
+    if (window.CRS_ESPECIALIDADES_ESTABLE) {
+      refresh();
       return Promise.resolve();
     }
     if (loadingPromise) return loadingPromise;
@@ -33,12 +28,11 @@
     const existing = document.querySelector("script[data-especialidades-estable]");
     loadingPromise = new Promise((resolve, reject) => {
       const script = existing || document.createElement("script");
-      script.src = "./especialidades-estable.js?v=3";
+      script.src = "./especialidades-estable.js?v=4";
       script.async = true;
       script.dataset.especialidadesEstable = "true";
       script.onload = () => {
-        window.__CRS_ESPECIALIDADES_ESTABLE_LOADED__ = true;
-        requestRefresh();
+        refresh();
         resolve();
       };
       script.onerror = () => {
@@ -52,20 +46,8 @@
     return loadingPromise;
   }
 
-  function scheduleLoad() {
-    if (currentRoute() !== SPECIALTIES_ROUTE) return;
-    loadStableSpecialties().catch(console.error);
-  }
-
   window.CRS_SPECIALTIES_UI = Object.freeze({
     load: loadStableSpecialties,
-    refresh: requestRefresh
+    refresh
   });
-
-  window.addEventListener("hashchange", scheduleLoad);
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", scheduleLoad, { once: true });
-  } else {
-    scheduleLoad();
-  }
 })();
