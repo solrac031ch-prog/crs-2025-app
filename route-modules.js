@@ -53,7 +53,11 @@
         script.dataset.crsLoaded = "true";
         resolve(script);
       };
-      script.onerror = () => reject(new Error(`No se pudo cargar ${path}`));
+      script.onerror = () => {
+        scriptPromises.delete(key);
+        script.remove();
+        reject(new Error(`No se pudo cargar ${path}`));
+      };
       if (!existing) document.body.append(script);
     });
 
@@ -101,11 +105,17 @@
     await loadScript("gestion-panel-final", "./gestion-panel-final.js", 13);
   }
 
-  async function ensureForms() {
+  async function ensureForms(current) {
     await Promise.all([
       loadScript("app-forms", "./app-forms.js", 2),
       ensureSupabase()
     ]);
+    await loadScript("arsenal-form-entry", "./arsenal-form-entry.js", 1);
+
+    if (current === "#/formularios/arsenal-terapeutico") {
+      await loadScript("arsenal-terapeutico", "./arsenal-terapeutico.js", 2);
+      await loadScript("arsenal-uso-ocasional", "./arsenal-uso-ocasional.js", 2);
+    }
   }
 
   async function ensurePhoneDirectory() {
@@ -119,7 +129,7 @@
     const promise = (async () => {
       if (current === "#/jefatura") return ensureJefatura();
       if (current === "#/gestion" || current.startsWith("#/gestion/")) return ensureManagement();
-      if (current === "#/formularios" || current.startsWith("#/formularios/")) return ensureForms();
+      if (current === "#/formularios" || current.startsWith("#/formularios/")) return ensureForms(current);
       if (current === "#/telefonos") return ensurePhoneDirectory();
       if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent();
       if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
@@ -129,6 +139,7 @@
       if (["#/especialidades", "#/llamados"].includes(current)) return ensureSupabase();
       return undefined;
     })().catch((error) => {
+      routePromises.delete(current);
       console.error("No se pudo preparar la sección solicitada", error);
       throw error;
     });
