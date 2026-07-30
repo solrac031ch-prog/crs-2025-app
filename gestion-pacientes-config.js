@@ -1,5 +1,5 @@
 window.CRS_PATIENT_CASES_CONFIG = Object.freeze({
-  appsScriptUrl: "https://script.google.com/macros/s/AKfycbyoWv7y_zH3V29SrOp3UbjHEZnX4Li65CSk0hO_n2Yu5dCyLZ0CAiN-F7UIHwz2aIUJ/exec"
+  appsScriptUrl: "https://script.google.com/macros/s/AKfycbx8aOAwVisgpiQnfK8vew6O6Vv8rv9oq31CwtUw_jFSD-8r12M6vv94p-gXXN4SXFOt/exec"
 });
 
 (() => {
