@@ -106,13 +106,16 @@
     ]);
   }
 
-  async function ensurePublicContent() {
+  async function ensurePublicContent(current) {
+    const educationRoute = current === "#/educacion";
     await Promise.all([
       loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2),
-      loadScript("contenido-web", "./contenido-web.js", 2),
+      loadScript("contenido-web", "./contenido-web.js", 3),
+      educationRoute ? loadStyle("educacion-uniforme", "./educacion-uniforme.css", 1) : Promise.resolve(),
       ensureSupabase()
     ]);
     await loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
+    if (educationRoute) await loadScript("educacion-uniforme", "./educacion-uniforme.js", 1);
   }
 
   async function ensureForms(current) {
@@ -142,7 +145,7 @@
       if (current === "#/formularios" || current.startsWith("#/formularios/")) return ensureForms(current);
       if (current === "#/telefonos") return ensurePhoneDirectory();
       if (current === "#/especialidades" || current.startsWith("#/especialidad/")) return ensureClinicalProtocols(current);
-      if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent();
+      if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent(current);
       if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
         await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2);
         return loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
