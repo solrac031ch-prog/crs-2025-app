@@ -1,11 +1,7 @@
 html[data-ui-stabilizing="true"] #managementContent,
 html[data-ui-stabilizing="true"] #chiefContent,
 html[data-ui-stabilizing="true"] #educationContent,
-html[data-ui-stabilizing="true"] #doctorsContent,
-html[data-ui-stabilizing="true"] #turnFormsList,
-html[data-ui-stabilizing="true"] #phonesContent,
-html[data-ui-stabilizing="true"] #specialtyGroups,
-html[data-ui-stabilizing="true"] #protocolDetail {
+html[data-ui-stabilizing="true"] #doctorsContent {
   visibility: hidden;
   opacity: 0;
 }
@@ -13,48 +9,46 @@ html[data-ui-stabilizing="true"] #protocolDetail {
 #managementContent,
 #chiefContent,
 #educationContent,
-#doctorsContent,
-#turnFormsList,
-#phonesContent,
-#specialtyGroups,
-#protocolDetail {
-  min-height: 220px;
-  transition: opacity .12s ease;
+#doctorsContent {
+  min-height: 150px;
+  transition: opacity .08s ease;
 }
 
 #managementPage.active,
 #chiefPage.active,
 #educationPage.active,
 #doctorsPage.active {
-  min-height: 70vh;
+  min-height: 62vh;
 }
 
 html[data-ui-stabilizing="true"] #managementPage.active::after,
 html[data-ui-stabilizing="true"] #chiefPage.active::after,
 html[data-ui-stabilizing="true"] #educationPage.active::after,
 html[data-ui-stabilizing="true"] #doctorsPage.active::after {
-  content: "Cargando…";
+  content: "Abriendo…";
   display: block;
-  width: min(520px, 100%);
-  margin: 18px auto 0;
-  padding: 18px;
-  border: 1px solid #dce7e2;
-  border-radius: 14px;
-  background: #f8fbfa;
-  color: #52615c;
+  width: min(360px, 100%);
+  margin: 10px auto 0;
+  padding: 12px 14px;
+  border: 1px solid #e4ece8;
+  border-radius: 12px;
+  background: #fbfdfc;
+  color: #64748b;
+  font-size: .9rem;
   font-weight: 800;
   text-align: center;
+}
+
+[data-crs-global-list],
+[data-crs-admin-list] {
+  min-height: 44px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   #managementContent,
   #chiefContent,
   #educationContent,
-  #doctorsContent,
-  #turnFormsList,
-  #phonesContent,
-  #specialtyGroups,
-  #protocolDetail {
+  #doctorsContent {
     transition: none;
   }
 }
