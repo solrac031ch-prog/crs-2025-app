@@ -15,7 +15,8 @@
   const OLD_ROUTES = {
     "#/gestion/noticias": "#/noticias",
     "#/gestion/educacion": "#/educacion",
-    "#/gestion/paper": "#/paper"
+    "#/gestion/paper": "#/paper",
+    "#/gestion/procedimientos": "#/procedimientos"
   };
 
   const VISUALS = {
@@ -83,6 +84,10 @@
     return [...items].sort((a, b) => String(b.createdAt || b.month || "").localeCompare(String(a.createdAt || a.month || "")));
   }
 
+  function sortProcedures(items = []) {
+    return [...items].sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "es", { sensitivity: "base" }));
+  }
+
   function staticContent(kind) {
     const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
     return sortItems(window.CRS_STATIC_CONTENT?.[staticKey] || []);
@@ -132,6 +137,21 @@
       : `<div class="gf-empty">${esc(empty)}</div>`;
   }
 
+  function educationBody(items) {
+    return `<section class="gf-education-entry"><div><span>Videos prácticos</span><strong>Procedimientos de urgencias</strong></div><a class="document-button" href="#/procedimientos">Ver procedimientos</a></section>${listBody(items, "education", "Aún no hay material docente publicado.")}`;
+  }
+
+  function procedureBody(items) {
+    const procedures = sortProcedures(items).filter((item) => item.title);
+    if (!procedures.length) return `<div class="gf-empty">Aún no hay procedimientos publicados.</div>`;
+    return `<section class="gf-procedure-list" aria-label="Procedimientos de urgencias">${procedures.map((item) => {
+      const href = item.eventUrl || item.url || "";
+      return href
+        ? `<a class="gf-procedure-button" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(item.title)}</a>`
+        : `<span class="gf-procedure-button disabled" aria-disabled="true">${esc(item.title)}</span>`;
+    }).join("")}</section>`;
+  }
+
   function paperBody(papers) {
     const latest = papers[0];
     const older = papers.slice(1);
@@ -171,6 +191,36 @@
     const remoteFingerprint = fingerprint(remote);
     if (remoteFingerprint !== initialFingerprint) {
       pageShell(title, text, listBody(remote, kind, empty), pageId, activeRoute, remoteFingerprint);
+    }
+  }
+
+  async function renderEducation() {
+    const expectedRoute = route();
+    const initial = readCache("education") || staticContent("education");
+    const initialFingerprint = fingerprint(initial);
+    pageShell("Educación médica", "Material docente publicado para el equipo.", educationBody(initial), "educationPage", "educacion", `education:${initialFingerprint}`);
+
+    const remote = await remoteContent("education");
+    if (route() !== expectedRoute || !remote) return;
+    writeCache("education", remote);
+    const remoteFingerprint = fingerprint(remote);
+    if (remoteFingerprint !== initialFingerprint) {
+      pageShell("Educación médica", "Material docente publicado para el equipo.", educationBody(remote), "educationPage", "educacion", `education:${remoteFingerprint}`);
+    }
+  }
+
+  async function renderProcedures() {
+    const expectedRoute = route();
+    const initial = readCache("procedure") || staticContent("procedure");
+    const initialFingerprint = fingerprint(initial);
+    pageShell("Procedimientos de urgencias", "Videos publicados desde el Centro de Gestión Jefatura.", procedureBody(initial), "managementPage", "", `procedure:${initialFingerprint}`);
+
+    const remote = await remoteContent("procedure");
+    if (route() !== expectedRoute || !remote) return;
+    writeCache("procedure", remote);
+    const remoteFingerprint = fingerprint(remote);
+    if (remoteFingerprint !== initialFingerprint) {
+      pageShell("Procedimientos de urgencias", "Videos publicados desde el Centro de Gestión Jefatura.", procedureBody(remote), "managementPage", "", `procedure:${remoteFingerprint}`);
     }
   }
 
@@ -225,9 +275,9 @@
     if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) return renderUrgencia();
     if (current === "#/jefatura") return renderJefaturaShell();
     if (current === "#/noticias") return renderList("news", "Noticias", "Avisos y publicaciones vigentes.", "Aún no hay noticias publicadas.");
-    if (current === "#/educacion") return renderList("education", "Educación médica", "Material docente publicado para el equipo.", "Aún no hay material docente publicado.", "educationPage", "educacion");
+    if (current === "#/educacion") return renderEducation();
     if (current === "#/paper") return renderPaper();
-    if (current === "#/procedimientos") return renderList("procedure", "Procedimientos médicos", "Repositorio visual de procedimientos y material práctico.", "Aún no hay procedimientos publicados.");
+    if (current === "#/procedimientos") return renderProcedures();
   }
 
   let renderTimer = 0;
