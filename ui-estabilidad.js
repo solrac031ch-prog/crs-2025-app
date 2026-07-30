@@ -13,13 +13,34 @@
     "#/equipo-urgencia"
   ]);
 
+  const ROUTE_PROFILE = Object.freeze({
+    "#/gestion": { minHold: 100, fallback: 3000 },
+    "#/gestion/pacientes": { minHold: 120, fallback: 10000 },
+    "#/gestion/uhd-citados": { minHold: 100, fallback: 3500 },
+    "#/jefatura": { minHold: 280, fallback: 7000 },
+    "#/noticias": { minHold: 480, fallback: 5000 },
+    "#/educacion": { minHold: 520, fallback: 5000 },
+    "#/paper": { minHold: 480, fallback: 5000 },
+    "#/procedimientos": { minHold: 480, fallback: 5000 },
+    "#/urgencia": { minHold: 120, fallback: 3000 },
+    "#/medicos": { minHold: 120, fallback: 3000 },
+    "#/equipo-urgencia": { minHold: 120, fallback: 3000 }
+  });
+
   const UHD_SCOPE_KEY = "crsPatientUhdScopeV2";
+  const QUIET_WINDOW = 72;
   let settleTimer = 0;
   let fallbackTimer = 0;
   let routeToken = 0;
+  let stagedAt = 0;
+  let lastMutationAt = 0;
 
   function route() {
     return String(location.hash || "#/inicio").split("?")[0];
+  }
+
+  function profile(current = route()) {
+    return ROUTE_PROFILE[current] || { minHold: 100, fallback: 4000 };
   }
 
   function jefaturaReady() {
@@ -36,21 +57,23 @@
     const active = document.querySelector(".page.active");
     const content = active?.querySelector("#managementContent,#educationContent,#doctorsContent");
     if (!content || content.dataset.gfReadyRoute !== current) return false;
-    const selector = current === "#/educacion"
-      ? ".edu-uniform-shell,.gf-shell"
-      : ".gf-shell";
-    return Boolean(content.querySelector(selector));
+    if (current === "#/educacion") return Boolean(content.querySelector(".edu-uniform-shell"));
+    return Boolean(content.querySelector(".gf-shell"));
   }
 
   function isReady(current) {
-    if (current === "#/gestion") return Boolean(document.querySelector("#managementContent .gestion-profiles-shell"));
+    if (current === "#/gestion") {
+      return Boolean(document.querySelector("#managementContent .gestion-profiles-shell"));
+    }
     if (current === "#/gestion/pacientes") {
       return Boolean(
         document.querySelector("#managementContent .patient-shell[data-gestion-mode-ready]") ||
         document.querySelector("#managementContent[data-gestion-review-login='true'] .gestion-profiles-shell")
       );
     }
-    if (current === "#/gestion/uhd-citados") return Boolean(document.querySelector("#managementContent [data-uhd-citation-form]"));
+    if (current === "#/gestion/uhd-citados") {
+      return Boolean(document.querySelector("#managementContent [data-uhd-citation-form]"));
+    }
     if (current === "#/jefatura") return jefaturaReady();
     if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos", "#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
       return publicPageReady(current);
@@ -58,23 +81,46 @@
     return true;
   }
 
-  function reveal(token = routeToken) {
-    if (token !== routeToken) return;
-    document.documentElement.dataset.uiStabilizing = "false";
-    document.documentElement.dataset.uiReadyRoute = route();
-    window.clearTimeout(fallbackTimer);
+  function afterLayoutSettles(callback) {
+    requestAnimationFrame(() => requestAnimationFrame(callback));
   }
 
-  function tryReveal(delay = 10) {
+  function reveal(token = routeToken, timedOut = false) {
+    if (token !== routeToken) return;
+    window.clearTimeout(settleTimer);
+    window.clearTimeout(fallbackTimer);
+    document.documentElement.dataset.uiStabilizing = "false";
+    document.documentElement.dataset.uiReadyRoute = route();
+    document.documentElement.dataset.uiTimedOut = timedOut ? "true" : "false";
+  }
+
+  function tryReveal(delay = 0) {
     const token = routeToken;
     window.clearTimeout(settleTimer);
     settleTimer = window.setTimeout(() => {
       if (token !== routeToken) return;
       const current = route();
-      if (!DYNAMIC_ROUTES.has(current) || isReady(current)) {
-        requestAnimationFrame(() => reveal(token));
+      if (!DYNAMIC_ROUTES.has(current)) {
+        reveal(token);
+        return;
       }
-    }, delay);
+      if (!isReady(current)) return;
+
+      const now = performance.now();
+      const settings = profile(current);
+      const holdRemaining = Math.max(0, settings.minHold - (now - stagedAt));
+      const quietRemaining = Math.max(0, QUIET_WINDOW - (now - lastMutationAt));
+      const wait = Math.max(holdRemaining, quietRemaining);
+      if (wait > 0) {
+        tryReveal(wait + 4);
+        return;
+      }
+
+      afterLayoutSettles(() => {
+        if (token !== routeToken || route() !== current || !isReady(current)) return;
+        reveal(token);
+      });
+    }, Math.max(0, delay));
   }
 
   function stage() {
@@ -95,14 +141,22 @@
       return;
     }
 
+    stagedAt = performance.now();
+    lastMutationAt = stagedAt;
     document.documentElement.dataset.uiStabilizing = "true";
     document.documentElement.dataset.uiReadyRoute = "";
-    tryReveal(6);
-    fallbackTimer = window.setTimeout(() => reveal(token), 320);
+    document.documentElement.dataset.uiTimedOut = "false";
+    tryReveal(8);
+
+    fallbackTimer = window.setTimeout(() => {
+      if (token !== routeToken) return;
+      afterLayoutSettles(() => reveal(token, true));
+    }, profile(current).fallback);
   }
 
   const observer = new MutationObserver(() => {
-    if (document.documentElement.dataset.uiStabilizing === "true") tryReveal(12);
+    lastMutationAt = performance.now();
+    if (document.documentElement.dataset.uiStabilizing === "true") tryReveal(QUIET_WINDOW);
   });
 
   function start() {
@@ -118,8 +172,8 @@
   }, true);
 
   window.addEventListener("hashchange", stage, true);
-  window.addEventListener("crs:ui-section-ready", () => tryReveal(2));
-  window.addEventListener("crs:supabase-ready", () => tryReveal(5));
+  window.addEventListener("crs:ui-section-ready", () => tryReveal(QUIET_WINDOW));
+  window.addEventListener("crs:supabase-ready", () => tryReveal(QUIET_WINDOW));
   window.addEventListener("crs:auth-changed", () => {
     if (route() === "#/jefatura" || route().startsWith("#/gestion")) stage();
   });
