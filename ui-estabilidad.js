@@ -1,5 +1,6 @@
 (() => {
   const DYNAMIC_ROUTES = new Set([
+    "#/especialidades",
     "#/gestion",
     "#/gestion/pacientes",
     "#/gestion/uhd-citados",
@@ -14,6 +15,7 @@
   ]);
 
   const ROUTE_PROFILE = Object.freeze({
+    "#/especialidades": { minHold: 240, fallback: 6000 },
     "#/gestion": { minHold: 100, fallback: 3000 },
     "#/gestion/pacientes": { minHold: 120, fallback: 10000 },
     "#/gestion/uhd-citados": { minHold: 100, fallback: 3500 },
@@ -43,6 +45,17 @@
     return ROUTE_PROFILE[current] || { minHold: 100, fallback: 4000 };
   }
 
+  function specialtiesReady() {
+    const page = document.querySelector("#specialtiesPage.active.specialty-stable");
+    if (!page) return false;
+    return Boolean(
+      page.querySelector(".specialty-lift-hero") &&
+      page.querySelector("#specialtyShortcutPanel") &&
+      page.querySelector("#specialtyFocusCard") &&
+      page.querySelector("#specialtyGroups .specialty-card-upgraded")
+    );
+  }
+
   function jefaturaReady() {
     const shell = document.querySelector("#chiefContent [data-crs-access-shell]");
     if (!shell) return false;
@@ -62,6 +75,7 @@
   }
 
   function isReady(current) {
+    if (current === "#/especialidades") return specialtiesReady();
     if (current === "#/gestion") {
       return Boolean(document.querySelector("#managementContent .gestion-profiles-shell"));
     }
