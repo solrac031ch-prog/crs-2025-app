@@ -13,6 +13,10 @@
     return String(location.hash || "#/inicio").split("?")[0];
   }
 
+  function notifyReady(detail) {
+    window.dispatchEvent(new CustomEvent("crs:ui-section-ready", { detail }));
+  }
+
   function esc(value) {
     return String(value || "")
       .replaceAll("&", "&amp;")
@@ -119,9 +123,11 @@
     if (!content) return;
     const date = tomorrowISO();
     if (title) title.textContent = "Citación para UHD";
-    if (content.dataset.uhdFormReady === date && content.querySelector("[data-uhd-citation-form]")) return;
-    content.innerHTML = formHtml();
-    content.dataset.uhdFormReady = date;
+    if (content.dataset.uhdFormReady !== date || !content.querySelector("[data-uhd-citation-form]")) {
+      content.innerHTML = formHtml();
+      content.dataset.uhdFormReady = date;
+    }
+    notifyReady({ route: UHD_ROUTE });
   }
 
   function setStatus(form, text, error = false) {
@@ -228,6 +234,7 @@
       if (text) text.textContent = "Pacientes dados de alta y citados para presentarse a evaluación por UHD.";
     }
     if (modeTitle) modeTitle.textContent = "Citaciones UHD";
+    notifyReady({ route: CASES_ROUTE, mode: filterMode });
   }
 
   document.addEventListener("submit", async (event) => {
@@ -282,19 +289,31 @@
     timer = window.setTimeout(renderCurrentRoute, delay);
   }
 
-  const observer = new MutationObserver((mutations) => {
-    if (!mutations.some((mutation) => mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) return;
-    if (route() === UHD_ROUTE || route() === CASES_ROUTE) schedule(40);
+  function relevantMutation() {
+    const current = route();
+    const content = $("#managementContent");
+    if (!content) return false;
+    if (current === UHD_ROUTE) return !content.querySelector("[data-uhd-citation-form]");
+    if (current === CASES_ROUTE) {
+      const mode = sessionStorage.getItem(FILTER_KEY);
+      return (mode === "uhd-today" || mode === "uhd-all") && Boolean(content.querySelector("#patientCasesTable")) && !content.querySelector("[data-uhd-review-note]");
+    }
+    return false;
+  }
+
+  const observer = new MutationObserver(() => {
+    if (relevantMutation()) schedule(20);
   });
 
   function start() {
-    observer.observe(document.body, { childList: true, subtree: true });
+    const content = $("#managementContent");
+    if (content) observer.observe(content, { childList: true, subtree: true });
     schedule(10);
   }
 
-  window.addEventListener("hashchange", () => schedule(20));
-  window.addEventListener("crs:supabase-ready", () => schedule(40));
-  window.addEventListener("crs:auth-changed", () => schedule(40));
+  window.addEventListener("hashchange", () => schedule(10));
+  window.addEventListener("crs:supabase-ready", () => schedule(20));
+  window.addEventListener("crs:auth-changed", () => schedule(20));
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start, { once: true });
