@@ -8,6 +8,9 @@
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
   const route = () => location.hash.split("?")[0] || "#/inicio";
+  const CACHE_PREFIX = "crsPublicContentCacheV2:";
+  const CACHE_TTL = 5 * 60 * 1000;
+  const remotePromises = new Map();
 
   const OLD_ROUTES = {
     "#/gestion/noticias": "#/noticias",
@@ -17,7 +20,7 @@
 
   const VISUALS = {
     news: ["#155e75", "#7c2d12", "Noticias"],
-    education: ["#166534", "#4338ca", "Educacion"],
+    education: ["#166534", "#4338ca", "Educación"],
     paper: ["#92400e", "#164e63", "Paper"],
     procedure: ["#991b1b", "#115e59", "Procedimiento"]
   };
@@ -65,7 +68,7 @@
   function card(item, kind) {
     const [a, b, label] = VISUALS[kind] || VISUALS.news;
     const image = visualImage(item, kind);
-    const media = `<div class="gf-media" style="--gf-a:${a};--gf-b:${b}">${image ? `<img src="${esc(image)}" alt="" loading="lazy">` : ""}<span class="gf-tag">${esc(label)}</span><strong>${esc(item.title || label)}</strong></div>`;
+    const media = `<div class="gf-media" style="--gf-a:${a};--gf-b:${b}">${image ? `<img src="${esc(image)}" alt="" loading="lazy" decoding="async">` : ""}<span class="gf-tag">${esc(label)}</span><strong>${esc(item.title || label)}</strong></div>`;
     const body = `<div class="gf-body"><h3>${esc(item.title || label)}</h3><p>${esc(item.description || "")}</p>${action(item, "Abrir")}</div>`;
     return `<article class="gf-card">${media}${body}</article>`;
   }
@@ -85,22 +88,42 @@
     return sortItems(window.CRS_STATIC_CONTENT?.[staticKey] || []);
   }
 
-  function withTimeout(promise, ms = 1200) {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Supabase tardó demasiado; usando contenido local.")), ms))
-    ]);
+  function readCache(kind) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(`${CACHE_PREFIX}${kind}`) || "null");
+      if (!cached?.items || Date.now() - Number(cached.savedAt || 0) > CACHE_TTL) return null;
+      return sortItems(cached.items);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeCache(kind, items) {
+    try {
+      sessionStorage.setItem(`${CACHE_PREFIX}${kind}`, JSON.stringify({ savedAt: Date.now(), items }));
+    } catch (_) {}
+  }
+
+  function fingerprint(items = []) {
+    return JSON.stringify(items.map((item) => [
+      item.id || "", item.title || "", item.description || "", item.month || "",
+      item.url || "", item.eventUrl || "", item.imageUrl || item.image_url || "", item.createdAt || ""
+    ]));
   }
 
   async function remoteContent(kind) {
     const api = window.CRS_SUPABASE;
     if (!api?.enabled?.()) return null;
-    try {
-      return sortItems(await withTimeout(api.fetchContent(kind)));
-    } catch (error) {
-      console.warn(error?.message || error);
-      return null;
-    }
+    if (remotePromises.has(kind)) return remotePromises.get(kind);
+    const promise = api.fetchContent(kind)
+      .then((items) => sortItems(items || []))
+      .catch((error) => {
+        console.warn(error?.message || error);
+        return null;
+      })
+      .finally(() => remotePromises.delete(kind));
+    remotePromises.set(kind, promise);
+    return promise;
   }
 
   function listBody(items, kind, empty) {
@@ -121,61 +144,75 @@
     return `<section class="gf-paper-layout">${featured}<aside class="gf-repo"><h2>Repositorio</h2>${repo}</aside></section>`;
   }
 
-  function pageShell(title, text, body, pageId = "managementPage", activeRoute = "", ready = false) {
+  function pageShell(title, text, body, pageId = "managementPage", activeRoute = "", signature = "") {
     activate(pageId, activeRoute, title);
     const titleEl = pageId === "educationPage" ? $("#educationTitle") : $("#managementTitle");
     const contentEl = pageId === "educationPage" ? $("#educationContent") : $("#managementContent");
     if (titleEl) titleEl.textContent = title;
     if (!contentEl) return;
-    contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>${body}</div>`;
-    if (ready) {
-      contentEl.dataset.gfReadyRoute = route();
-      notifyReady(route());
-    } else {
-      delete contentEl.dataset.gfReadyRoute;
+    const nextSignature = `${route()}:${signature}`;
+    if (contentEl.dataset.gfSignature !== nextSignature) {
+      contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>${esc(title)}</h2><p>${esc(text)}</p></section>${body}</div>`;
+      contentEl.dataset.gfSignature = nextSignature;
     }
+    contentEl.dataset.gfReadyRoute = route();
+    notifyReady(route());
   }
 
   async function renderList(kind, title, text, empty, pageId = "managementPage", activeRoute = "") {
     const expectedRoute = route();
-    pageShell(title, text, `<div class="gf-empty">Cargando contenido…</div>`, pageId, activeRoute, false);
-    const localItems = staticContent(kind);
-    const remoteItems = await remoteContent(kind);
-    if (route() !== expectedRoute) return;
-    const items = remoteItems || localItems;
-    pageShell(title, text, listBody(items, kind, empty), pageId, activeRoute, true);
+    const initial = readCache(kind) || staticContent(kind);
+    const initialFingerprint = fingerprint(initial);
+    pageShell(title, text, listBody(initial, kind, empty), pageId, activeRoute, initialFingerprint);
+
+    const remote = await remoteContent(kind);
+    if (route() !== expectedRoute || !remote) return;
+    writeCache(kind, remote);
+    const remoteFingerprint = fingerprint(remote);
+    if (remoteFingerprint !== initialFingerprint) {
+      pageShell(title, text, listBody(remote, kind, empty), pageId, activeRoute, remoteFingerprint);
+    }
   }
 
   async function renderPaper() {
     const expectedRoute = route();
-    pageShell("Paper del mes", "Lectura destacada con título, abstract y repositorio mensual.", `<div class="gf-empty">Cargando paper…</div>`, "managementPage", "", false);
-    const localPapers = staticContent("paper");
-    const remotePapers = await remoteContent("paper");
-    if (route() !== expectedRoute) return;
-    pageShell("Paper del mes", "Lectura destacada con título, abstract y repositorio mensual.", paperBody(remotePapers || localPapers), "managementPage", "", true);
+    const initial = readCache("paper") || staticContent("paper");
+    const initialFingerprint = fingerprint(initial);
+    pageShell("Paper del mes", "Lectura destacada con título, abstract y repositorio mensual.", paperBody(initial), "managementPage", "", initialFingerprint);
+
+    const remote = await remoteContent("paper");
+    if (route() !== expectedRoute || !remote) return;
+    writeCache("paper", remote);
+    const remoteFingerprint = fingerprint(remote);
+    if (remoteFingerprint !== initialFingerprint) {
+      pageShell("Paper del mes", "Lectura destacada con título, abstract y repositorio mensual.", paperBody(remote), "managementPage", "", remoteFingerprint);
+    }
   }
 
   function renderGestion() {
     activate("managementPage", "gestion", "Seguimiento operativo");
     const title = $("#managementTitle");
-    const contentEl = $("#managementContent");
-    if (title) title.textContent = "Gestión";
-    if (!contentEl) return;
-    contentEl.innerHTML = `<div class="gf-shell"><section class="gf-hero"><h2>Gestión de casos</h2><p>Panel operativo para seguimiento de pacientes y tareas prioritarias.</p></section><section class="gf-grid"><a class="gf-home-card teal" href="#/gestion/pacientes"><strong>Gestión pacientes</strong><span>Seguimiento de casos prioritarios para jefatura.</span></a></section></div>`;
+    const content = $("#managementContent");
+    if (title) title.textContent = "Gestión de casos";
+    if (content && !content.querySelector(".gestion-profiles-shell")) content.replaceChildren();
   }
 
   function renderUrgencia() {
     activate("doctorsPage", "gestion", "Equipo Urgencia");
     const contentEl = $("#doctorsContent");
     if (!contentEl) return;
-    contentEl.innerHTML = `<div class="gf-shell"><div class="gf-route"><a class="back-link" href="#/inicio">Inicio</a><a class="back-link" href="#/gestion">Gestión</a></div><section class="gf-hero"><h2>Equipo Urgencia</h2><p>Accesos de lectura para el equipo durante el turno.</p><div class="gf-actions"><a class="document-button" href="#/especialidades">Flujos clínicos</a><a class="document-button" href="#/llamados">Especialistas / UHD</a><a class="document-button" href="#/visita">Visita diaria</a><a class="document-button" href="#/formularios">Formularios</a><a class="document-button" href="#/telefonos">Directorio</a></div></section></div>`;
+    const signature = "equipo-urgencia-v1";
+    if (contentEl.dataset.gfSignature !== signature) {
+      contentEl.innerHTML = `<div class="gf-shell"><div class="gf-route"><a class="back-link" href="#/inicio">Inicio</a><a class="back-link" href="#/gestion">Gestión</a></div><section class="gf-hero"><h2>Equipo Urgencia</h2><p>Accesos de lectura para el equipo durante el turno.</p><div class="gf-actions"><a class="document-button" href="#/especialidades">Flujos clínicos</a><a class="document-button" href="#/llamados">Especialistas / UHD</a><a class="document-button" href="#/visita">Visita diaria</a><a class="document-button" href="#/formularios">Formularios</a><a class="document-button" href="#/telefonos">Directorio</a></div></section></div>`;
+      contentEl.dataset.gfSignature = signature;
+    }
     contentEl.dataset.gfReadyRoute = route();
     notifyReady(route());
   }
 
   function renderJefaturaShell() {
     activate("chiefPage", "jefatura", "Espacio jefatura");
-    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(20);
+    window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0);
   }
 
   async function render() {
@@ -193,18 +230,18 @@
     if (current === "#/procedimientos") return renderList("procedure", "Procedimientos médicos", "Repositorio visual de procedimientos y material práctico.", "Aún no hay procedimientos publicados.");
   }
 
-  let renderTimer = null;
+  let renderTimer = 0;
   function schedule(delay = 0) {
-    if (renderTimer) clearTimeout(renderTimer);
-    renderTimer = setTimeout(() => {
-      renderTimer = null;
+    window.clearTimeout(renderTimer);
+    renderTimer = window.setTimeout(() => {
+      renderTimer = 0;
       render().catch(console.error);
     }, delay);
   }
 
   window.CRS_GESTION_FINAL = { render, schedule };
   window.addEventListener("hashchange", () => schedule());
-  window.addEventListener("crs:supabase-ready", () => schedule(20));
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => schedule());
+  window.addEventListener("crs:supabase-ready", () => schedule());
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => schedule(), { once: true });
   else schedule();
 })();
