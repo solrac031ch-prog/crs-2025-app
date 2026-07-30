@@ -4,20 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#050505" />
-    <meta name="application-name" content="CRS HPH" />
+    <meta name="application-name" content="MASTER Urgencia Adulto HPH" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="CRS HPH" />
+    <meta name="apple-mobile-web-app-title" content="MASTER HPH" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="msapplication-TileColor" content="#050505" />
     <meta name="msapplication-TileImage" content="./icon-192.png" />
-    <meta name="description" content="Aplicacion CRS HPH 2025 para flujos de derivacion, formularios, directorio telefonico, arsenal terapeutico, gestion, noticias y paper del mes." />
+    <meta name="description" content="MASTER Urgencia Adulto HPH: flujos de derivación, formularios, llamados, UHD, gestión ambulatoria, educación médica y herramientas del turno." />
     <meta name="robots" content="index,follow" />
-    <meta property="og:title" content="CRS HPH 2025" />
-    <meta property="og:description" content="Derivaciones, formularios, directorio, arsenal terapeutico y gestion de turno de Urgencia Adulto HPH." />
+    <meta property="og:title" content="MASTER Urgencia Adulto HPH" />
+    <meta property="og:description" content="Flujos clínicos, coordinación de turno, UHD, formularios y gestión ambulatoria de Urgencia Adulto HPH." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://solrac031ch-prog.github.io/crs-2025-app/" />
-    <title>CRS HPH 2025</title>
+    <title>MASTER Urgencia Adulto HPH</title>
     <link rel="canonical" href="https://solrac031ch-prog.github.io/crs-2025-app/" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="preconnect" href="https://mjrcymctfnnyabvmfgda.supabase.co" crossorigin />
@@ -59,8 +59,8 @@
     <main class="layout">
       <section id="homePage" class="page page-home" aria-labelledby="homeTitle">
         <div class="hero">
-          <p class="eyebrow">CRS HPH 2025</p>
-          <h1 id="homeTitle">Derivaciones y coordinaci&oacute;n de turno</h1>
+          <p class="eyebrow">MASTER Urgencia Adulto HPH</p>
+          <h1 id="homeTitle">Gesti&oacute;n cl&iacute;nica y coordinaci&oacute;n de turno</h1>
           <p id="todayLabel" class="today-label"></p>
         </div>
         <div class="home-actions" aria-label="Accesos principales">
@@ -79,9 +79,9 @@
       <section id="specialtiesPage" class="page" aria-labelledby="specialtiesTitle">
         <div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">P&aacute;gina 2</p><h1 id="specialtiesTitle">Especialidades y flujos</h1></div></div>
         <section id="rulesPreview" class="rules-preview" aria-label="Reglas antes de derivar"></section>
-        <section class="control-panel" aria-label="Buscador y filtros"><label class="search"><span>Buscar flujo, especialidad o contacto</span><input id="searchInput" type="search" placeholder="Ej: TVP, oftalmo, pulso, TACO..." autocomplete="off" /></label><div class="shift-box"><span class="label">Contexto de turno</span><div class="segmented" role="group" aria-label="Horario"><button class="segment active" data-shift="all" type="button">Todos</button><button class="segment" data-shift="habil" type="button">H&aacute;bil</button><button class="segment" data-shift="inhabil" type="button">Inh&aacute;bil</button></div></div></section>
-        <div class="quick-actions" aria-label="Categorias"><button class="chip active" data-category="Todos" type="button">Todos</button><button class="chip" data-category="Flujo" type="button">Flujos</button><button class="chip" data-category="Poli choque" type="button">Especialidades</button><button class="chip" data-category="CRS" type="button">CRS</button><button class="chip" data-category="Hospitalizados" type="button">Hospitalizados</button><button class="chip" data-category="Protocolo" type="button">Protocolos</button></div>
-        <div id="resultsMeta" class="results-meta"></div><div id="specialtyGroups" class="specialty-groups" aria-live="polite"></div>
+        <section class="control-panel" aria-label="Buscador y filtros"><label class="search"><span>Buscar flujo, especialidad o contacto</span><input id="searchInput" type="search" placeholder="Ej: TVP, oftalmo, pulso, TACO..." autocomplete="off" aria-keyshortcuts="/" /></label><div class="shift-box"><span class="label">Contexto de turno</span><div class="segmented" role="group" aria-label="Horario"><button class="segment active" data-shift="all" type="button" aria-pressed="true">Todos</button><button class="segment" data-shift="habil" type="button" aria-pressed="false">H&aacute;bil</button><button class="segment" data-shift="inhabil" type="button" aria-pressed="false">Inh&aacute;bil</button></div></div></section>
+        <div class="quick-actions" aria-label="Categorias"><button class="chip active" data-category="Todos" type="button" aria-pressed="true">Todos</button><button class="chip" data-category="Flujo" type="button" aria-pressed="false">Flujos</button><button class="chip" data-category="Poli choque" type="button" aria-pressed="false">Especialidades</button><button class="chip" data-category="CRS" type="button" aria-pressed="false">CRS</button><button class="chip" data-category="Hospitalizados" type="button" aria-pressed="false">Hospitalizados</button><button class="chip" data-category="Protocolo" type="button" aria-pressed="false">Protocolos</button></div>
+        <div id="resultsMeta" class="results-meta" aria-live="polite"></div><div id="specialtyGroups" class="specialty-groups" aria-live="polite"></div>
       </section>
 
       <section id="protocolPage" class="page" aria-labelledby="protocolTitle"><div class="page-head"><a class="back-link" href="#/especialidades">Especialidades</a><div><p id="protocolCategory" class="eyebrow"></p><h1 id="protocolTitle"></h1></div></div><div id="protocolDetail" class="protocol-detail"></div></section>
@@ -106,8 +106,8 @@
     <script src="./app-forms-data.js?v=1"></script>
     <script src="./app.js?v=48"></script>
     <script src="./route-modules.js?v=8"></script>
-    <script src="./app-router.js?v=5"></script>
-    <script src="./especialidades-ui.js?v=3"></script>
+    <script src="./app-router.js?v=6"></script>
+    <script src="./especialidades-ui.js?v=4"></script>
     <script src="./protocolos-detalle-polish.js?v=2"></script>
   </body>
 </html>

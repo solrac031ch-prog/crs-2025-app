@@ -12,6 +12,23 @@
 
   let routeTimer = 0;
   let routeVersion = 0;
+  let specialtyRenderFrame = 0;
+
+  function announceRouteRendered(name) {
+    window.dispatchEvent(new CustomEvent("crs:route-rendered", {
+      detail: { route: window.location.hash || "#/inicio", name }
+    }));
+  }
+
+  async function enhanceSpecialties(version) {
+    try {
+      await window.CRS_SPECIALTIES_UI?.load?.();
+      if (version !== routeVersion) return;
+      window.CRS_SPECIALTIES_UI?.refresh?.();
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   async function renderRoute() {
     const version = ++routeVersion;
@@ -34,13 +51,20 @@
       window.CRS_GESTION_FINAL?.schedule?.(0);
       window.CRS_SUPABASE_JEFATURA?.scheduleRender?.(0);
       window.CRS_SUPABASE?.renderPublicRoute?.();
+      announceRouteRendered(name);
       window.scrollTo(0, 0);
       return;
     }
 
     if (pageName === "inicio") renderHome();
-    if (pageName === "especialidades") renderSpecialties();
-    if (pageName === "especialidad") renderProtocol(slug || "");
+    if (pageName === "especialidades") {
+      renderSpecialties();
+      await enhanceSpecialties(version);
+    }
+    if (pageName === "especialidad") {
+      renderProtocol(slug || "");
+      await enhanceSpecialties(version);
+    }
     if (pageName === "llamados" || pageName === "visita") renderDocuments();
     if (pageName === "formularios") {
       if (typeof renderFormsRoute === "function") renderFormsRoute(parts.slice(1));
@@ -48,6 +72,8 @@
     }
     if (pageName === "telefonos") renderPhones();
 
+    if (version !== routeVersion) return;
+    announceRouteRendered(name || pageName);
     window.scrollTo(0, 0);
   }
 
@@ -59,25 +85,56 @@
     }, delay);
   }
 
+  function refreshSpecialties() {
+    if (activeRouteName() !== "especialidades") return;
+    window.cancelAnimationFrame(specialtyRenderFrame);
+    specialtyRenderFrame = window.requestAnimationFrame(() => {
+      specialtyRenderFrame = 0;
+      renderSpecialties();
+      window.CRS_SPECIALTIES_UI?.refresh?.();
+    });
+  }
+
   function setCategory(category) {
     state.category = category;
     document.querySelectorAll("[data-category]").forEach((button) => {
-      button.classList.toggle("active", button.dataset.category === category);
+      const active = button.dataset.category === category;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
     });
-    if (activeRouteName() === "especialidades") renderSpecialties();
+    refreshSpecialties();
   }
 
   function setShift(shift, activeButton) {
     state.shift = shift;
     document.querySelectorAll("[data-shift]").forEach((button) => {
-      button.classList.toggle("active", button === activeButton);
+      const active = button === activeButton;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
     });
-    if (activeRouteName() === "especialidades") renderSpecialties();
+    refreshSpecialties();
   }
 
   searchInput.addEventListener("input", (event) => {
     state.query = event.target.value;
-    if (activeRouteName() === "especialidades") renderSpecialties();
+    refreshSpecialties();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const typing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable;
+
+    if (event.key === "/" && !typing && activeRouteName() === "especialidades") {
+      event.preventDefault();
+      searchInput.focus({ preventScroll: true });
+      searchInput.select();
+    }
+
+    if (event.key === "Escape" && document.activeElement === searchInput && searchInput.value) {
+      searchInput.value = "";
+      state.query = "";
+      refreshSpecialties();
+    }
   });
 
   document.addEventListener("click", (event) => {

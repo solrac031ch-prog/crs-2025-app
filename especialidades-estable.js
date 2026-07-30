@@ -5,44 +5,45 @@
 
   const categoryOrder = ["Flujo", "CRS", "Poli choque", "Hospitalizados", "Protocolo"];
   const categoryMeta = {
-    Flujo: { label: "Flujos", icon: "⚡", count: "12", color: "#0f766e", soft: "#dff5ef", text: "Algoritmos y rutas de accion rapida." },
-    CRS: { label: "CRS", icon: "🏥", count: "4", color: "#2563eb", soft: "#e6efff", text: "Derivaciones ambulatorias al CRS." },
-    "Poli choque": { label: "Poli choque", icon: "🚨", count: "4", color: "#b45309", soft: "#fff2d6", text: "Accesos de choque por especialidad." },
-    Hospitalizados: { label: "Hospitalizados", icon: "🛏️", count: "1", color: "#7c3aed", soft: "#f0e8ff", text: "Coordinacion de pacientes hospitalizados." },
-    Protocolo: { label: "Protocolos", icon: "📋", count: "4", color: "#be123c", soft: "#ffe4eb", text: "Protocolos institucionales de respaldo." }
+    Flujo: { label: "Flujos", icon: "⚡", color: "#0f766e", soft: "#dff5ef", text: "Algoritmos y rutas de acción rápida." },
+    CRS: { label: "CRS", icon: "🏥", color: "#2563eb", soft: "#e6efff", text: "Derivaciones ambulatorias al CRS." },
+    "Poli choque": { label: "Poli choque", icon: "🚨", color: "#b45309", soft: "#fff2d6", text: "Accesos de choque por especialidad." },
+    Hospitalizados: { label: "Hospitalizados", icon: "🛏️", color: "#7c3aed", soft: "#f0e8ff", text: "Coordinación de pacientes hospitalizados." },
+    Protocolo: { label: "Protocolos", icon: "📋", color: "#be123c", soft: "#ffe4eb", text: "Protocolos institucionales de respaldo." }
   };
 
   const renameMap = new Map([
-    ["Hemorragia intracerebral", "Neurocirugia"],
-    ["Patologia aguda de columna", "Cirugia de columna"],
-    ["Patología aguda de columna", "Cirugia de columna"],
-    ["Radiologia Intervencional 2025", "Radiologia intervencional"],
-    ["Radiología Intervencional 2025", "Radiologia intervencional"],
-    ["Patologia urologia de urgencia 2025", "Urgencias urologicas"],
-    ["Patología urología de urgencia 2025", "Urgencias urologicas"],
+    ["Hemorragia intracerebral", "Neurocirugía"],
+    ["Patologia aguda de columna", "Cirugía de columna"],
+    ["Patología aguda de columna", "Cirugía de columna"],
+    ["Radiologia Intervencional 2025", "Radiología intervencional"],
+    ["Radiología Intervencional 2025", "Radiología intervencional"],
+    ["Patologia urologia de urgencia 2025", "Urgencias urológicas"],
+    ["Patología urología de urgencia 2025", "Urgencias urológicas"],
     ["Hemodinamia 2025", "Hemodinamia"],
     ["EDA", "Endoscopia de urgencias"],
     ["Hemorragia digestiva alta", "Endoscopia de urgencias"]
   ]);
 
   const cardHints = new Map([
-    ["Sala Pulso", "🩸 Transfusion y tratamientos ambulatorios"],
+    ["Sala Pulso", "🩸 Transfusión y tratamientos ambulatorios"],
     ["Endoscopia de urgencias", "🔎 EDA, HDA y criterios Blatchford"],
-    ["TVP - sospecha, ECO y horario inhabil", "🦵 Sospecha, ECO y ruta inhabil"],
-    ["Neurologia", "🧠 ACV, neurointervencion y donante"],
-    ["Hemodinamia", "❤️ Activacion y documento 2025"],
-    ["Neurocirugia", "🧠 HIC y manejo inicial"],
-    ["Cirugia de columna", "🦴 Patologia aguda de columna"],
-    ["Urgencias urologicas", "🚻 Flujo urologico urgente"],
-    ["Radiologia intervencional", "🖼️ Documento de radiologia intervencional"]
+    ["TVP - sospecha, ECO y horario inhabil", "🦵 Sospecha, ECO y ruta inhábil"],
+    ["Neurologia", "🧠 ACV, neurointervención y donante"],
+    ["Neurología", "🧠 ACV, neurointervención y donante"],
+    ["Hemodinamia", "❤️ Activación y documento 2025"],
+    ["Neurocirugía", "🧠 HIC y manejo inicial"],
+    ["Cirugía de columna", "🦴 Patología aguda de columna"],
+    ["Urgencias urológicas", "🚻 Flujo urológico urgente"],
+    ["Radiología intervencional", "🖼️ Documento de radiología intervencional"]
   ]);
 
   const shortcuts = [
     ["🦵 TVP", "TVP"],
     ["🔎 Endoscopia", "endoscopia"],
-    ["🧠 Neurocirugia", "neurocirugia"],
+    ["🧠 Neurocirugía", "neurocirugia"],
     ["❤️ Hemodinamia", "hemodinamia"],
-    ["🚻 Urologia", "urologia"]
+    ["🚻 Urología", "urologia"]
   ];
 
   let queued = false;
@@ -52,6 +53,14 @@
   const isSpecialties = () => location.hash.split("?")[0] === specialtiesHash;
   const isProtocol = () => location.hash.startsWith(protocolPrefix);
   const metaFor = (category) => categoryMeta[category] || categoryMeta.Flujo;
+
+  function categoryCount(category) {
+    if (!Array.isArray(protocols)) return 0;
+    return protocols.filter((protocol) => {
+      if (protocol.category !== category) return false;
+      return protocol.title !== "Hemorragia digestiva alta";
+    }).length;
+  }
 
   function addStyle() {
     if ($("#especialidades-estable-style")) return;
@@ -70,14 +79,14 @@
   }
 
   function quickRulesMarkup() {
-    return `<section class="quick-protocol"><div class="quick-hero"><div><p class="detail-label">Chequeo en 20 segundos</p><h2>Antes de derivar</h2><p>CRS por Pitagoras o APS.</p></div><span class="quick-page">p. 2</span></div><div class="quick-decision"><div class="decision-question"><span>1</span><div><strong>¿El paciente entra en un flujo CRS?</strong><small>Sigue por IC en Pitagoras.</small></div></div><div class="decision-options"><button class="decision-option is-yes" data-focus-specialty-search type="button"><strong>Si</strong><span>Buscar flujo</span></button><button class="decision-option is-no" type="button"><strong>No</strong><span>Derivar a APS</span></button></div></div><div class="quick-warning"><span>Alerta</span><strong>IC directa no Pitagoras: se devuelve.</strong></div></section>`;
+    return `<section class="quick-protocol"><div class="quick-hero"><div><p class="detail-label">Chequeo en 20 segundos</p><h2>Antes de derivar</h2><p>CRS por Pitágoras o APS.</p></div><span class="quick-page">p. 2</span></div><div class="quick-decision"><div class="decision-question"><span>1</span><div><strong>¿El paciente entra en un flujo CRS?</strong><small>Sigue por IC en Pitágoras.</small></div></div><div class="decision-options"><button class="decision-option is-yes" data-focus-specialty-search type="button"><strong>Sí</strong><span>Buscar flujo</span></button><button class="decision-option is-no" type="button"><strong>No</strong><span>Derivar a APS</span></button></div></div><div class="quick-warning"><span>Alerta</span><strong>IC directa no Pitágoras: se devuelve.</strong></div></section>`;
   }
 
   function ensureHero(container) {
     if ($(".specialty-lift-hero", container)) return;
     const hero = document.createElement("section");
     hero.className = "specialty-lift-hero";
-    hero.innerHTML = `<div><span class="hub-kicker">🩺 Turno adulto HPH</span><h2>Rutas clinicas en accion ⚡</h2><p>Flujos, CRS, poli choque, hospitalizados y protocolos institucionales en una sola vista.</p></div><div class="hub-stats"><div class="hub-stat"><span>Vista activa</span><strong data-hub-active>Flujos</strong></div><div class="hub-stat"><span>Disponibles</span><b data-hub-count>0</b></div></div>`;
+    hero.innerHTML = `<div><span class="hub-kicker">🩺 Turno adulto HPH</span><h2>Rutas clínicas en acción ⚡</h2><p>Flujos, CRS, poli choque, hospitalizados y protocolos institucionales en una sola vista.</p></div><div class="hub-stats"><div class="hub-stat"><span>Vista activa</span><strong data-hub-active>Flujos</strong></div><div class="hub-stat"><span>Disponibles</span><b data-hub-count>0</b></div></div>`;
     $(".page-head", container)?.after(hero);
   }
 
@@ -85,7 +94,7 @@
     const rules = $("#rulesPreview", container);
     if (!rules) return;
     rules.classList.add("quick-rules");
-    if (!$('.quick-protocol', rules)) rules.innerHTML = quickRulesMarkup();
+    if (!$(".quick-protocol", rules)) rules.innerHTML = quickRulesMarkup();
   }
 
   function ensureShortcuts(container) {
@@ -106,7 +115,7 @@
     const panel = document.createElement("section");
     panel.id = "specialtyFocusCard";
     panel.className = "specialty-focus-card";
-    panel.innerHTML = `<div><span data-focus-label>⚡ Flujos</span><h3 data-focus-title>Flujos disponibles</h3><p data-focus-text>Algoritmos y rutas de accion rapida.</p></div><div class="focus-count" data-focus-count>0</div>`;
+    panel.innerHTML = `<div><span data-focus-label>⚡ Flujos</span><h3 data-focus-title>Flujos disponibles</h3><p data-focus-text>Algoritmos y rutas de acción rápida.</p></div><div class="focus-count" data-focus-count>0</div>`;
     anchor.after(panel);
   }
 
@@ -117,7 +126,9 @@
     if (todos) {
       todos.hidden = true;
       todos.classList.remove("active");
+      todos.setAttribute("aria-pressed", "false");
     }
+
     categoryOrder.forEach((category) => {
       let button = quick.querySelector(`[data-category="${category}"]`);
       if (!button) {
@@ -125,12 +136,14 @@
         button.className = "chip";
         button.type = "button";
         button.dataset.category = category;
+        button.setAttribute("aria-pressed", "false");
         quick.append(button);
       }
       const meta = metaFor(category);
+      const count = categoryCount(category);
       button.style.setProperty("--cat-color", meta.color);
       button.style.setProperty("--cat-soft", meta.soft);
-      const html = `<span class="cat-code">${meta.icon}</span><span class="cat-copy"><strong>${meta.label}</strong><small>${meta.count} rutas</small></span>`;
+      const html = `<span class="cat-code">${meta.icon}</span><span class="cat-copy"><strong>${meta.label}</strong><small>${count} ${count === 1 ? "ruta" : "rutas"}</small></span>`;
       if (button.innerHTML !== html) button.innerHTML = html;
     });
 
@@ -141,7 +154,7 @@
       if (flow && (!active || active.dataset.category === "Todos")) {
         const y = window.scrollY;
         flow.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-        requestAnimationFrame(() => window.scrollTo({ top: y, left: 0, behavior: "instant" }));
+        requestAnimationFrame(() => window.scrollTo({ top: y, left: 0, behavior: "auto" }));
       }
     }
   }
@@ -151,10 +164,8 @@
     return active?.dataset.category || "Flujo";
   }
 
-  function visibleCount() {
-    const text = $("#resultsMeta")?.textContent || "";
-    const match = text.match(/\d+/);
-    return match ? match[0] : "0";
+  function visibleCount(container) {
+    return $$("#specialtyGroups .specialty-button:not([hidden])", container).length;
   }
 
   function decorateCards(container) {
@@ -197,24 +208,30 @@
   function updateFocus(container) {
     const category = currentCategory(container);
     const meta = metaFor(category);
-    const count = visibleCount();
+    const count = visibleCount(container);
     container.style.setProperty("--focus-color", meta.color);
     const setText = (selector, text) => {
       const node = $(selector, container);
       if (node && node.textContent !== text) node.textContent = text;
     };
     setText("[data-hub-active]", `${meta.icon} ${meta.label}`);
-    setText("[data-hub-count]", count);
+    setText("[data-hub-count]", String(count));
     setText("[data-focus-label]", `${meta.icon} ${meta.label}`);
     setText("[data-focus-title]", `${meta.label} disponibles`);
     setText("[data-focus-text]", meta.text);
-    setText("[data-focus-count]", count);
+    setText("[data-focus-count]", String(count));
+  }
+
+  function signalReady(section) {
+    window.dispatchEvent(new CustomEvent("crs:ui-section-ready", {
+      detail: { route: location.hash.split("?")[0], section }
+    }));
   }
 
   function patchSpecialties() {
-    if (!isSpecialties()) return;
+    if (!isSpecialties()) return false;
     const container = $(pageSelector);
-    if (!container || !container.classList.contains("active")) return;
+    if (!container || !container.classList.contains("active")) return false;
     addStyle();
     container.classList.add("specialty-stable");
     ensureHero(container);
@@ -224,12 +241,14 @@
     ensureCategoryButtons(container);
     decorateCards(container);
     updateFocus(container);
+    signalReady("especialidades");
+    return true;
   }
 
   function patchProtocolTitle() {
-    if (!isProtocol()) return;
+    if (!isProtocol()) return false;
     const title = $("#protocolTitle");
-    if (!title) return;
+    if (!title) return false;
     const current = title.textContent.trim();
     const renamed = renameMap.get(current);
     if (renamed && current !== renamed) title.textContent = renamed;
@@ -237,19 +256,16 @@
       const summary = $("#protocolDetail .protocol-summary");
       if (summary) summary.textContent = "Concentra EDA, hemorragia digestiva alta y criterios de endoscopia urgente.";
     }
+    signalReady("protocolo");
+    return true;
   }
 
   function patch() {
-    patchSpecialties();
-    patchProtocolTitle();
+    return patchSpecialties() || patchProtocolTitle();
   }
 
-  function schedulePatch(delay = 0) {
-    if (queued && delay === 0) return;
-    if (delay > 0) {
-      setTimeout(schedulePatch, delay);
-      return;
-    }
+  function schedulePatch() {
+    if (queued) return;
     queued = true;
     requestAnimationFrame(() => {
       queued = false;
@@ -259,9 +275,9 @@
 
   document.addEventListener("click", (event) => {
     if (event.target.closest(`${pageSelector} [data-category]`) || event.target.closest(`${pageSelector} [data-shift]`)) {
-      schedulePatch(0);
-      schedulePatch(80);
+      schedulePatch();
     }
+
     const shortcut = event.target.closest("[data-specialty-query]");
     const focusSearch = event.target.closest("[data-focus-specialty-search]");
     if (shortcut || focusSearch) {
@@ -270,19 +286,14 @@
       if (shortcut) input.value = shortcut.dataset.specialtyQuery || "";
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.focus({ preventScroll: true });
-      schedulePatch(60);
     }
   });
 
   document.addEventListener("input", (event) => {
-    if (event.target.closest(`${pageSelector} #searchInput`)) schedulePatch(60);
+    if (event.target.closest(`${pageSelector} #searchInput`)) schedulePatch();
   });
 
-  window.addEventListener("hashchange", () => {
-    schedulePatch(0);
-    schedulePatch(120);
+  window.CRS_ESPECIALIDADES_ESTABLE = Object.freeze({
+    refresh: schedulePatch
   });
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => schedulePatch(0));
-  else schedulePatch(0);
 })();
