@@ -14,57 +14,66 @@ window.CRS_SUPABASE_CONFIG = {
 };
 
 (() => {
-  let supabaseFallbackLoading = false;
+  const PRIMARY_SDK = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  const FALLBACK_SDK = "https://unpkg.com/@supabase/supabase-js@2";
+  const REMOTE_ROUTES = new Set([
+    "#/noticias", "#/educacion", "#/paper", "#/procedimientos",
+    "#/jefatura", "#/gestion", "#/gestion/pacientes", "#/gestion/uhd-citados",
+    "#/formularios", "#/llamados", "#/especialidades"
+  ]);
+
+  let sdkLoading = false;
+  let readyFired = false;
+  let normalizeTimer = 0;
 
   function route() {
     return location.hash.split("?")[0] || "#/inicio";
   }
 
   function fireSupabaseReady() {
-    try {
-      window.dispatchEvent(new Event("crs:supabase-ready"));
-    } catch (_) {
-      const event = document.createEvent("Event");
-      event.initEvent("crs:supabase-ready", true, true);
-      window.dispatchEvent(event);
-    }
+    if (readyFired || !window.supabase?.createClient) return;
+    readyFired = true;
+    window.dispatchEvent(new Event("crs:supabase-ready"));
   }
 
-  function loadSupabaseFallback() {
-    if (window.supabase?.createClient || supabaseFallbackLoading) return;
-    supabaseFallbackLoading = true;
+  function appendSdk(src, fallback = false) {
     const script = document.createElement("script");
-    script.src = "https://unpkg.com/@supabase/supabase-js@2";
+    script.src = src;
+    script.async = true;
     script.crossOrigin = "anonymous";
+    script.dataset.supabaseSdk = fallback ? "fallback" : "primary";
     script.onload = () => {
-      supabaseFallbackLoading = false;
+      sdkLoading = false;
       fireSupabaseReady();
       window.CRS_SUPABASE?.renderPublicRoute?.();
     };
     script.onerror = () => {
-      supabaseFallbackLoading = false;
-      console.error("No se pudo cargar Supabase desde CDN ni fallback.");
+      script.remove();
+      if (!fallback) {
+        appendSdk(FALLBACK_SDK, true);
+        return;
+      }
+      sdkLoading = false;
+      console.error("No se pudo cargar Supabase desde los CDN disponibles.");
     };
     document.head.append(script);
   }
 
   function ensureSupabaseClient() {
-    if (!window.supabase?.createClient) setTimeout(loadSupabaseFallback, 80);
+    if (window.supabase?.createClient) {
+      fireSupabaseReady();
+      return;
+    }
+    if (sdkLoading || document.querySelector("script[data-supabase-sdk]")) return;
+    sdkLoading = true;
+    appendSdk(PRIMARY_SDK);
   }
 
-  function loadSupabaseJefaturaPanel() {
-    if (document.querySelector("script[data-supabase-jefatura-panel]")) return;
-    const script = document.createElement("script");
-    script.src = "./supabase-jefatura-panel.js?v=12";
-    script.dataset.supabaseJefaturaPanel = "true";
-    (document.body || document.documentElement).append(script);
-  }
-
-  function normalizeSupabaseCopy() {
+  function normalizeCopy() {
     const hash = route();
     const managementEyebrow = document.querySelector("#managementPage .page-head .eyebrow");
     if (managementEyebrow && (hash === "#/gestion" || hash.startsWith("#/gestion/"))) {
-      const nextText = hash === "#/gestion/pacientes" ? "Gestion pacientes" : "Seguimiento operativo";
+      const nextText = hash === "#/gestion/pacientes" ? "Gestión pacientes" : "Seguimiento operativo";
       if (managementEyebrow.textContent !== nextText) managementEyebrow.textContent = nextText;
     }
 
@@ -76,38 +85,42 @@ window.CRS_SUPABASE_CONFIG = {
     }
   }
 
-  function scheduleNormalizeCopy(delay = 40) {
-    setTimeout(normalizeSupabaseCopy, delay);
+  function scheduleNormalizeCopy(delay = 0) {
+    window.clearTimeout(normalizeTimer);
+    normalizeTimer = window.setTimeout(() => requestAnimationFrame(normalizeCopy), delay);
+  }
+
+  function scheduleSdkLoad() {
+    if (REMOTE_ROUTES.has(route())) {
+      ensureSupabaseClient();
+      return;
+    }
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(ensureSupabaseClient, { timeout: 500 });
+    } else {
+      window.setTimeout(ensureSupabaseClient, 160);
+    }
   }
 
   function boot() {
     window.CRS_REGISTER_SERVICE_WORKER?.();
-    ensureSupabaseClient();
-    loadSupabaseJefaturaPanel();
-    scheduleNormalizeCopy(40);
-    scheduleNormalizeCopy(260);
+    scheduleSdkLoad();
+    scheduleNormalizeCopy();
   }
 
-  window.addEventListener("crs:supabase-ready", () => {
-    window.CRS_SUPABASE?.renderPublicRoute?.();
+  window.addEventListener("hashchange", () => {
+    scheduleSdkLoad();
+    scheduleNormalizeCopy();
   });
 
-  window.addEventListener("hashchange", () => {
-    ensureSupabaseClient();
-    loadSupabaseJefaturaPanel();
-    scheduleNormalizeCopy(20);
-    scheduleNormalizeCopy(220);
-  });
+  window.addEventListener("load", () => {
+    scheduleSdkLoad();
+    scheduleNormalizeCopy();
+  }, { once: true });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot, { once: true });
   } else {
     boot();
   }
-
-  window.addEventListener("load", () => {
-    ensureSupabaseClient();
-    loadSupabaseJefaturaPanel();
-    scheduleNormalizeCopy(80);
-  }, { once: true });
 })();
