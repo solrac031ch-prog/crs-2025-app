@@ -86,7 +86,7 @@
     ]);
     await Promise.all([
       loadScript("gestion-perfiles", "./gestion-perfiles.js", 5),
-      loadScript("gestion-uhd", "./gestion-uhd-citados.js", 4)
+      loadScript("gestion-uhd", "./gestion-uhd-citados.js", 5)
     ]);
   }
 
