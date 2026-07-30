@@ -2,6 +2,16 @@ html {
   scrollbar-gutter: stable;
 }
 
+html,
+body,
+.page.active,
+#managementContent,
+#chiefContent,
+#educationContent,
+#doctorsContent {
+  overflow-anchor: none;
+}
+
 #managementPage > .page-head,
 #chiefPage > .page-head,
 #educationPage > .page-head,
@@ -34,6 +44,7 @@ html[data-ui-stabilizing="true"] #educationContent,
 html[data-ui-stabilizing="true"] #doctorsContent {
   visibility: hidden;
   opacity: 0;
+  pointer-events: none;
 }
 
 html[data-ui-stabilizing="true"] #managementPage.active::after,
@@ -46,6 +57,7 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
   left: 50%;
   z-index: 2;
   width: min(360px, calc(100% - 32px));
+  min-height: 46px;
   padding: 12px 14px;
   transform: translateX(-50%);
   border: 1px solid #e4ece8;
@@ -55,7 +67,9 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
   box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
   font-size: .9rem;
   font-weight: 800;
+  line-height: 1.35;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .gestion-case-modebar {
@@ -74,8 +88,11 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
 .patient-shell,
 .gestion-profiles-shell,
 .edu-uniform-shell,
-.gf-shell {
+.gf-shell,
+.uhd-shell,
+[data-crs-access-shell] {
   margin-top: 0 !important;
+  overflow-anchor: none;
 }
 
 .patient-review-toolbar {
@@ -88,7 +105,13 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
 
 [data-crs-global-list],
 [data-crs-admin-list] {
-  min-height: 44px;
+  min-height: 88px;
+  overflow-anchor: none;
+}
+
+.edu-podcast-player iframe,
+.gf-media img {
+  display: block;
 }
 
 @media (max-width: 720px) {
