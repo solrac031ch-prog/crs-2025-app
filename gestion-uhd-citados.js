@@ -117,8 +117,11 @@
     const title = $("#managementTitle");
     const content = $("#managementContent");
     if (!content) return;
+    const date = tomorrowISO();
     if (title) title.textContent = "Citación para UHD";
+    if (content.dataset.uhdFormReady === date && content.querySelector("[data-uhd-citation-form]")) return;
     content.innerHTML = formHtml();
+    content.dataset.uhdFormReady = date;
   }
 
   function setStatus(form, text, error = false) {
@@ -166,8 +169,9 @@
       registrado_por: doctorName
     };
 
-    saveDoctor(doctorName, doctorRut);
-    return api.savePublicCase(item, doctorRut, "");
+    const result = await api.savePublicCase(item, doctorRut, "");
+    if (result?.ok) saveDoctor(doctorName, doctorRut);
+    return result;
   }
 
   function reviewSearchValue(mode) {
@@ -186,15 +190,21 @@
       note.dataset.uhdReviewNote = "true";
       mount.before(note);
     }
-    note.innerHTML = `
-      <strong>${mode === "all" ? "Todos los pacientes citados para UHD" : `Pacientes citados para hoy · ${formatDate(localISO(new Date()))}`}</strong>
-      <span>La lista se obtiene del registro compartido de Gestión.</span>
-      <div class="gestion-profile-actions">
-        <button class="gestion-profile-button" type="button" data-uhd-filter="today">Hoy</button>
-        <button class="gestion-profile-button secondary" type="button" data-uhd-filter="all">Todos UHD</button>
-      </div>`;
-    query.value = reviewSearchValue(mode);
-    query.dispatchEvent(new Event("input", { bubbles: true }));
+    if (note.dataset.uhdMode !== mode) {
+      note.dataset.uhdMode = mode;
+      note.innerHTML = `
+        <strong>${mode === "all" ? "Todos los pacientes citados para UHD" : `Pacientes citados para hoy · ${formatDate(localISO(new Date()))}`}</strong>
+        <span>La lista se obtiene del registro compartido de Gestión.</span>
+        <div class="gestion-profile-actions">
+          <button class="gestion-profile-button" type="button" data-uhd-filter="today">Hoy</button>
+          <button class="gestion-profile-button secondary" type="button" data-uhd-filter="all">Todos UHD</button>
+        </div>`;
+    }
+    const target = reviewSearchValue(mode);
+    if (query.value !== target) {
+      query.value = target;
+      query.dispatchEvent(new Event("input", { bubbles: true }));
+    }
   }
 
   function applyReviewFilter() {
