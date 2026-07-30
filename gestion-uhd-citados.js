@@ -2,7 +2,9 @@
   const UHD_ROUTE = "#/gestion/uhd-citados";
   const CASES_ROUTE = "#/gestion/pacientes";
   const MODE_KEY = "crsGestionCasesModeV1";
-  const FILTER_KEY = "crsGestionCasesFilterV1";
+  const LEGACY_FILTER_KEY = "crsGestionCasesFilterV1";
+  const TYPE_KEY = "crsPatientReviewTypeV2";
+  const UHD_SCOPE_KEY = "crsPatientUhdScopeV2";
   const DOCTOR_KEY = "crsGestionDoctorShiftV1";
   const ALLOWED_COMMUNES = new Set(["San Ramón", "La Pintana", "La Granja"]);
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -47,9 +49,7 @@
 
   function activateManagementPage() {
     $$(".page").forEach((page) => page.classList.toggle("active", page.id === "managementPage"));
-    $$('[data-route-link]').forEach((link) => {
-      link.classList.toggle("active", link.dataset.routeLink === "gestion");
-    });
+    $$('[data-route-link]').forEach((link) => link.classList.toggle("active", link.dataset.routeLink === "gestion"));
   }
 
   function storedDoctor() {
@@ -151,11 +151,10 @@
     const doctorRut = String(data.get("doctorRut") || "").trim();
     const presentationDate = String(data.get("presentationDate") || tomorrowISO()).trim();
 
-    if (!ALLOWED_COMMUNES.has(commune)) {
-      throw new Error("UHD solo recibe pacientes de San Ramón, La Pintana y La Granja.");
-    }
+    if (!ALLOWED_COMMUNES.has(commune)) throw new Error("UHD solo recibe pacientes de San Ramón, La Pintana y La Granja.");
 
     const item = {
+      tipo_solicitud: "UHD",
       paciente: patientName,
       run: patientRut,
       ubicacion: `${address}, ${commune}`,
@@ -175,66 +174,17 @@
       registrado_por: doctorName
     };
 
-    const result = await api.savePublicCase(item, doctorRut, "");
+    const result = await api.savePublicCase(item, doctorRut);
     if (result?.ok) saveDoctor(doctorName, doctorRut);
     return result;
   }
 
-  function reviewSearchValue(mode) {
-    return mode === "all"
-      ? "UHD - Citado para evaluación"
-      : `Fecha de presentación UHD: ${localISO(new Date())}`;
-  }
-
-  function addReviewNote(query, mode) {
-    const mount = $("#patientCasesTable");
-    if (!mount) return;
-    let note = $("[data-uhd-review-note]");
-    if (!note) {
-      note = document.createElement("div");
-      note.className = "uhd-review-note";
-      note.dataset.uhdReviewNote = "true";
-      mount.before(note);
-    }
-    if (note.dataset.uhdMode !== mode) {
-      note.dataset.uhdMode = mode;
-      note.innerHTML = `
-        <strong>${mode === "all" ? "Todos los pacientes citados para UHD" : `Pacientes citados para hoy · ${formatDate(localISO(new Date()))}`}</strong>
-        <span>La lista se obtiene del registro compartido de Gestión.</span>
-        <div class="gestion-profile-actions">
-          <button class="gestion-profile-button" type="button" data-uhd-filter="today">Hoy</button>
-          <button class="gestion-profile-button secondary" type="button" data-uhd-filter="all">Todos UHD</button>
-        </div>`;
-    }
-    const target = reviewSearchValue(mode);
-    if (query.value !== target) {
-      query.value = target;
-      query.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-  }
-
-  function applyReviewFilter() {
-    if (route() !== CASES_ROUTE) return;
-    const mode = sessionStorage.getItem(FILTER_KEY);
-    const note = $("[data-uhd-review-note]");
-    if (mode !== "uhd-today" && mode !== "uhd-all") {
-      note?.remove();
-      return;
-    }
-    const query = $("[data-patient-filter='query']");
-    if (!query || !$("#patientCasesTable")) return;
-    const filterMode = mode === "uhd-all" ? "all" : "today";
-    addReviewNote(query, filterMode);
-    const hero = $("#managementContent .patient-hero");
-    const modeTitle = $("#managementContent .gestion-case-modebar strong");
-    if (hero) {
-      const heading = $("h2", hero);
-      const text = $("p", hero);
-      if (heading) heading.textContent = "Citaciones UHD";
-      if (text) text.textContent = "Pacientes dados de alta y citados para presentarse a evaluación por UHD.";
-    }
-    if (modeTitle) modeTitle.textContent = "Citaciones UHD";
-    notifyReady({ route: CASES_ROUTE, mode: filterMode });
+  function selectUhdReview(scope = "today") {
+    sessionStorage.setItem(MODE_KEY, "revision");
+    sessionStorage.setItem(TYPE_KEY, "uhd");
+    sessionStorage.setItem(UHD_SCOPE_KEY, scope === "all" ? "all" : "today");
+    sessionStorage.removeItem(LEGACY_FILTER_KEY);
+    window.CRS_PATIENT_CASES?.setReviewType?.("uhd", scope);
   }
 
   document.addEventListener("submit", async (event) => {
@@ -268,56 +218,15 @@
 
   document.addEventListener("click", (event) => {
     const review = event.target.closest?.("[data-gestion-uhd-review]");
-    const filter = event.target.closest?.("[data-uhd-filter]");
-    if (review) {
-      sessionStorage.setItem(MODE_KEY, "revision");
-      sessionStorage.setItem(FILTER_KEY, review.dataset.gestionUhdReview === "all" ? "uhd-all" : "uhd-today");
-    }
-    if (filter) {
-      sessionStorage.setItem(FILTER_KEY, filter.dataset.uhdFilter === "all" ? "uhd-all" : "uhd-today");
-      applyReviewFilter();
-    }
+    if (review) selectUhdReview(review.dataset.gestionUhdReview === "all" ? "all" : "today");
   }, true);
 
-  function renderCurrentRoute() {
-    if (route() === UHD_ROUTE) renderForm();
-    if (route() === CASES_ROUTE) applyReviewFilter();
-  }
-
-  function schedule(delay = 30) {
+  function schedule(delay = 0) {
     window.clearTimeout(timer);
-    timer = window.setTimeout(renderCurrentRoute, delay);
+    timer = window.setTimeout(renderForm, delay);
   }
 
-  function relevantMutation() {
-    const current = route();
-    const content = $("#managementContent");
-    if (!content) return false;
-    if (current === UHD_ROUTE) return !content.querySelector("[data-uhd-citation-form]");
-    if (current === CASES_ROUTE) {
-      const mode = sessionStorage.getItem(FILTER_KEY);
-      return (mode === "uhd-today" || mode === "uhd-all") && Boolean(content.querySelector("#patientCasesTable")) && !content.querySelector("[data-uhd-review-note]");
-    }
-    return false;
-  }
-
-  const observer = new MutationObserver(() => {
-    if (relevantMutation()) schedule(20);
-  });
-
-  function start() {
-    const content = $("#managementContent");
-    if (content) observer.observe(content, { childList: true, subtree: true });
-    schedule(10);
-  }
-
-  window.addEventListener("hashchange", () => schedule(10));
-  window.addEventListener("crs:supabase-ready", () => schedule(20));
-  window.addEventListener("crs:auth-changed", () => schedule(20));
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start, { once: true });
-  } else {
-    start();
-  }
+  window.addEventListener("hashchange", () => schedule(0));
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => schedule(0), { once: true });
+  else schedule(0);
 })();
