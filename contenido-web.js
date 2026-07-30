@@ -15,9 +15,9 @@
       },
       {
         id: "educacion-podcast-hph",
-        title: "Podcast Hospital Padre Hurtado",
-        description: "Episodios y contenido de audio para educacion medica.",
-        url: "https://open.spotify.com/show/4Yyb5LH2H6mj9NyDVajUMQ?si=LHra3q1PQl2s1-JQ8NysNg",
+        title: "Los Urgencistas",
+        description: "Podcast de educación médica sobre el enfrentamiento clínico y las primeras horas de manejo en urgencias.",
+        url: "https://open.spotify.com/show/4Yyb5LH2H6mj9NyDVajUMQ",
         category: "Podcast",
         createdAt: "2026-05-20T00:00:00.000Z"
       }
