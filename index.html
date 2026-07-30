@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-ui-stabilizing="true">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -30,8 +30,11 @@
     <link rel="stylesheet" href="./gestion-panel-final.css?v=1" />
     <link rel="stylesheet" href="./gestion-pacientes-core.css?v=1" />
     <link rel="stylesheet" href="./gestion-perfiles.css?v=1" />
+    <link rel="stylesheet" href="./gestion-uhd-citados.css?v=2" />
     <link rel="stylesheet" href="./supabase-admin-users.css?v=1" />
     <link rel="stylesheet" href="./supabase-jefatura-panel.css?v=1" />
+    <link rel="stylesheet" href="./jefatura-centro-gestion.css?v=2" />
+    <link rel="stylesheet" href="./ui-estabilidad.css?v=1" />
   </head>
   <body>
     <script>
@@ -72,7 +75,7 @@
           <a class="action-card" href="#/formularios"><span class="action-top"><span class="action-number">3</span><span class="action-kicker">Documentos</span></span><strong>Formularios</strong><span>Documentos frecuentes del turno.</span></a>
           <a class="action-card" href="#/noticias"><span class="action-top"><span class="action-number">4</span><span class="action-kicker">Comunidad</span></span><strong>Noticias</strong><span>Avisos y publicaciones vigentes.</span></a>
           <a class="action-card" href="#/educacion"><span class="action-top"><span class="action-number">5</span><span class="action-kicker">Docencia</span></span><strong>Educaci&oacute;n m&eacute;dica</strong><span>Material docente, procedimientos y recursos.</span></a>
-          <a class="action-card" href="#/paper"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Lectura</span></span><strong>Paper del mes</strong><span>T&iacute;tulo, abstract y repositorio mensual al lado derecho.</span></a>
+          <a class="action-card" href="#/paper"><span class="action-top"><span class="action-number">6</span><span class="action-kicker">Lectura</span></span><strong>Paper del mes</strong><span>T&iacute;tulo, abstract y repositorio mensual.</span></a>
           <a class="action-card" href="#/gestion"><span class="action-top"><span class="action-number">7</span><span class="action-kicker">Gesti&oacute;n</span></span><strong>Casos prioritarios</strong><span>Seguimiento operativo de pacientes y tareas.</span></a>
           <a class="action-card" href="#/jefatura"><span class="action-top"><span class="action-number">8</span><span class="action-kicker">Admin</span></span><strong>Jefatura</strong><span>Publicaciones, documentos y usuarios.</span></a>
         </div>
@@ -95,10 +98,11 @@
       <section id="educationPage" class="page" aria-labelledby="educationTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Educacion medica</p><h1 id="educationTitle">Urgencias HPH</h1></div></div><div id="educationContent" class="document-list"></div></section>
       <section id="managementPage" class="page" aria-labelledby="managementTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Seguimiento operativo</p><h1 id="managementTitle">Gesti&oacute;n de casos</h1></div></div><div id="managementContent" aria-live="polite"></div></section>
       <section id="doctorsPage" class="page" aria-labelledby="doctorsTitle"><div class="page-head"><a class="back-link" href="#/gestion">Gesti&oacute;n</a><div><p class="eyebrow">Equipo Urgencia</p><h1 id="doctorsTitle">M&oacute;dulo operativo</h1></div></div><div id="doctorsContent" aria-live="polite"></div></section>
-      <section id="chiefPage" class="page" aria-labelledby="chiefTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Espacio jefatura</p><h1 id="chiefTitle">Panel restringido</h1></div></div><div id="chiefContent" aria-live="polite"></div></section>
+      <section id="chiefPage" class="page" aria-labelledby="chiefTitle"><div class="page-head"><a class="back-link" href="#/inicio">Inicio</a><div><p class="eyebrow">Espacio jefatura</p><h1 id="chiefTitle">Centro de Gesti&oacute;n Jefatura</h1></div></div><div id="chiefContent" aria-live="polite"></div></section>
     </main>
 
     <template id="specialtyButtonTemplate"><a class="specialty-button"><span class="specialty-sticker" aria-hidden="true"></span><strong></strong></a></template>
+    <script src="./ui-estabilidad.js?v=1"></script>
     <script src="./compatibilidad-global.js?v=5"></script>
     <script src="./ley-urgencias-data.js?v=38"></script>
     <script src="./gestion-pacientes-config.js?v=4"></script>
@@ -120,9 +124,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-config.js?v=16"></script>
     <script src="./supabase-backend.js?v=7"></script>
-    <script src="./supabase-jefatura-panel.js?v=14" data-supabase-jefatura-panel></script>
+    <script src="./supabase-jefatura-panel.js?v=15" data-supabase-jefatura-panel></script>
     <script src="./supabase-admin-users.js?v=5"></script>
+    <script src="./jefatura-centro-gestion.js?v=2"></script>
     <script src="./gestion-panel-final.js?v=10"></script>
-    <script src="./gestion-perfiles.js?v=3"></script>
+    <script src="./gestion-perfiles.js?v=4"></script>
+    <script src="./gestion-uhd-citados.js?v=2"></script>
   </body>
 </html>
