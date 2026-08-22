@@ -92,7 +92,6 @@
         <section class="gestion-profiles-head">
           <span>Gestión ambulatoria prioritaria</span>
           <h2>¿Qué necesitas hacer?</h2>
-          <p>Accesos directos para registrar o revisar solicitudes sin recargar la pantalla con opciones innecesarias.</p>
         </section>
         <section class="gestion-profiles-grid" aria-label="Perfiles de gestión">
           <article class="gestion-profile-card doctor">
