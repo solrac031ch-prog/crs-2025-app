@@ -16,6 +16,7 @@ const publicRoutes = [
   '#/especialidades',
   '#/llamados',
   '#/formularios',
+  '#/telefonos',
   '#/noticias',
   '#/educacion',
   '#/paper',
