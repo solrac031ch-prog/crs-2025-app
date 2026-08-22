@@ -70,12 +70,22 @@
     await loadScript("supabase-backend", "./supabase-backend.js", 8);
   }
 
+  function disableEmbeddedPriorityManagement() {
+    const protocols = window.CRS_PROTOCOLS;
+    if (!Array.isArray(protocols)) return;
+    protocols.forEach((protocol) => {
+      protocol.hidePriority = true;
+    });
+  }
+
   async function ensureClinicalProtocols(current) {
+    disableEmbeddedPriorityManagement();
     await Promise.all([
       loadScript("protocolos-2026-ajustes", "./protocolos-2026-ajustes.js", 4),
       loadScript("protocolos-agiles", "./protocolos-agiles.js", 6),
       current === "#/especialidades" ? ensureSupabase() : Promise.resolve()
     ]);
+    disableEmbeddedPriorityManagement();
   }
 
   async function ensureManagement() {
