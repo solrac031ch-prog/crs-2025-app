@@ -15,6 +15,7 @@ const publicRoutes = [
   '#/inicio',
   '#/especialidades',
   '#/llamados',
+  '#/visita',
   '#/formularios',
   '#/telefonos',
   '#/noticias',
@@ -33,6 +34,7 @@ const appOwned = {
   especialidades: 'renderSpecialties()',
   especialidad: 'renderProtocol(slug || "")',
   llamados: 'renderDocuments()',
+  visita: 'renderDocuments()',
   formularios: 'renderFormsRoute(parts.slice(1))',
   telefonos: 'renderPhones()'
 };
