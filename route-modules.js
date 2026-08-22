@@ -123,7 +123,7 @@
       loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2),
       loadScript("contenido-web", "./contenido-web.js", 3),
       educationRoute ? loadStyle("educacion-uniforme", "./educacion-uniforme.css", 1) : Promise.resolve(),
-      paperRoute ? loadStyle("paper-mensual", "./paper-mensual.css", 1) : Promise.resolve(),
+      paperRoute ? loadStyle("paper-mensual", "./paper-mensual.css", 2) : Promise.resolve(),
       ensureSupabase()
     ]);
     await loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
