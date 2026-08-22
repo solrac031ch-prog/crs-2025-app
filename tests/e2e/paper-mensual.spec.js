@@ -38,3 +38,37 @@ test('Paper del mes organiza el histórico por año y mes', async ({ page }) => 
   await expect(page.locator('.pm-year').nth(1).locator('.pm-year-head strong')).toHaveText('2025');
   await expect(page.locator('.pm-year').nth(1).locator('.pm-month')).toHaveText('Diciembre');
 });
+
+test('Paper del mes prioriza la fecha del paper y no la fecha de carga', async ({ page }) => {
+  await page.route('https://mjrcymctfnnyabvmfgda.supabase.co/**', (route) => route.abort());
+  await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
+
+  await page.evaluate(() => {
+    sessionStorage.setItem('crsPublicContentCacheV2:paper', JSON.stringify({
+      savedAt: Date.now(),
+      items: [
+        {
+          id: 'paper-2025-subido-despues',
+          title: 'Paper diciembre 2025 subido hoy',
+          description: 'Paper antiguo cargado recientemente.',
+          month: '2025-12',
+          url: 'https://example.com/2025',
+          createdAt: '2026-08-22T22:00:00.000Z'
+        },
+        {
+          id: 'paper-2026-subido-antes',
+          title: 'Paper julio 2026',
+          description: 'Paper más reciente por fecha clínica.',
+          month: '2026-07',
+          url: 'https://example.com/2026',
+          createdAt: '2026-01-10T10:00:00.000Z'
+        }
+      ]
+    }));
+    location.hash = '#/paper';
+  });
+
+  await expect(page.locator('.gf-paper-featured h2')).toHaveText('Paper julio 2026');
+  await expect(page.locator('.pm-featured-month')).toHaveText('Julio 2026');
+  await expect(page.locator('.pm-paper-item strong')).toHaveText('Paper diciembre 2025 subido hoy');
+});
