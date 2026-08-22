@@ -80,7 +80,20 @@
     return year && month ? `${month}/${year}` : "Sin mes";
   }
 
-  function sortItems(items = []) {
+  function paperDateKey(item) {
+    const month = String(item?.month || "").trim();
+    if (/^\d{4}-(0[1-9]|1[0-2])(?:$|-)/.test(month)) return month.slice(0, 7);
+    return String(item?.createdAt || "").slice(0, 7);
+  }
+
+  function sortItems(items = [], kind = "") {
+    if (kind === "paper") {
+      return [...items].sort((a, b) => {
+        const byPaperDate = paperDateKey(b).localeCompare(paperDateKey(a));
+        if (byPaperDate) return byPaperDate;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      });
+    }
     return [...items].sort((a, b) => String(b.createdAt || b.month || "").localeCompare(String(a.createdAt || a.month || "")));
   }
 
@@ -90,14 +103,14 @@
 
   function staticContent(kind) {
     const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
-    return sortItems(window.CRS_STATIC_CONTENT?.[staticKey] || []);
+    return sortItems(window.CRS_STATIC_CONTENT?.[staticKey] || [], kind);
   }
 
   function readCache(kind) {
     try {
       const cached = JSON.parse(sessionStorage.getItem(`${CACHE_PREFIX}${kind}`) || "null");
       if (!cached?.items || Date.now() - Number(cached.savedAt || 0) > CACHE_TTL) return null;
-      return sortItems(cached.items);
+      return sortItems(cached.items, kind);
     } catch (_) {
       return null;
     }
@@ -121,7 +134,7 @@
     if (!api?.enabled?.()) return null;
     if (remotePromises.has(kind)) return remotePromises.get(kind);
     const promise = api.fetchContent(kind)
-      .then((items) => sortItems(items || []))
+      .then((items) => sortItems(items || [], kind))
       .catch((error) => {
         console.warn(error?.message || error);
         return null;
