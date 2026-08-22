@@ -21,6 +21,7 @@ async function beginActivePageTrace(page) {
 test('las rutas principales renderizan su vista en un navegador real', async ({ page }) => {
   await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#homePage')).toHaveClass(/\bactive\b/);
+  await expect(page.locator('#homePage a[href="#/telefonos"]')).toBeVisible();
 
   await page.locator('a[href="#/especialidades"]').first().click();
   await expect(page.locator('#specialtiesPage')).toHaveClass(/\bactive\b/);
@@ -28,6 +29,9 @@ test('las rutas principales renderizan su vista en un navegador real', async ({ 
 
   await setRoute(page, '#/llamados', '#callsPage');
   await setRoute(page, '#/formularios', '#formsPage');
+  await setRoute(page, '#/telefonos', '#phonesPage');
+  await expect(page.locator('#phonesTitle')).toHaveText('Directorio telefónico');
+  await expect(page.locator('#phonesContent .dt-shell')).toBeVisible();
 
   await setRoute(page, '#/noticias', '#managementPage');
   await expect(page.locator('#managementTitle')).toHaveText('Noticias');
