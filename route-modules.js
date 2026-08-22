@@ -118,14 +118,17 @@
 
   async function ensurePublicContent(current) {
     const educationRoute = current === "#/educacion";
+    const paperRoute = current === "#/paper";
     await Promise.all([
       loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2),
       loadScript("contenido-web", "./contenido-web.js", 3),
       educationRoute ? loadStyle("educacion-uniforme", "./educacion-uniforme.css", 1) : Promise.resolve(),
+      paperRoute ? loadStyle("paper-mensual", "./paper-mensual.css", 1) : Promise.resolve(),
       ensureSupabase()
     ]);
     await loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
     if (educationRoute) await loadScript("educacion-uniforme", "./educacion-uniforme.js", 2);
+    if (paperRoute) await loadScript("paper-mensual", "./paper-mensual-ui.js", 1);
   }
 
   async function ensureForms(current) {
