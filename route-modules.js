@@ -142,7 +142,10 @@
   }
 
   async function ensurePhoneDirectory() {
-    await loadScript("directorio-telefonico", "./directorio-telefonico.js", 3);
+    await Promise.all([
+      loadStyle("directorio-telefonico", "./directorio-telefonico.css", 1),
+      loadScript("directorio-telefonico", "./directorio-telefonico.js", 3)
+    ]);
   }
 
   async function ensureForRoute(value = route()) {
