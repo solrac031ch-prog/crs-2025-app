@@ -126,7 +126,7 @@
       paperRoute ? loadStyle("paper-mensual", "./paper-mensual.css", 2) : Promise.resolve(),
       ensureSupabase()
     ]);
-    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
+    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
     if (educationRoute) await loadScript("educacion-uniforme", "./educacion-uniforme.js", 2);
     if (paperRoute) await loadScript("paper-mensual", "./paper-mensual-ui.js", 1);
   }
@@ -164,7 +164,7 @@
       if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent(current);
       if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
         await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2);
-        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 14);
+        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
       }
       if (current === "#/llamados") return ensureSupabase();
       return undefined;
