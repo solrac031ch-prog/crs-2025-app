@@ -133,7 +133,6 @@
       .institutional-doc-item input[type=file],.institutional-doc-item input[type=url]{width:100%;min-width:0}
       .institutional-current{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:9px;background:#ecfdf5;color:#166534;font-size:.78rem;font-weight:750}
       .institutional-current.pending{background:#f8fafc;color:#64748b}
-      .institutional-public-badge{display:grid;gap:8px;margin-bottom:10px;padding:10px 12px;border:1px solid #a7f3d0;border-radius:10px;background:#ecfdf5;color:#166534;font-size:.86rem;font-weight:750}
       @media(max-width:760px){.institutional-doc-grid{grid-template-columns:1fr}}
     `;
     document.head.append(style);
@@ -258,16 +257,13 @@
     action.dataset.institutionalVersion = nextSignature;
     action.replaceChildren();
 
-    const badge = document.createElement("div");
-    badge.className = "institutional-public-badge";
-    badge.textContent = "Versión institucional vigente publicada por Jefatura.";
     const link = document.createElement("a");
     link.className = "document-button";
     link.href = href;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = label;
-    action.append(badge, link);
+    action.append(link);
   }
 
   function patchLinkByText(text, doc) {
@@ -287,8 +283,6 @@
     if (!card) return;
     card.href = href;
     card.dataset.institutionalVersion = signature(doc);
-    const detail = card.querySelector("span:last-child");
-    if (detail) detail.textContent = "Versión vigente publicada por Jefatura";
   }
 
   function cleanGenericPanel() {
