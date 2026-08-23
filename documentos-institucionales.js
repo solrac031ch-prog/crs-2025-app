@@ -1,9 +1,47 @@
 (() => {
   const MANAGED = [
     {
+      key: "antimicrobianosHph",
+      title: "Antimicrobianos H. Padre Hurtado",
+      description: "Formulario institucional vigente para solicitudes relacionadas con antimicrobianos del Hospital Padre Hurtado.",
+      publicTitle: "Antimicrobianos H. Padre Hurtado",
+      publicLabel: "Abrir formulario antimicrobianos"
+    },
+    {
+      key: "examenesManualesHph",
+      title: "Orden de examenes manuales HPH",
+      description: "Formato manual vigente para completar, imprimir o guardar como PDF.",
+      publicTitle: "Orden de examenes manuales HPH",
+      publicLabel: "Abrir orden de examenes"
+    },
+    {
+      key: "transfusion",
+      title: "Transfusion",
+      description: "Documento manual vigente para transfusión y respaldo operativo asociado.",
+      publicTitle: "Transfusion",
+      publicLabel: "Abrir documento de transfusion"
+    },
+    {
+      key: "medicamentosUsoOcasional",
+      title: "Medicamentos de uso ocasional",
+      description: "Formulario vigente para solicitud de fármaco no considerado en arsenal.",
+      publicTitle: "Medicamentos de uso ocasional",
+      publicLabel: "Abrir formulario medicamentos"
+    },
+    {
       key: "solicitudVih",
       title: "Solicitud de VIH",
-      description: "Formulario institucional vigente para solicitud de VIH."
+      description: "Formulario institucional vigente para solicitud de VIH.",
+      publicTitle: "Solicitud de VIH",
+      publicLabel: "Abrir solicitud de VIH"
+    },
+    {
+      key: "notificacionObligatoria",
+      title: "Notificación obligatoria",
+      description: "Enlace institucional vigente para notificación obligatoria / EPIVIGILA.",
+      publicTitle: "Formularios de notificación obligatoria",
+      publicLabel: "Abrir EPIVIGILA",
+      linkOnly: true
     },
     {
       key: "leyUrgenciasDecreto",
@@ -22,8 +60,14 @@
     }
   ];
 
+  const LEGACY_JEFATURA_TITLES = new Set([
+    "Medicamentos de uso ocasional",
+    "Ley de Urgencias",
+    "Notificación obligatoria"
+  ]);
   const MANAGED_TITLES = new Set([
     ...MANAGED.map((item) => item.title),
+    ...MANAGED.map((item) => item.publicTitle).filter(Boolean),
     "Ley de Urgencias"
   ]);
   let renderTimer = 0;
@@ -136,15 +180,15 @@
     hiddenDescription.value = definition.description;
 
     const fileLabel = document.createElement("label");
-    fileLabel.append("Nueva versión (PDF / documento)");
+    fileLabel.append(definition.linkOnly ? "Archivo opcional" : "Nueva versión (PDF / documento)");
     const file = document.createElement("input");
     file.type = "file";
     file.name = "file";
-    file.accept = ".pdf,.doc,.docx,.odt,image/*";
+    file.accept = ".pdf,.doc,.docx,.odt,.xls,.xlsx,image/*";
     fileLabel.append(file);
 
     const urlLabel = document.createElement("label");
-    urlLabel.append("O pegar enlace vigente");
+    urlLabel.append(definition.linkOnly ? "Enlace vigente" : "O pegar enlace vigente");
     const url = document.createElement("input");
     url.type = "url";
     url.name = "url";
@@ -166,9 +210,10 @@
     const body = $('[data-jefatura-section="documentos-institucionales"] .jefatura-dropdown-body');
     if (!body) return;
 
-    const cards = $$(':scope > .crs-access-card', body);
-    const legacyLaw = cards.find((card) => clean(card.querySelector("h3")?.textContent) === "Ley de Urgencias");
-    if (legacyLaw && !legacyLaw.hidden) legacyLaw.hidden = true;
+    $$(':scope > .crs-access-card', body).forEach((card) => {
+      const title = clean(card.querySelector("h3")?.textContent);
+      if (LEGACY_JEFATURA_TITLES.has(title)) card.hidden = true;
+    });
 
     const map = byKey(documents);
     const managerSignature = MANAGED.map((item) => `${item.key}:${signature(map.get(item.key))}`).join("|");
@@ -186,7 +231,7 @@
     const title = document.createElement("h3");
     title.textContent = "Documentos institucionales editables";
     const copy = document.createElement("p");
-    copy.textContent = "Sube una nueva versión o pega un enlace. La publicación nueva pasa a ser la versión vigente para todo el equipo; si falla la carga, la versión anterior se conserva.";
+    copy.textContent = "Administra desde aquí todos los documentos y enlaces publicados en Formularios. La nueva publicación pasa a ser la versión vigente para el equipo; si la carga falla, se conserva la versión anterior.";
     head.append(title, copy);
 
     const grid = document.createElement("div");
@@ -196,7 +241,7 @@
     body.append(manager);
 
     const count = body.closest("details")?.querySelector(".jefatura-dropdown-count");
-    if (count) count.textContent = "6";
+    if (count) count.textContent = String(MANAGED.length);
   }
 
   function findPanel(title) {
@@ -228,7 +273,7 @@
   function patchLinkByText(text, doc) {
     const href = publicUrl(doc);
     if (!href) return;
-    $$(`#turnFormsList a`).forEach((link) => {
+    $$("#turnFormsList a").forEach((link) => {
       if (clean(link.textContent) !== text) return;
       link.href = href;
       link.dataset.institutionalVersion = signature(doc);
@@ -256,14 +301,31 @@
     if (!panel.querySelector("article")) panel.remove();
   }
 
+  function patchPublishedForm(definition, map) {
+    if (!definition.publicTitle || !definition.publicLabel) return;
+    const doc = map.get(definition.key);
+    if (!doc) return;
+    if (definition.key === "notificacionObligatoria") {
+      patchLinkByText(definition.publicLabel, doc);
+      return;
+    }
+    replacePublicAction(findPanel(definition.publicTitle), doc, definition.publicLabel);
+  }
+
   async function patchForms(documents) {
     if (!route().startsWith("#/formularios")) return;
     const map = byKey(documents);
     const legacyLaw = map.get("leyUrgencias");
 
     if (route() === "#/formularios") {
-      replacePublicAction(findPanel("Solicitud de VIH"), map.get("solicitudVih"), "Abrir solicitud de VIH");
+      MANAGED.forEach((definition) => patchPublishedForm(definition, map));
+      patchLinkByText("Abrir EPIVIGILA", map.get("notificacionObligatoria"));
       cleanGenericPanel();
+      return;
+    }
+
+    if (route().startsWith("#/formularios/notificacion-obligatoria")) {
+      patchLinkByText("Abrir EPIVIGILA", map.get("notificacionObligatoria"));
       return;
     }
 
