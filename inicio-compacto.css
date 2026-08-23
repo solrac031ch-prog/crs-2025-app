@@ -1,61 +1,194 @@
-/* Inicio — compactación media de tarjetas. Solo presentación. */
+/* Inicio — compacto para aprovechar una sola pantalla en escritorio. Solo presentación. */
 
 #homePage.active {
-  gap: 20px;
+  gap: 14px;
+}
+
+#homePage .hero {
+  gap: 6px 20px;
+  padding: 16px 0 14px;
+}
+
+#homePage .hero .eyebrow {
+  font-size: 0.68rem;
+}
+
+#homePage .hero h1 {
+  max-width: 22ch;
+  font-size: clamp(1.9rem, 3.8vw, 3.65rem);
+  line-height: 0.98;
+}
+
+#homePage .today-label {
+  max-width: 210px;
+  padding: 7px 10px;
+  font-size: 0.79rem;
+  line-height: 1.35;
+}
+
+#homePage .home-actions {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+#homePage .action-card,
+#homePage .action-card.action-primary,
+#homePage .action-card[href="#/especialidades"],
+#homePage .action-card[href="#/llamados"],
+#homePage .action-card:nth-child(9),
+#homePage .action-card:nth-child(10) {
+  grid-column: span 1;
+  min-height: 132px;
+  gap: 7px;
+  padding: 13px 15px 14px;
 }
 
 #homePage .action-card {
-  min-height: 172px;
-  gap: 10px;
-  padding: 18px 20px 20px;
+  border-right: 1px solid var(--home-rule);
+}
+
+#homePage .action-card:nth-child(5),
+#homePage .action-card:nth-child(10) {
+  border-right: 0;
 }
 
 #homePage .action-card .action-top {
-  min-height: 20px;
+  min-height: 17px;
 }
 
 #homePage .action-number {
-  font-size: 0.92rem;
+  font-size: 0.82rem;
 }
 
 #homePage .action-kicker {
-  font-size: 0.64rem;
-  letter-spacing: 0.11em;
+  font-size: 0.57rem;
+  letter-spacing: 0.09em;
 }
 
-#homePage .action-card strong {
-  margin-top: 3px;
-  font-size: clamp(1.32rem, 1.9vw, 1.78rem);
-  line-height: 1.03;
-}
-
-#homePage .action-card > span:last-child {
-  font-size: 0.84rem;
-  line-height: 1.4;
-}
-
-#homePage .action-card strong::after {
-  margin-top: 9px;
-}
-
-#homePage .action-card.action-primary,
-#homePage .action-card[href="#/especialidades"] {
-  min-height: 215px;
-  padding: 22px 24px 24px;
+#homePage .action-card strong,
+#homePage .action-card[href="#/especialidades"] strong {
+  max-width: 16ch;
+  margin-top: 1px;
+  font-size: clamp(1.08rem, 1.45vw, 1.48rem);
+  line-height: 1.02;
 }
 
 #homePage .action-card[href="#/especialidades"] strong {
-  font-size: clamp(1.95rem, 3.8vw, 3rem);
+  font-size: clamp(1.28rem, 1.75vw, 1.72rem);
 }
 
+#homePage .action-card > span:last-child,
 #homePage .action-card[href="#/especialidades"] > span:last-child {
-  font-size: 0.9rem;
-  line-height: 1.42;
+  max-width: 32ch;
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+#homePage .action-card strong::after,
+#homePage .action-card[href="#/especialidades"] strong::after {
+  width: 24px;
+  height: 2px;
+  margin-top: 6px;
+}
+
+#homePage .action-card:hover strong::after,
+#homePage .action-card:focus-visible strong::after {
+  width: 38px;
+}
+
+#homePage .home-panel {
+  grid-template-columns: minmax(125px, 0.22fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 10px 14px;
+}
+
+#homePage .home-panel strong {
+  font-size: 0.66rem;
+}
+
+#homePage .home-panel p {
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 1120px) {
+  #homePage .home-actions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  #homePage .action-card,
+  #homePage .action-card.action-primary,
+  #homePage .action-card[href="#/especialidades"],
+  #homePage .action-card[href="#/llamados"],
+  #homePage .action-card:nth-child(9),
+  #homePage .action-card:nth-child(10) {
+    grid-column: span 1;
+    min-height: 126px;
+  }
+
+  #homePage .action-card:nth-child(5),
+  #homePage .action-card:nth-child(10) {
+    border-right: 1px solid var(--home-rule);
+  }
+
+  #homePage .action-card:nth-child(4),
+  #homePage .action-card:nth-child(8) {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  #homePage .hero {
+    padding: 14px 0 12px;
+  }
+
+  #homePage .hero h1 {
+    font-size: clamp(1.85rem, 6.5vw, 3rem);
+  }
+
+  #homePage .home-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #homePage .action-card,
+  #homePage .action-card.action-primary,
+  #homePage .action-card[href="#/especialidades"],
+  #homePage .action-card[href="#/llamados"],
+  #homePage .action-card:nth-child(9),
+  #homePage .action-card:nth-child(10) {
+    grid-column: span 1;
+    min-height: 118px;
+  }
+
+  #homePage .action-card {
+    border-right: 1px solid var(--home-rule);
+  }
+
+  #homePage .action-card:nth-child(even) {
+    border-right: 0;
+  }
 }
 
 @media (max-width: 620px) {
   #homePage.active {
-    gap: 15px;
+    gap: 12px;
+  }
+
+  #homePage .hero {
+    padding: 12px 0 10px;
+  }
+
+  #homePage .hero h1 {
+    max-width: 14ch;
+    font-size: clamp(1.75rem, 9vw, 2.45rem);
+  }
+
+  #homePage .today-label {
+    padding: 6px 9px;
+    font-size: 0.76rem;
+  }
+
+  #homePage .home-actions {
+    grid-template-columns: 1fr;
   }
 
   #homePage .action-card,
@@ -64,24 +197,26 @@
   #homePage .action-card:nth-child(10),
   #homePage .action-card.action-primary,
   #homePage .action-card[href="#/especialidades"] {
+    grid-column: 1;
     min-height: 0;
-    gap: 8px;
-    padding: 16px 16px 17px;
+    gap: 6px;
+    padding: 12px 14px 13px;
+    border-right: 0 !important;
   }
 
-  #homePage .action-card[href="#/especialidades"] {
-    padding: 19px 16px 20px;
-  }
-
+  #homePage .action-card strong,
   #homePage .action-card[href="#/especialidades"] strong {
-    font-size: clamp(1.8rem, 9vw, 2.45rem);
+    font-size: clamp(1.16rem, 5.5vw, 1.52rem);
   }
 
-  #homePage .action-card strong {
-    font-size: clamp(1.28rem, 6vw, 1.62rem);
+  #homePage .action-card > span:last-child,
+  #homePage .action-card[href="#/especialidades"] > span:last-child {
+    font-size: 0.77rem;
   }
 
-  #homePage .action-card > span:last-child {
-    font-size: 0.82rem;
+  #homePage .home-panel {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 10px 12px;
   }
 }
