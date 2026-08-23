@@ -112,7 +112,8 @@
         "data-supabase-jefatura-panel": true
       }),
       loadScript("supabase-admin-users", "./supabase-admin-users.js", 6),
-      loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 4)
+      loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 4),
+      loadScript("documentos-institucionales", "./documentos-institucionales.js", 1)
     ]);
   }
 
@@ -136,7 +137,10 @@
       loadScript("app-forms", "./app-forms.js", 2),
       ensureSupabase()
     ]);
-    await loadScript("arsenal-form-entry", "./arsenal-form-entry.js", 1);
+    await Promise.all([
+      loadScript("arsenal-form-entry", "./arsenal-form-entry.js", 1),
+      loadScript("documentos-institucionales", "./documentos-institucionales.js", 1)
+    ]);
 
     if (current === "#/formularios/arsenal-terapeutico") {
       await loadScript("arsenal-terapeutico", "./arsenal-terapeutico.js", 2);
