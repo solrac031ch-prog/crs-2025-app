@@ -96,8 +96,16 @@
   transition: background 140ms ease;
 }
 
-#homePage .action-card:nth-child(3n) {
+#homePage .action-card:nth-child(2),
+#homePage .action-card:nth-child(5),
+#homePage .action-card:nth-child(8),
+#homePage .action-card:nth-child(10) {
   border-right: 0;
+}
+
+#homePage .action-card:nth-child(9),
+#homePage .action-card:nth-child(10) {
+  grid-column: span 6;
 }
 
 #homePage .action-card:hover {
@@ -186,8 +194,7 @@
   min-height: 260px;
   padding: 28px 30px 30px;
   color: var(--home-ink);
-  background:
-    linear-gradient(90deg, var(--home-accent-soft) 0%, rgba(238, 246, 243, 0.34) 62%, #fff 100%);
+  background: var(--home-accent-soft);
   border-color: var(--home-rule);
 }
 
@@ -269,24 +276,26 @@
   }
 
   #homePage .action-card,
-  #homePage .action-card[href="#/llamados"] {
+  #homePage .action-card[href="#/llamados"],
+  #homePage .action-card:nth-child(9) {
     grid-column: span 6;
   }
 
   #homePage .action-card.action-primary,
-  #homePage .action-card[href="#/especialidades"] {
+  #homePage .action-card[href="#/especialidades"],
+  #homePage .action-card:nth-child(10) {
     grid-column: span 12;
   }
 
-  #homePage .action-card:nth-child(3n) {
+  #homePage .action-card {
     border-right: 1px solid var(--home-rule);
   }
 
-  #homePage .action-card:nth-child(2n + 1):not(:first-child) {
-    border-right: 1px solid var(--home-rule);
-  }
-
-  #homePage .action-card:nth-child(2n):not(:first-child) {
+  #homePage .action-card:nth-child(3),
+  #homePage .action-card:nth-child(5),
+  #homePage .action-card:nth-child(7),
+  #homePage .action-card:nth-child(9),
+  #homePage .action-card:nth-child(10) {
     border-right: 0;
   }
 }
@@ -311,6 +320,8 @@
 
   #homePage .action-card,
   #homePage .action-card[href="#/llamados"],
+  #homePage .action-card:nth-child(9),
+  #homePage .action-card:nth-child(10),
   #homePage .action-card.action-primary,
   #homePage .action-card[href="#/especialidades"] {
     grid-column: span 12;
