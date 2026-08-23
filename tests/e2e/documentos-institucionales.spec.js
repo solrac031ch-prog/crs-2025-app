@@ -25,16 +25,17 @@ test('gestor institucional declara todos los formularios con claves estables', a
 
   expect(source).toContain('form.dataset.formBase = "true"');
   expect(source).toContain('form.dataset.formKey = definition.key');
-  expect(source).toContain('Versión institucional vigente publicada por Jefatura.');
+  expect(source).not.toContain('Versión institucional vigente publicada por Jefatura.');
+  expect(source).not.toContain('Versión vigente publicada por Jefatura');
   expect(source).toContain('Administra desde aquí todos los documentos y enlaces publicados en Formularios.');
 });
 
-test('rutas de Jefatura y Formularios cargan la versión 2 del gestor institucional', async () => {
+test('rutas de Jefatura y Formularios cargan la versión 3 del gestor institucional', async () => {
   const source = fs.readFileSync(path.join(root, 'route-modules.js'), 'utf8');
   const matches = source.match(/documentos-institucionales\.js/g) || [];
 
   expect(matches.length).toBe(2);
-  expect(source).toContain('loadScript("documentos-institucionales", "./documentos-institucionales.js", 2)');
+  expect(source).toContain('loadScript("documentos-institucionales", "./documentos-institucionales.js", 3)');
 });
 
 test('Formularios conserva todos los accesos locales mientras no exista reemplazo global', async ({ page }) => {
