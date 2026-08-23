@@ -1,4 +1,4 @@
-/* Inicio — estética editorial médica. Solo presentación, sin alterar contenido ni rutas. */
+/* Inicio — estética editorial médica con color. Solo presentación, sin alterar contenido ni rutas. */
 
 #homePage {
   --home-paper: #fbfaf7;
@@ -6,7 +6,7 @@
   --home-muted: #66706d;
   --home-rule: #d8ddd9;
   --home-accent: #0f5f57;
-  --home-accent-soft: #eef6f3;
+  --home-accent-soft: #e9f5f1;
   --home-serif: Georgia, "Times New Roman", Times, serif;
   position: relative;
   max-width: 1160px;
@@ -28,8 +28,18 @@
   align-items: end;
   gap: 10px 28px;
   padding: 28px 0 24px;
-  border-top: 5px solid var(--home-ink);
+  border-top: 5px solid var(--home-accent);
   border-bottom: 1px solid var(--home-ink);
+}
+
+#homePage .hero::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  width: min(28vw, 250px);
+  height: 4px;
+  background: linear-gradient(90deg, #2563eb 0 28%, #7c3aed 28% 52%, #d97706 52% 76%, #be123c 76% 100%);
 }
 
 #homePage .hero .eyebrow {
@@ -58,9 +68,11 @@
   align-self: end;
   max-width: 230px;
   margin: 0 0 4px;
-  padding-left: 18px;
-  color: var(--home-muted);
-  border-left: 1px solid var(--home-rule);
+  padding: 10px 12px;
+  color: #38504c;
+  background: #f0f8f5;
+  border: 1px solid #cfe3dc;
+  border-radius: 3px;
   font-size: 0.88rem;
   font-weight: 650;
   line-height: 1.45;
@@ -77,6 +89,8 @@
 }
 
 #homePage .action-card {
+  --section-color: var(--home-accent);
+  --section-soft: #ffffff;
   position: relative;
   grid-column: span 4;
   min-height: 208px;
@@ -86,14 +100,14 @@
   gap: 14px;
   padding: 22px 24px 24px;
   color: var(--home-ink);
-  background: #fff;
+  background: var(--section-soft);
   border: 0;
   border-right: 1px solid var(--home-rule);
   border-bottom: 1px solid var(--home-rule);
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: inset 0 4px 0 var(--section-color);
   overflow: hidden;
-  transition: background 140ms ease;
+  transition: background 140ms ease, box-shadow 140ms ease;
 }
 
 #homePage .action-card:nth-child(2),
@@ -109,15 +123,15 @@
 }
 
 #homePage .action-card:hover {
-  background: #f7faf8;
+  background: color-mix(in srgb, var(--section-soft) 78%, white);
   border-color: var(--home-rule);
+  box-shadow: inset 0 7px 0 var(--section-color);
   transform: none;
-  box-shadow: none;
 }
 
 #homePage .action-card:focus-visible {
   z-index: 2;
-  outline: 2px solid var(--home-accent);
+  outline: 2px solid var(--section-color);
   outline-offset: -3px;
 }
 
@@ -134,7 +148,7 @@
   height: auto;
   display: inline-block;
   flex: 0 0 auto;
-  color: var(--home-accent);
+  color: var(--section-color);
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -145,7 +159,7 @@
 
 #homePage .action-kicker {
   margin-left: auto;
-  color: var(--home-muted);
+  color: var(--section-color);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -168,7 +182,7 @@
 #homePage .action-card > span:last-child {
   max-width: 30ch;
   margin-top: auto;
-  color: var(--home-muted);
+  color: #596461;
   font-size: 0.9rem;
   line-height: 1.48;
 }
@@ -179,7 +193,7 @@
   width: 28px;
   height: 2px;
   margin-top: 13px;
-  background: var(--home-accent);
+  background: var(--section-color);
   transition: width 140ms ease;
 }
 
@@ -190,22 +204,23 @@
 
 #homePage .action-card.action-primary,
 #homePage .action-card[href="#/especialidades"] {
+  --section-color: #0f766e;
+  --section-soft: #e8f5f1;
   grid-column: span 8;
   min-height: 260px;
   padding: 28px 30px 30px;
   color: var(--home-ink);
-  background: var(--home-accent-soft);
+  background: var(--section-soft);
   border-color: var(--home-rule);
 }
 
 #homePage .action-card[href="#/especialidades"] .action-number,
-#homePage .action-card[href="#/especialidades"] .action-kicker,
-#homePage .action-card[href="#/especialidades"] > span:last-child {
-  color: var(--home-muted);
+#homePage .action-card[href="#/especialidades"] .action-kicker {
+  color: #0f766e;
 }
 
-#homePage .action-card[href="#/especialidades"] .action-number {
-  color: var(--home-accent);
+#homePage .action-card[href="#/especialidades"] > span:last-child {
+  color: #49635e;
 }
 
 #homePage .action-card[href="#/especialidades"] strong {
@@ -225,7 +240,49 @@
 }
 
 #homePage .action-card[href="#/llamados"] {
+  --section-color: #2563eb;
+  --section-soft: #eef4ff;
   grid-column: span 4;
+}
+
+#homePage .action-card[href="#/visita"] {
+  --section-color: #4f46e5;
+  --section-soft: #f1f0ff;
+}
+
+#homePage .action-card[href="#/formularios"] {
+  --section-color: #b7791f;
+  --section-soft: #fff8e8;
+}
+
+#homePage .action-card[href="#/telefonos"] {
+  --section-color: #0891b2;
+  --section-soft: #edfafe;
+}
+
+#homePage .action-card[href="#/noticias"] {
+  --section-color: #be123c;
+  --section-soft: #fff0f4;
+}
+
+#homePage .action-card[href="#/educacion"] {
+  --section-color: #7c3aed;
+  --section-soft: #f6f0ff;
+}
+
+#homePage .action-card[href="#/paper"] {
+  --section-color: #c2410c;
+  --section-soft: #fff3eb;
+}
+
+#homePage .action-card[href="#/gestion"] {
+  --section-color: #9f1239;
+  --section-soft: #fff0f3;
+}
+
+#homePage .action-card[href="#/jefatura"] {
+  --section-color: #475569;
+  --section-soft: #f2f5f8;
 }
 
 #homePage .home-panel {
@@ -233,10 +290,11 @@
   grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
-  padding: 18px 0 0;
-  background: transparent;
+  padding: 18px 20px;
+  background: #f2f8f6;
   border: 0;
   border-top: 3px double var(--home-ink);
+  border-left: 5px solid var(--home-accent);
   border-radius: 0;
   box-shadow: none;
 }
@@ -269,9 +327,6 @@
 
   #homePage .today-label {
     max-width: none;
-    padding: 10px 0 0;
-    border-left: 0;
-    border-top: 1px solid var(--home-rule);
     text-align: left;
   }
 
@@ -307,6 +362,11 @@
 
   #homePage .hero {
     padding: 22px 0 18px;
+  }
+
+  #homePage .hero::after {
+    width: 46vw;
+    height: 3px;
   }
 
   #homePage .hero h1 {
@@ -346,7 +406,7 @@
   #homePage .home-panel {
     grid-template-columns: 1fr;
     gap: 10px;
-    padding-top: 15px;
+    padding: 15px 16px;
   }
 }
 
