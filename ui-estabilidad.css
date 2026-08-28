@@ -12,6 +12,7 @@ body,
   overflow-anchor: none;
 }
 
+#specialtiesPage > .page-head,
 #managementPage > .page-head,
 #chiefPage > .page-head,
 #educationPage > .page-head,
@@ -26,12 +27,6 @@ body,
 #doctorsPage.active {
   position: relative;
   min-height: 70vh;
-}
-
-#managementPage.active,
-#chiefPage.active,
-#educationPage.active,
-#doctorsPage.active {
   padding-top: clamp(24px, 3vw, 40px);
 }
 
@@ -130,6 +125,7 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
 }
 
 @media (max-width: 720px) {
+  #specialtiesPage.active,
   #managementPage.active,
   #chiefPage.active,
   #educationPage.active,
