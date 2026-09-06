@@ -168,12 +168,6 @@
     enhanceForgotPassword();
   }
 
-  window.addEventListener("hashchange", () => setTimeout(enhanceForgotPassword, 20));
-  window.addEventListener("crs:supabase-ready", () => {
-    listenForRecovery();
-    setTimeout(enhanceForgotPassword, 20);
-  });
-
   window.CRS_SUPABASE_JEFATURA_LEGACY_DISABLED = true;
 
   if (document.readyState === "loading") {
