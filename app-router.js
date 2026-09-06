@@ -25,8 +25,17 @@
     }));
   }
 
+  function syncSpecialtyCategoryButtons() {
+    document.querySelectorAll("#specialtiesPage [data-category]").forEach((button) => {
+      const active = button.dataset.category === state.category;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  }
+
   function prepareSpecialtyDefault() {
     if (state.category === "Todos") state.category = "Flujo";
+    syncSpecialtyCategoryButtons();
   }
 
   function hideSpecialtyRefresh() {
@@ -129,11 +138,7 @@
 
   function setCategory(category) {
     state.category = category;
-    document.querySelectorAll("[data-category]").forEach((button) => {
-      const active = button.dataset.category === category;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
+    syncSpecialtyCategoryButtons();
     refreshSpecialties();
   }
 
