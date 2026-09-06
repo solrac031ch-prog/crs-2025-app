@@ -23,10 +23,14 @@ for (const marker of ['PASSWORD_RECOVERY', 'resetPasswordForEmail', 'updateUser'
   if (!js.includes(marker)) fail(`Se perdió una pieza del flujo de recuperación: ${marker}`);
 }
 
-const cssRef = './supabase-jefatura-panel.css?v=1';
-const jsRef = './supabase-jefatura-panel.js?v=14';
-if (!html.includes(cssRef)) fail('index.html no carga supabase-jefatura-panel.css.');
-if (!html.includes(jsRef)) fail('index.html no carga la versión esperada de supabase-jefatura-panel.js.');
-if (html.indexOf(cssRef) > html.indexOf('</head>')) fail('El CSS de recuperación debe cargarse desde <head>.');
+const cssMatch = html.match(/<link[^>]+href=["']\.\/supabase-jefatura-panel\.css\?v=\d+["'][^>]*>/);
+const jsMatch = html.match(/<script[^>]+src=["']\.\/supabase-jefatura-panel\.js\?v=\d+["'][^>]*>/);
+if (!cssMatch) fail('index.html debe cargar temprano supabase-jefatura-panel.css.');
+if (!jsMatch) fail('index.html debe cargar temprano supabase-jefatura-panel.js.');
+if (!cssMatch[0].includes('data-crs-route-style="supabase-jefatura-panel"')) {
+  fail('El CSS temprano de recuperación debe marcarse como route-style para evitar duplicados al entrar a Jefatura.');
+}
+if (html.indexOf(cssMatch[0]) > html.indexOf('</head>')) fail('El CSS de recuperación debe cargarse desde <head>.');
+if (html.indexOf(cssMatch[0]) >= html.indexOf(jsMatch[0])) fail('El CSS de recuperación debe estar disponible antes que su helper JavaScript.');
 
 console.log('Frontera de estilos de recuperación válida.');
