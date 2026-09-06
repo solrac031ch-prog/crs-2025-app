@@ -81,6 +81,8 @@
   async function ensureClinicalProtocols(current) {
     disableEmbeddedPriorityManagement();
     await Promise.all([
+      loadStyle("protocolo-saturacion-sea", "./protocolo-saturacion-sea.css", 1),
+      loadScript("protocolo-saturacion-sea", "./protocolo-saturacion-sea.js", 1),
       loadScript("protocolos-2026-ajustes", "./protocolos-2026-ajustes.js", 4),
       loadScript("protocolos-agiles", "./protocolos-agiles.js", 6),
       loadScript("especialidades-estable", "./especialidades-estable.js", 4, {
