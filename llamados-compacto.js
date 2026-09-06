@@ -47,34 +47,6 @@
     container.replaceChildren(wrapper);
   }
 
-  function compactSearch() {
-    const panel = document.querySelector("#callsSearchPanel");
-    if (!panel) return;
-
-    panel.querySelectorAll(".on-call-meta, .on-call-date").forEach((item) => item.remove());
-    panel.querySelectorAll('.route-actions a[href="#/inicio"]').forEach((item) => item.remove());
-
-    panel.querySelectorAll(".law-live-empty").forEach((item) => {
-      if (/Escribe una especialidad/i.test(item.textContent || "")) item.remove();
-    });
-
-    const sourceNote = panel.querySelector("[data-call-live-source] span");
-    if (sourceNote && sourceNote.textContent !== "Rotativa vigente · Jefatura") {
-      sourceNote.textContent = "Rotativa vigente · Jefatura";
-    }
-
-    const actions = panel.querySelector(".route-actions");
-    if (actions) {
-      actions.classList.add("calls-route-actions");
-      const clear = actions.querySelector(".on-call-clear");
-      if (clear) {
-        clear.textContent = "Limpiar";
-        const query = panel.querySelector("[data-call-live-query]");
-        clear.hidden = !String(query?.value || "").trim();
-      }
-    }
-  }
-
   function compactPage() {
     if (currentRoute() !== ROUTE) return;
     const page = document.querySelector("#callsPage");
@@ -82,9 +54,8 @@
 
     page.classList.add("calls-compact");
     const title = page.querySelector("#callsTitle");
-    if (title) title.textContent = "Llamados y UHD";
+    if (title && title.textContent !== "Llamados y UHD") title.textContent = "Llamados y UHD";
 
-    compactSearch();
     compactDocumentAction("#callsDocumentAction", "especialistas", "Documento de respaldo");
     compactDocumentAction("#uhdDocumentAction", "uhd", "Abrir disponibilidad UHD");
   }
@@ -99,7 +70,7 @@
     const page = document.querySelector("#callsPage");
     if (!page) return;
     observer = new MutationObserver(schedule);
-    observer.observe(page, { childList: true, subtree: true, characterData: true });
+    observer.observe(page, { childList: true, subtree: true });
   }
 
   function routeChanged() {
