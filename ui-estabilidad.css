@@ -81,6 +81,16 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
   box-sizing: border-box;
 }
 
+#specialtiesPage.specialty-refreshing #resultsMeta,
+#specialtiesPage.specialty-refreshing #specialtyGroups {
+  visibility: hidden !important;
+  pointer-events: none;
+}
+
+#specialtiesPage.specialty-refreshing #specialtyGroups {
+  min-height: 260px;
+}
+
 .gestion-case-modebar {
   display: none !important;
 }
