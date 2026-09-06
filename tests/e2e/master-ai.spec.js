@@ -18,6 +18,7 @@ test.describe('MASTER IA', () => {
           invoke: async (_name, options) => ({
             data: {
               configured: true,
+              mode: 'generative',
               answer: 'Usa el flujo institucional recuperado y verifica la fuente MASTER.',
               sources: options.body.sources
             },
@@ -36,6 +37,37 @@ test.describe('MASTER IA', () => {
     await expect(page.locator('[data-master-ai-status]')).toContainText('fuentes recuperadas');
   });
 
+  test('si la redacción generativa falla conserva una respuesta extractiva con fuentes', async ({ page }) => {
+    await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-master-ai-launcher]').click();
+
+    await page.evaluate(() => {
+      window.CRS_SUPABASE.client = () => ({
+        functions: {
+          invoke: async (_name, options) => ({
+            data: {
+              configured: true,
+              mode: 'sources',
+              answer: 'Respuesta extractiva basada solo en MASTER.\n\nFuente MASTER: Saturación SEA y Clave Negra',
+              sources: options.body.sources,
+              notice: 'La redacción generativa está temporalmente no disponible; se muestra únicamente contenido extraído de MASTER.'
+            },
+            error: null
+          })
+        }
+      });
+    });
+
+    await page.locator('#masterAiQuestion').fill('¿Cómo activo Clave Negra?');
+    await page.locator('[data-master-ai-form] button[type="submit"]').click();
+
+    await expect(page.locator('[data-master-ai-answer]')).toBeVisible();
+    await expect(page.locator('[data-master-ai-answer-text]')).toContainText(/Fuente MASTER/i);
+    await expect(page.locator('[data-master-ai-status]')).toContainText(/Respuesta extractiva/i);
+    await expect(page.locator('[data-master-ai-config]')).toBeVisible();
+    await expect(page.locator('[data-master-ai-config]')).toContainText(/temporalmente/i);
+  });
+
   test('bloquea datos identificatorios antes de invocar IA', async ({ page }) => {
     await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-master-ai-launcher]').click();
@@ -46,7 +78,7 @@ test.describe('MASTER IA', () => {
         functions: {
           invoke: async () => {
             window.__masterAiInvocations += 1;
-            return { data: { configured: true, answer: 'NO DEBE APARECER', sources: [] }, error: null };
+            return { data: { configured: true, mode: 'generative', answer: 'NO DEBE APARECER', sources: [] }, error: null };
           }
         }
       });
