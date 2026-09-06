@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const js = fs.readFileSync('gestion-panel-final.js', 'utf8');
 const css = fs.readFileSync('gestion-panel-final.css', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
+const routeModules = fs.readFileSync('route-modules.js', 'utf8');
 const errors = [];
 
 if (/function\s+addStyle\s*\(|createElement\(["']style["']\)|style\.textContent/.test(js)) {
@@ -17,14 +18,22 @@ if (!css.includes('@media(max-width:840px)') || !css.includes('@media(max-width:
   errors.push('gestion-panel-final.css debe conservar los breakpoints responsivos existentes.');
 }
 
-if (!index.includes('<link rel="stylesheet" href="./gestion-panel-final.css?v=1" />')) {
-  errors.push('index.html debe cargar gestion-panel-final.css desde <head>.');
+const staticCssIndex = index.indexOf('./gestion-panel-final.css');
+const staticJsIndex = index.indexOf('./gestion-panel-final.js');
+const staticOrdered = staticCssIndex >= 0 && staticJsIndex > staticCssIndex;
+
+const managementMatch = routeModules.match(/async function ensureManagement\(\)\s*\{([\s\S]*?)\n\s*\}\n\n\s*async function ensureJefatura/);
+const managementBody = managementMatch?.[1] || '';
+const lazyCssIndex = managementBody.indexOf('loadStyle("gestion-panel-final", "./gestion-panel-final.css"');
+const lazyJsIndex = managementBody.indexOf('loadScript("gestion-panel-final", "./gestion-panel-final.js"');
+const lazyOrdered = lazyCssIndex >= 0 && lazyJsIndex > lazyCssIndex;
+
+if (!staticOrdered && !lazyOrdered) {
+  errors.push('Gestión debe cargar gestion-panel-final.css antes que gestion-panel-final.js, de forma estática o mediante route-modules.js.');
 }
 
-const cssIndex = index.indexOf('./gestion-panel-final.css');
-const jsIndex = index.indexOf('./gestion-panel-final.js');
-if (cssIndex < 0 || jsIndex < 0 || cssIndex >= jsIndex) {
-  errors.push('La hoja de Gestión debe cargarse antes que gestion-panel-final.js.');
+if (!routeModules.includes('if (current === "#/gestion" || current.startsWith("#/gestion/")) return ensureManagement();')) {
+  errors.push('route-modules.js debe preparar Gestión mediante ensureManagement().');
 }
 
 for (const error of errors) console.error(`ERROR: ${error}`);
