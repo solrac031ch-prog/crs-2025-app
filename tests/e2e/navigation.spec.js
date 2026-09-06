@@ -80,6 +80,11 @@ test('Gestión y Jefatura no pasan por una página equivocada al cambiar de ruta
 
 test('Gestión de casos tiene configuración explícita y un único flujo activo', async ({ page }) => {
   await page.goto('/index.html#/gestion', { waitUntil: 'domcontentloaded' });
+  await expect.poll(
+    () => page.evaluate(() => Boolean(window.CRS_PATIENT_CASES?.listCases)),
+    { timeout: 10000, message: 'Gestión debe terminar de cargar su runtime diferido' }
+  ).toBeTruthy();
+
   const config = await page.evaluate(() => ({
     url: window.CRS_PATIENT_CASES_CONFIG?.appsScriptUrl || '',
     apiReady: Boolean(window.CRS_PATIENT_CASES?.listCases)
