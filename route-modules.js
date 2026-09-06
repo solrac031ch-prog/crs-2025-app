@@ -175,10 +175,11 @@
 
   async function ensureCalls() {
     await Promise.all([
-      loadStyle("llamados-compacto", "./llamados-compacto.css", 1),
+      loadStyle("llamados-compacto", "./llamados-compacto.css", 2),
       ensureSupabase()
     ]);
     await loadScript("llamados-compacto", "./llamados-compacto.js", 1);
+    await loadScript("llamados-vigente", "./llamados-vigente.js", 1);
   }
 
   async function ensureForRoute(value = route()) {
