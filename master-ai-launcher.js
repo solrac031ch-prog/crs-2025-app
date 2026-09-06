@@ -25,20 +25,60 @@
     document.head.append(link);
   }
 
+  function loadSharedRouteScript(key, path, version) {
+    const selector = `script[data-crs-route-module="${key}"]`;
+    const existing = document.querySelector(selector);
+    if (existing?.dataset.crsLoaded === 'true') return Promise.resolve(existing);
+
+    return new Promise((resolve, reject) => {
+      const script = existing || document.createElement('script');
+      const loaded = () => {
+        script.dataset.crsLoaded = 'true';
+        resolve(script);
+      };
+      const failed = () => reject(new Error(`No se pudo preparar la fuente clínica ${path}.`));
+      script.addEventListener('load', loaded, { once: true });
+      script.addEventListener('error', failed, { once: true });
+      if (!existing) {
+        script.src = `./${path}?v=${version}`;
+        script.async = false;
+        script.dataset.crsRouteModule = key;
+        document.body.append(script);
+      }
+    });
+  }
+
+  async function ensureClinicalCorpus() {
+    // Son los mismos módulos de datos que usa Especialidades. Se marcan con la
+    // misma clave del cargador de rutas para que nunca se ejecuten dos veces.
+    await loadSharedRouteScript('protocolo-saturacion-sea', 'protocolo-saturacion-sea.js', 1);
+    await loadSharedRouteScript('protocolos-2026-ajustes', 'protocolos-2026-ajustes.js', 4);
+  }
+
   function ensureRuntime() {
     if (window.CRS_MASTER_AI?.open) return Promise.resolve();
     if (loading) return loading;
-    loading = new Promise((resolve, reject) => {
+    loading = (async () => {
       ensureStyle();
-      const script = document.createElement('script');
-      script.src = `./master-ai.js?v=${RUNTIME_VERSION}`;
-      script.dataset.masterAiRuntime = 'true';
-      script.onload = () => resolve();
-      script.onerror = () => {
-        loading = null;
-        reject(new Error('No se pudo cargar MASTER IA.'));
-      };
-      document.body.append(script);
+      await ensureClinicalCorpus();
+      await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-master-ai-runtime]');
+        if (existing) {
+          if (window.CRS_MASTER_AI?.open) return resolve();
+          existing.addEventListener('load', resolve, { once: true });
+          existing.addEventListener('error', reject, { once: true });
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = `./master-ai.js?v=${RUNTIME_VERSION}`;
+        script.dataset.masterAiRuntime = 'true';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('No se pudo cargar MASTER IA.'));
+        document.body.append(script);
+      });
+    })().catch((error) => {
+      loading = null;
+      throw error;
     });
     return loading;
   }
