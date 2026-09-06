@@ -46,10 +46,10 @@ test('las rutas principales renderizan su vista en un navegador real', async ({ 
   await expect(page.locator('#managementTitle')).toHaveText('Paper del mes');
 
   await setRoute(page, '#/gestion', '#managementPage');
-  await expect(page.locator('#managementTitle')).toHaveText('Gestion');
+  await expect(page.locator('#managementTitle')).toHaveText('Gestión de casos');
 
   await setRoute(page, '#/jefatura', '#chiefPage');
-  await expect(page.locator('#chiefTitle')).toHaveText('Panel restringido');
+  await expect(page.locator('#chiefTitle')).toHaveText('Centro de Gestión Jefatura');
 });
 
 test('Gestión y Jefatura no pasan por una página equivocada al cambiar de ruta', async ({ page }) => {
