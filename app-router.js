@@ -14,6 +14,7 @@
   let routeVersion = 0;
   let specialtyRenderFrame = 0;
   let specialtyRevealFrame = 0;
+  let specialtyCategoryBeforeSearch = null;
 
   function announceRouteRendered(name) {
     const current = (window.location.hash || "#/inicio").split("?")[0];
@@ -140,6 +141,7 @@
 
   function setCategory(category) {
     state.category = category;
+    if (state.query.trim()) specialtyCategoryBeforeSearch = category === "Todos" ? specialtyCategoryBeforeSearch : category;
     syncSpecialtyCategoryButtons();
     refreshSpecialties();
   }
@@ -154,9 +156,25 @@
     refreshSpecialties();
   }
 
-  searchInput.addEventListener("input", (event) => {
-    state.query = event.target.value;
+  function setSpecialtyQuery(value) {
+    const previousQuery = state.query.trim();
+    const nextQuery = String(value || "").trim();
+
+    if (nextQuery && !previousQuery) {
+      specialtyCategoryBeforeSearch = state.category === "Todos" ? "Flujo" : state.category;
+      state.category = "Todos";
+    } else if (!nextQuery && previousQuery && state.category === "Todos") {
+      state.category = specialtyCategoryBeforeSearch || "Flujo";
+      specialtyCategoryBeforeSearch = null;
+    }
+
+    state.query = String(value || "");
+    syncSpecialtyCategoryButtons();
     refreshSpecialties();
+  }
+
+  searchInput.addEventListener("input", (event) => {
+    setSpecialtyQuery(event.target.value);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -171,8 +189,7 @@
 
     if (event.key === "Escape" && document.activeElement === searchInput && searchInput.value) {
       searchInput.value = "";
-      state.query = "";
-      refreshSpecialties();
+      setSpecialtyQuery("");
     }
   });
 

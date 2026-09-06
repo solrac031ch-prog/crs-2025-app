@@ -70,6 +70,11 @@
     await loadScript("supabase-backend", "./supabase-backend.js", 8);
   }
 
+  function ensurePatientManagement() {
+    if (window.CRS_PATIENT_CASES) return Promise.resolve();
+    return loadScript("gestion-pacientes-runtime", "./gestion-pacientes-runtime.js", 1);
+  }
+
   function disableEmbeddedPriorityManagement() {
     const protocols = window.CRS_PROTOCOLS;
     if (!Array.isArray(protocols)) return;
@@ -90,17 +95,21 @@
       loadScript("especialidades-estable", "./especialidades-estable.js", 4, {
         "data-especialidades-estable": true
       }),
+      loadScript("protocolos-detalle-polish-runtime", "./protocolos-detalle-polish-runtime.js", 1),
+      ensurePatientManagement(),
       current === "#/especialidades" ? ensureSupabase() : Promise.resolve()
     ]);
     disableEmbeddedPriorityManagement();
   }
 
   async function ensureManagement() {
+    const current = route();
     await Promise.all([
       loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2),
       loadStyle("gestion-perfiles", "./gestion-perfiles.css", 1),
       loadStyle("gestion-uhd", "./gestion-uhd-citados.css", 3),
-      ensureSupabase()
+      ensureSupabase(),
+      ["#/gestion", "#/gestion/pacientes"].includes(current) ? ensurePatientManagement() : Promise.resolve()
     ]);
     await Promise.all([
       loadScript("gestion-perfiles", "./gestion-perfiles.js", 5),

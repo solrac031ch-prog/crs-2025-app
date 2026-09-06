@@ -1,12 +1,15 @@
 import fs from 'node:fs';
 
-const js = fs.readFileSync('gestion-pacientes-core.js', 'utf8');
+const runtime = fs.readFileSync('gestion-pacientes-runtime.js', 'utf8');
+const bootstrap = fs.readFileSync('gestion-pacientes-core.js', 'utf8');
 const css = fs.readFileSync('gestion-pacientes-core.css', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 const errors = [];
 
-if (/function\s+addStyle\s*\(|createElement\(["']style["']\)|style\.textContent/.test(js)) {
-  errors.push('gestion-pacientes-core.js no debe volver a inyectar su hoja visual desde JavaScript.');
+for (const [name, source] of [['runtime', runtime], ['bootstrap', bootstrap]]) {
+  if (/function\s+addStyle\s*\(|createElement\(["']style["']\)|style\.textContent/.test(source)) {
+    errors.push(`Gestión pacientes (${name}) no debe inyectar su hoja visual desde JavaScript.`);
+  }
 }
 
 for (const selector of ['.patient-shell', '.patient-hero', '.patient-card', '.patient-filter', '.patient-table', '.patient-status']) {
@@ -24,7 +27,7 @@ if (!/<link[^>]+href=["']\.\/gestion-pacientes-core\.css\?v=\d+["'][^>]*>/.test(
 const cssIndex = index.indexOf('./gestion-pacientes-core.css');
 const jsIndex = index.indexOf('./gestion-pacientes-core.js');
 if (cssIndex < 0 || jsIndex < 0 || cssIndex >= jsIndex) {
-  errors.push('La hoja de Gestión pacientes debe cargarse antes que gestion-pacientes-core.js.');
+  errors.push('La hoja de Gestión pacientes debe cargar antes del bootstrap de privacidad.');
 }
 
 for (const error of errors) console.error(`ERROR: ${error}`);

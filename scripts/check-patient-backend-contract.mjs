@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-const frontend = fs.readFileSync('gestion-pacientes-core.js', 'utf8');
+const frontend = fs.readFileSync('gestion-pacientes-runtime.js', 'utf8');
 const backend = fs.readFileSync('apps-script/gestion-pacientes.gs', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 const errors = [];
