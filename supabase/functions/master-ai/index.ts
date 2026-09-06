@@ -78,6 +78,16 @@ function extractOutputText(payload: any) {
   return chunks.join("\n").trim();
 }
 
+function safeUpstreamError(payload: any) {
+  const error = payload?.error || {};
+  return {
+    status: Number(payload?.status || 0) || undefined,
+    type: clean(error?.type, 80) || undefined,
+    code: clean(error?.code, 80) || undefined,
+    message: clean(error?.message, 240) || undefined
+  };
+}
+
 async function sha256(value: string) {
   const bytes = new TextEncoder().encode(value);
   const hash = await crypto.subtle.digest("SHA-256", bytes);
@@ -217,7 +227,10 @@ Deno.serve(async (req: Request) => {
   }
   if (!response.ok) {
     console.error("OpenAI API error", response.status, payload);
-    return json({ error: "El servicio de IA no pudo completar la consulta." }, 502, origin);
+    return json({
+      error: "El servicio de IA no pudo completar la consulta.",
+      upstream: { ...safeUpstreamError(payload), status: response.status }
+    }, 502, origin);
   }
 
   const answer = extractOutputText(payload);
