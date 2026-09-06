@@ -15,15 +15,23 @@
   let specialtyRenderFrame = 0;
 
   function announceRouteRendered(name) {
+    const current = (window.location.hash || "#/inicio").split("?")[0];
     window.dispatchEvent(new CustomEvent("crs:route-rendered", {
       detail: { route: window.location.hash || "#/inicio", name }
+    }));
+    window.dispatchEvent(new CustomEvent("crs:ui-section-ready", {
+      detail: { route: current, name }
     }));
   }
 
   async function enhanceSpecialties(version) {
     try {
-      await window.CRS_SPECIALTIES_UI?.load?.();
+      window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
+      if (!window.CRS_ESPECIALIDADES_ESTABLE) {
+        await window.CRS_SPECIALTIES_UI?.load?.();
+      }
       if (version !== routeVersion) return;
+      window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
       window.CRS_SPECIALTIES_UI?.refresh?.();
     } catch (error) {
       console.error(error);
@@ -91,6 +99,7 @@
     specialtyRenderFrame = window.requestAnimationFrame(() => {
       specialtyRenderFrame = 0;
       renderSpecialties();
+      window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
       window.CRS_SPECIALTIES_UI?.refresh?.();
     });
   }
