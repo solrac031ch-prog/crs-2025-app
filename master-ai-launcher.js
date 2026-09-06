@@ -55,12 +55,34 @@
     await loadSharedRouteScript('protocolos-2026-ajustes', 'protocolos-2026-ajustes.js', 4);
   }
 
+  async function ensureSupabaseSdk() {
+    try {
+      const readyClient = window.CRS_SUPABASE?.client?.();
+      if (readyClient?.functions?.invoke) return true;
+
+      window.CRS_SUPABASE_BOOT?.ensureClient?.();
+      if (window.supabase?.createClient) return true;
+
+      await Promise.race([
+        new Promise((resolve) => window.addEventListener('crs:supabase-ready', resolve, { once: true })),
+        new Promise((resolve) => window.setTimeout(resolve, 8000))
+      ]);
+      return Boolean(window.CRS_SUPABASE?.client?.()?.functions?.invoke);
+    } catch (error) {
+      console.warn('MASTER IA continuará en modo local: Supabase no estuvo listo al abrir.', error);
+      return false;
+    }
+  }
+
   function ensureRuntime() {
     if (window.CRS_MASTER_AI?.open) return Promise.resolve();
     if (loading) return loading;
     loading = (async () => {
       ensureStyle();
-      await ensureClinicalCorpus();
+      await Promise.all([
+        ensureClinicalCorpus(),
+        ensureSupabaseSdk()
+      ]);
       await new Promise((resolve, reject) => {
         const existing = document.querySelector('script[data-master-ai-runtime]');
         if (existing) {
