@@ -48,6 +48,6 @@ test('Inicio editorial se apila en una columna en móvil', async ({ page }) => {
     };
   });
 
-  expect(layout.columns).toBe(12);
+  expect(layout.columns).toBe(1);
   expect(Math.abs(layout.gridWidth - layout.firstWidth)).toBeLessThan(2);
 });
