@@ -373,8 +373,15 @@
   function renderLoadingShell(message = "Cargando rotativa vigente…") {
     if (route() !== ROUTE) return;
     const panel = document.querySelector("#callsSearchPanel");
-    if (!panel) return;
-    if (panel.querySelector("[data-call-live-search]")) return;
+    if (!panel || panel.querySelector("[data-call-live-search]")) return;
+
+    const existing = panel.querySelector("[data-call-live-loading]");
+    if (existing) {
+      const status = existing.querySelector(".on-call-live-status");
+      if (status && status.textContent !== message) status.textContent = message;
+      return;
+    }
+
     panel.innerHTML = `
       <section class="on-call-search on-call-live" data-call-live-loading>
         <div class="on-call-live-status" aria-live="polite">${message}</div>
@@ -503,10 +510,7 @@
     const page = document.querySelector("#callsPage");
     if (!page) return;
     observer = new MutationObserver(() => {
-      if (route() === ROUTE) {
-        if (source) mountSearch();
-        else renderLoadingShell();
-      }
+      if (route() === ROUTE && source) mountSearch();
     });
     observer.observe(page, { childList: true, subtree: true });
   }
