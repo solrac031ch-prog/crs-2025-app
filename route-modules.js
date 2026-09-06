@@ -180,7 +180,7 @@
       ensureSupabase()
     ]);
     await loadScript("llamados-compacto", "./llamados-compacto.js", 4);
-    await loadScript("llamados-vigente", "./llamados-vigente.js", 3);
+    await loadScript("llamados-vigente", "./llamados-vigente.js", 4);
   }
 
   async function ensureForRoute(value = route()) {
