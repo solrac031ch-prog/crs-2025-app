@@ -1,5 +1,5 @@
 (() => {
-  const RUNTIME_VERSION = 1;
+  const RUNTIME_VERSION = 2;
   const STYLE_VERSION = 1;
   let loading = null;
 
