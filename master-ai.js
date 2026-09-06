@@ -110,6 +110,36 @@
     ].some((pattern) => pattern.test(text));
   }
 
+  function localSourceAnswer(sources) {
+    const lines = [];
+    const titles = [];
+    sources.slice(0, 3).forEach((source) => {
+      titles.push(source.title);
+      const candidates = [source.summary, ...(String(source.text || '').split(/\n+/))]
+        .map((item) => String(item || '').trim())
+        .filter((item) => item.length >= 12);
+      for (const item of candidates) {
+        if (lines.some((line) => normalize(line) === normalize(item))) continue;
+        lines.push(item.slice(0, 520));
+        if (lines.length >= 5) break;
+      }
+    });
+    if (!lines.length) {
+      return 'No encuentro respaldo suficiente en MASTER para responder con seguridad.';
+    }
+    return `Respuesta extractiva basada solo en las fuentes recuperadas de MASTER:\n${lines.map((line, index) => `${index + 1}. ${line}`).join('\n')}\n\nFuente MASTER: ${[...new Set(titles)].join('; ')}`;
+  }
+
+  function localSourceResult(sources, notice) {
+    return {
+      configured: false,
+      mode: 'sources',
+      answer: localSourceAnswer(sources),
+      sources,
+      notice
+    };
+  }
+
   function setStatus(message, error = false) {
     const node = dialog?.querySelector('[data-master-ai-status]');
     if (!node) return;
@@ -137,25 +167,25 @@
     });
   }
 
-  function renderAnswer(answer, sources, configured) {
+  function renderAnswer(answer, sources, notice = '') {
     const box = dialog?.querySelector('[data-master-ai-answer]');
     const text = dialog?.querySelector('[data-master-ai-answer-text]');
     const config = dialog?.querySelector('[data-master-ai-config]');
     if (!box || !text || !config) return;
     text.textContent = answer;
     renderSources(sources);
-    config.hidden = configured;
+    config.textContent = notice;
+    config.hidden = !notice;
     box.hidden = false;
   }
 
   async function ask(question, sources) {
     const api = window.CRS_SUPABASE?.client?.();
     if (!api?.functions?.invoke) {
-      return {
-        configured: false,
-        answer: 'Encontré fuentes pertinentes dentro de MASTER, pero el servicio de IA todavía no está disponible en este dispositivo.',
-        sources
-      };
+      return localSourceResult(
+        sources,
+        'La conexión con el servidor no está disponible; se muestra únicamente contenido recuperado de MASTER.'
+      );
     }
     const { data, error } = await api.functions.invoke('master-ai', {
       body: {
@@ -163,8 +193,14 @@
         sources: sources.map(({ title, category, page, summary, text }) => ({ title, category, page, summary, text }))
       }
     });
-    if (error) throw error;
-    return data || {};
+    if (error) {
+      console.warn('MASTER IA usó modo fuentes por error de Edge Function.', error?.name || 'error');
+      return localSourceResult(
+        sources,
+        'La redacción generativa no está disponible en este momento; se muestra únicamente contenido recuperado de MASTER.'
+      );
+    }
+    return data || localSourceResult(sources, 'La respuesta del servidor no estuvo disponible; se muestran únicamente las fuentes de MASTER.');
   }
 
   async function submit(event) {
@@ -193,7 +229,7 @@
     const sources = retrieve(question);
     if (!sources.length) {
       renderSources([]);
-      renderAnswer('No encontré respaldo suficiente dentro de los protocolos cargados en MASTER para responder esa consulta. Prueba con el nombre del flujo, especialidad o procedimiento.', [], true);
+      renderAnswer('No encontré respaldo suficiente dentro de los protocolos cargados en MASTER para responder esa consulta. Prueba con el nombre del flujo, especialidad o procedimiento.', []);
       setStatus('Sin fuentes institucionales suficientes.', true);
       return;
     }
@@ -202,13 +238,25 @@
     setStatus(`Revisando ${sources.length} fuente${sources.length === 1 ? '' : 's'} de MASTER…`);
     try {
       const result = await ask(question, sources);
-      const answer = String(result.answer || '').trim() || 'No fue posible generar una respuesta.';
-      renderAnswer(answer, Array.isArray(result.sources) && result.sources.length ? result.sources : sources, Boolean(result.configured));
-      setStatus(result.configured ? 'Respuesta generada únicamente con las fuentes recuperadas.' : 'Fuentes recuperadas; falta activar la credencial de IA en el servidor.');
+      const answer = String(result.answer || '').trim() || localSourceAnswer(sources);
+      const resultSources = Array.isArray(result.sources) && result.sources.length ? result.sources : sources;
+      const mode = String(result.mode || (result.configured ? 'generative' : 'sources'));
+      renderAnswer(answer, resultSources, String(result.notice || ''));
+      if (mode === 'generative') {
+        setStatus('Respuesta generada únicamente con las fuentes recuperadas.');
+      } else if (mode === 'sources') {
+        setStatus('Respuesta extractiva: solo contenido recuperado de MASTER.');
+      } else {
+        setStatus('Sin fuentes institucionales suficientes.', true);
+      }
     } catch (error) {
       console.error('MASTER IA', error);
-      renderAnswer('Encontré las fuentes que ves abajo, pero no pude completar la respuesta de IA. Puedes abrir el flujo correspondiente directamente en MASTER.', sources, true);
-      setStatus('No se pudo contactar el servicio de IA.', true);
+      renderAnswer(
+        localSourceAnswer(sources),
+        sources,
+        'La redacción generativa no está disponible en este momento; se muestra únicamente contenido recuperado de MASTER.'
+      );
+      setStatus('Respuesta extractiva: solo contenido recuperado de MASTER.');
     } finally {
       button.disabled = false;
     }
@@ -249,7 +297,7 @@
             <span class="master-ai-answer-label">Respuesta basada en MASTER</span>
             <div class="master-ai-answer-text" data-master-ai-answer-text></div>
             <div class="master-ai-sources" data-master-ai-sources></div>
-            <div class="master-ai-config" data-master-ai-config hidden>La recuperación de fuentes ya funciona. Para habilitar la redacción por IA falta configurar OPENAI_API_KEY como secreto de la Edge Function en Supabase.</div>
+            <div class="master-ai-config" data-master-ai-config hidden></div>
           </section>
           <p class="master-ai-footer">Si el contenido recuperado no respalda la pregunta, el asistente debe decirlo en vez de completar información por conocimiento general.</p>
         </div>
@@ -293,5 +341,5 @@
     window.setTimeout(() => dialog.querySelector('textarea')?.focus({ preventScroll: true }), 0);
   }
 
-  window.CRS_MASTER_AI = Object.freeze({ open, close, retrieve });
+  window.CRS_MASTER_AI = Object.freeze({ open, close, retrieve, localSourceAnswer });
 })();
