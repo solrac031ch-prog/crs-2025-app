@@ -101,8 +101,16 @@
     window.setTimeout(schedule, 600);
   }
 
+  function supabaseReady() {
+    if (currentRoute() !== ROUTE) return;
+    window.dispatchEvent(new CustomEvent("crs:ui-section-ready", {
+      detail: { route: ROUTE, section: "llamados-supabase-ready" }
+    }));
+  }
+
   window.addEventListener("hashchange", routeChanged);
   window.addEventListener("crs:ui-section-ready", routeChanged);
+  window.addEventListener("crs:supabase-ready", supabaseReady);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", routeChanged, { once: true });
