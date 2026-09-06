@@ -40,7 +40,7 @@ test('las rutas principales renderizan su vista en un navegador real', async ({ 
   await expect(page.locator('#managementTitle')).toHaveText('Noticias');
 
   await setRoute(page, '#/educacion', '#educationPage');
-  await expect(page.locator('#educationTitle')).toHaveText('Educacion medica');
+  await expect(page.locator('#educationTitle')).toHaveText('Educación médica');
 
   await setRoute(page, '#/paper', '#managementPage');
   await expect(page.locator('#managementTitle')).toHaveText('Paper del mes');
@@ -109,14 +109,13 @@ test('no reaparecen parches heredados ni Service Worker', async ({ page }) => {
 test('las hojas separadas se cargan como CSS y no como style dinámico', async ({ page }) => {
   await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
 
-  for (const href of [
-    'gestion-panel-final.css',
-    'gestion-pacientes-core.css',
-    'supabase-admin-users.css',
-    'supabase-jefatura-panel.css'
-  ]) {
-    await expect(page.locator(`head link[rel="stylesheet"][href*="${href}"]`)).toHaveCount(1);
-  }
+  await setRoute(page, '#/gestion', '#managementPage');
+  await expect(page.locator('head link[rel="stylesheet"][href*="gestion-panel-final.css"]')).toHaveCount(1);
+  await expect(page.locator('head link[rel="stylesheet"][href*="gestion-pacientes-core.css"]')).toHaveCount(1);
+
+  await setRoute(page, '#/jefatura', '#chiefPage');
+  await expect(page.locator('head link[rel="stylesheet"][href*="supabase-admin-users.css"]')).toHaveCount(1);
+  await expect(page.locator('head link[rel="stylesheet"][href*="supabase-jefatura-panel.css"]')).toHaveCount(1);
 
   await expect(page.locator('#gestion-final-style')).toHaveCount(0);
   await expect(page.locator('#gestion-pacientes-core-style')).toHaveCount(0);
