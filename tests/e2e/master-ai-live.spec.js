@@ -2,6 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 const SUPABASE_URL = 'https://mjrcymctfnnyabvmfgda.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9';
+const LIVE_ENABLED = process.env.MASTER_AI_LIVE === '1';
 
 function safeBody(value) {
   if (!value || typeof value !== 'object') return value;
@@ -11,6 +12,7 @@ function safeBody(value) {
 }
 
 test('MASTER IA responde de punta a punta usando la Edge Function real', async ({ page, request }) => {
+  test.skip(!LIVE_ENABLED, 'La prueba real se ejecuta solo con MASTER_AI_LIVE=1 para no gastar cuota en cada PR.');
   test.setTimeout(60000);
 
   const apiResponse = await request.post(`${SUPABASE_URL}/functions/v1/master-ai`, {
@@ -46,6 +48,7 @@ test('MASTER IA responde de punta a punta usando la Edge Function real', async (
   expect(direct.allowOrigin, JSON.stringify(direct, null, 2)).toBe('http://127.0.0.1:4173');
   expect(direct.status, JSON.stringify(direct, null, 2)).toBe(200);
   expect(direct.body?.configured, JSON.stringify(direct, null, 2)).toBe(true);
+  expect(['generative', 'sources'], JSON.stringify(direct, null, 2)).toContain(direct.body?.mode);
   expect(String(direct.body?.answer || ''), JSON.stringify(direct, null, 2)).toMatch(/Fuente MASTER/i);
 
   await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
@@ -56,7 +59,7 @@ test('MASTER IA responde de punta a punta usando la Edge Function real', async (
   await page.locator('[data-master-ai-form] button[type="submit"]').click();
 
   const status = page.locator('[data-master-ai-status]');
-  await expect(status).toContainText('Respuesta generada únicamente con las fuentes recuperadas.', { timeout: 30000 });
+  await expect(status).toContainText(/Respuesta (generada|extractiva)/i, { timeout: 30000 });
 
   const answer = page.locator('[data-master-ai-answer-text]');
   await expect(answer).toContainText(/Clave Negra/i);
