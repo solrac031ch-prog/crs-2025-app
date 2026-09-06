@@ -13,6 +13,7 @@
   let routeTimer = 0;
   let routeVersion = 0;
   let specialtyRenderFrame = 0;
+  let specialtyRevealFrame = 0;
 
   function announceRouteRendered(name) {
     const current = (window.location.hash || "#/inicio").split("?")[0];
@@ -22,6 +23,23 @@
     window.dispatchEvent(new CustomEvent("crs:ui-section-ready", {
       detail: { route: current, name }
     }));
+  }
+
+  function prepareSpecialtyDefault() {
+    if (state.category === "Todos") state.category = "Flujo";
+  }
+
+  function hideSpecialtyRefresh() {
+    pages.especialidades?.classList.add("specialty-refreshing");
+  }
+
+  function revealSpecialtyRefresh() {
+    window.cancelAnimationFrame(specialtyRevealFrame);
+    specialtyRevealFrame = window.requestAnimationFrame(() => {
+      specialtyRevealFrame = window.requestAnimationFrame(() => {
+        pages.especialidades?.classList.remove("specialty-refreshing");
+      });
+    });
   }
 
   async function enhanceSpecialties(version) {
@@ -66,8 +84,11 @@
 
     if (pageName === "inicio") renderHome();
     if (pageName === "especialidades") {
+      prepareSpecialtyDefault();
+      hideSpecialtyRefresh();
       renderSpecialties();
       await enhanceSpecialties(version);
+      revealSpecialtyRefresh();
     }
     if (pageName === "especialidad") {
       renderProtocol(slug || "");
@@ -96,11 +117,13 @@
   function refreshSpecialties() {
     if (activeRouteName() !== "especialidades") return;
     window.cancelAnimationFrame(specialtyRenderFrame);
+    hideSpecialtyRefresh();
     specialtyRenderFrame = window.requestAnimationFrame(() => {
       specialtyRenderFrame = 0;
       renderSpecialties();
       window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
       window.CRS_SPECIALTIES_UI?.refresh?.();
+      revealSpecialtyRefresh();
     });
   }
 
