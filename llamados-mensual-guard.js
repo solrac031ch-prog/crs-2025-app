@@ -85,8 +85,8 @@
 
   function headerDays(row) {
     const values = [];
-    row.items.forEach((item) => {
-      if (!/^\d{1,2}$/.test(item.text)) return;
+    (row?.items || []).forEach((item) => {
+      if (!/^\d{1,2}$/.test(String(item.text || ""))) return;
       const day = Number(item.text);
       if (Number.isInteger(day) && day >= 1 && day <= 31 && !values.includes(day)) values.push(day);
     });
@@ -103,7 +103,55 @@
 
   function observedSpecialties(rows) {
     const labels = catalogLabels();
-    return labels.filter((label) => rows.some((row) => row.norm === label || row.norm.startsWith(`${label} `)));
+    return labels.filter((label) => rows.some((row) => {
+      const norm = row.norm || clean(row.text);
+      return norm === label || norm.startsWith(`${label} `);
+    }));
+  }
+
+  function validateRows(allRows) {
+    const rows = Array.isArray(allRows) ? allRows : [];
+    const documentText = rows.map((row) => row.text || "").join(" ");
+    const meta = parseMonthYear(documentText);
+    if (!meta) {
+      throw new Error("No pude identificar mes y año dentro del PDF. No se reemplazó la rotativa vigente.");
+    }
+
+    const headers = rows
+      .map((row) => ({ row, days: headerDays(row) }))
+      .filter(({ days }) => days.length >= 3);
+    const foundDays = new Set(headers.flatMap(({ days }) => days));
+    const expectedLastDay = daysInMonth(meta.year, meta.month);
+    const missingDays = [];
+    for (let day = 1; day <= expectedLastDay; day += 1) {
+      if (!foundDays.has(day)) missingDays.push(day);
+    }
+    const extraDays = [...foundDays].filter((day) => day > expectedLastDay).sort((a, b) => a - b);
+
+    if (headers.length < 4 || missingDays.length || extraDays.length) {
+      const missing = missingDays.length ? ` Faltan días: ${missingDays.join(", ")}.` : "";
+      const extra = extraDays.length ? ` Sobran días para ${meta.label}: ${extraDays.join(", ")}.` : "";
+      throw new Error(`El PDF no conserva la estructura mensual esperada.${missing}${extra} No se reemplazó la rotativa vigente.`);
+    }
+
+    const specialties = observedSpecialties(rows);
+    const catalogCount = catalogLabels().length;
+    const minimumSpecialties = Math.min(6, Math.max(3, catalogCount));
+    if (specialties.length < minimumSpecialties) {
+      throw new Error("El PDF no contiene suficientes filas reconocibles de especialidades. No se reemplazó la rotativa vigente.");
+    }
+
+    return Object.freeze({
+      valid: true,
+      month: meta.month,
+      year: meta.year,
+      label: meta.label,
+      daysInMonth: expectedLastDay,
+      blockCount: headers.length,
+      specialtyCount: specialties.length,
+      missingDays: Object.freeze([]),
+      extraDays: Object.freeze([])
+    });
   }
 
   async function validateFile(file) {
@@ -127,45 +175,7 @@
       const content = await page.getTextContent();
       allRows.push(...groupRows(content.items));
     }
-
-    const documentText = allRows.map((row) => row.text).join(" ");
-    const meta = parseMonthYear(documentText);
-    if (!meta) {
-      throw new Error("No pude identificar mes y año dentro del PDF. No se reemplazó la rotativa vigente.");
-    }
-
-    const headers = allRows
-      .map((row) => ({ row, days: headerDays(row) }))
-      .filter(({ days }) => days.length >= 3);
-    const foundDays = new Set(headers.flatMap(({ days }) => days));
-    const expectedLastDay = daysInMonth(meta.year, meta.month);
-    const missingDays = [];
-    for (let day = 1; day <= expectedLastDay; day += 1) {
-      if (!foundDays.has(day)) missingDays.push(day);
-    }
-
-    if (headers.length < 4 || missingDays.length) {
-      const missing = missingDays.length ? ` Faltan días: ${missingDays.join(", ")}.` : "";
-      throw new Error(`El PDF no conserva la estructura mensual esperada.${missing} No se reemplazó la rotativa vigente.`);
-    }
-
-    const specialties = observedSpecialties(allRows);
-    const catalogCount = catalogLabels().length;
-    const minimumSpecialties = Math.min(6, Math.max(3, catalogCount));
-    if (specialties.length < minimumSpecialties) {
-      throw new Error("El PDF no contiene suficientes filas reconocibles de especialidades. No se reemplazó la rotativa vigente.");
-    }
-
-    return Object.freeze({
-      valid: true,
-      month: meta.month,
-      year: meta.year,
-      label: meta.label,
-      daysInMonth: expectedLastDay,
-      blockCount: headers.length,
-      specialtyCount: specialties.length,
-      missingDays: Object.freeze([])
-    });
+    return validateRows(allRows);
   }
 
   function statusBox(form) {
@@ -242,7 +252,8 @@
 
   window.CRS_CALLS_MONTHLY_GUARD = Object.freeze({
     parseMonthYear,
+    validateRows,
     validateFile,
-    version: 1
+    version: 2
   });
 })();
