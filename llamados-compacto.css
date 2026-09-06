@@ -3,7 +3,7 @@
 }
 
 #callsPage.calls-compact .on-call-search {
-  gap: 14px;
+  gap: 12px;
 }
 
 #callsPage.calls-compact .on-call-controls {
@@ -16,12 +16,12 @@
 
 #callsPage.calls-compact .calls-route-actions {
   justify-content: flex-end;
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 #callsPage.calls-compact .on-call-clear {
-  min-height: 36px;
-  padding: 6px 2px;
+  min-height: 34px;
+  padding: 4px 2px;
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -34,6 +34,10 @@
 #callsPage.calls-compact .on-call-clear:hover,
 #callsPage.calls-compact .on-call-clear:focus-visible {
   color: var(--ink);
+}
+
+#callsPage.calls-compact .on-call-clear[hidden] {
+  display: none !important;
 }
 
 #callsPage.calls-compact .calls-document-action {
@@ -66,11 +70,11 @@
 #callsPage.calls-compact .on-call-live-source {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
   margin: 0;
   color: var(--muted);
-  font-size: .86rem;
+  font-size: .82rem;
 }
 
 #callsPage.calls-compact .on-call-live-source strong {
@@ -79,17 +83,46 @@
 }
 
 #callsPage.calls-compact .on-call-live-status {
-  min-height: 22px;
+  min-height: 20px;
   color: var(--muted);
-  font-size: .9rem;
+  font-size: .88rem;
 }
 
 #callsPage.calls-compact .on-call-live-status:empty {
   display: none;
 }
 
-#callsPage.calls-compact .on-call-live-result {
-  margin-top: 8px;
+#callsPage.calls-compact [data-call-live-results] {
+  display: grid;
+  gap: 10px;
+}
+
+#callsPage.calls-compact .on-call-live-result.calls-live-card {
+  margin: 0;
+  padding: 15px 18px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+#callsPage.calls-compact .on-call-live-result.calls-live-card .on-call-result-head {
+  margin-bottom: 5px;
+}
+
+#callsPage.calls-compact .on-call-live-result.calls-live-card .on-call-specialty {
+  letter-spacing: .01em;
+}
+
+#callsPage.calls-compact .on-call-live-result.calls-live-card strong {
+  display: block;
+  margin: 0;
+  font-size: 1.06rem;
+  line-height: 1.3;
+}
+
+#callsPage.calls-compact .on-call-live-result.calls-live-card p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 @media (max-width: 680px) {
@@ -99,5 +132,9 @@
 
   #callsPage.calls-compact .calls-doc-link {
     width: auto;
+  }
+
+  #callsPage.calls-compact .on-call-live-result.calls-live-card {
+    padding: 14px 15px;
   }
 }
