@@ -102,7 +102,8 @@
     disableEmbeddedPriorityManagement();
   }
 
-  async function ensureManagement(current) {
+  async function ensureManagement() {
+    const current = route();
     await Promise.all([
       loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2),
       loadStyle("gestion-perfiles", "./gestion-perfiles.css", 1),
@@ -186,7 +187,7 @@
 
     const promise = (async () => {
       if (current === "#/jefatura") return ensureJefatura();
-      if (current === "#/gestion" || current.startsWith("#/gestion/")) return ensureManagement(current);
+      if (current === "#/gestion" || current.startsWith("#/gestion/")) return ensureManagement();
       if (current === "#/formularios" || current.startsWith("#/formularios/")) return ensureForms(current);
       if (current === "#/telefonos") return ensurePhoneDirectory();
       if (current === "#/especialidades" || current.startsWith("#/especialidad/")) return ensureClinicalProtocols(current);
