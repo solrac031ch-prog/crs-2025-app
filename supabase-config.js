@@ -18,9 +18,10 @@ window.CRS_SUPABASE_CONFIG = {
   const FALLBACK_SDK = "https://unpkg.com/@supabase/supabase-js@2";
   const REMOTE_ROUTES = new Set([
     "#/noticias", "#/educacion", "#/paper", "#/procedimientos",
-    "#/jefatura", "#/gestion", "#/gestion/pacientes", "#/gestion/uhd-citados",
-    "#/formularios", "#/llamados", "#/especialidades"
+    "#/jefatura", "#/gestion", "#/llamados", "#/visita", "#/especialidades",
+    "#/formularios"
   ]);
+  const REMOTE_PREFIXES = ["#/gestion/", "#/formularios/", "#/especialidad/"];
 
   let sdkLoading = false;
   let readyFired = false;
@@ -28,6 +29,17 @@ window.CRS_SUPABASE_CONFIG = {
 
   function route() {
     return location.hash.split("?")[0] || "#/inicio";
+  }
+
+  function hasAuthCallback() {
+    const hash = String(location.hash || "");
+    const search = String(location.search || "");
+    return /(?:^#|[&#])(?:access_token|refresh_token|type|error_description)=/i.test(hash)
+      || /[?&](?:code|error|error_description)=/i.test(search);
+  }
+
+  function isRemoteRoute(value = route()) {
+    return REMOTE_ROUTES.has(value) || REMOTE_PREFIXES.some((prefix) => value.startsWith(prefix));
   }
 
   function fireSupabaseReady() {
@@ -91,15 +103,7 @@ window.CRS_SUPABASE_CONFIG = {
   }
 
   function scheduleSdkLoad() {
-    if (REMOTE_ROUTES.has(route())) {
-      ensureSupabaseClient();
-      return;
-    }
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(ensureSupabaseClient, { timeout: 500 });
-    } else {
-      window.setTimeout(ensureSupabaseClient, 160);
-    }
+    if (isRemoteRoute() || hasAuthCallback()) ensureSupabaseClient();
   }
 
   function boot() {
@@ -107,6 +111,12 @@ window.CRS_SUPABASE_CONFIG = {
     scheduleSdkLoad();
     scheduleNormalizeCopy();
   }
+
+  window.CRS_SUPABASE_BOOT = Object.freeze({
+    ensureClient: ensureSupabaseClient,
+    isRemoteRoute,
+    hasAuthCallback
+  });
 
   window.addEventListener("hashchange", () => {
     scheduleSdkLoad();
