@@ -89,7 +89,7 @@ jobs:
         shell: python
         run: |
           from html.parser import HTMLParser
-          from pathlib import import Path
+          from pathlib import Path
           from urllib.parse import urlsplit
 
           root = Path('.')
