@@ -4,6 +4,7 @@ const read = (path) => fs.readFileSync(path, 'utf8');
 const app = read('app.js');
 const forms = read('app-forms.js');
 const router = read('app-router.js');
+const routeModules = read('route-modules.js');
 const index = read('index.html');
 const errors = [];
 
@@ -39,9 +40,16 @@ if (!router.includes('renderFormsRoute(parts.slice(1))')) {
 
 const appIndex = index.indexOf('./app.js');
 const formsIndex = index.indexOf('./app-forms.js');
+const routeModulesIndex = index.indexOf('./route-modules.js');
 const routerIndex = index.indexOf('./app-router.js');
-if (appIndex < 0 || formsIndex < 0 || routerIndex < 0 || !(appIndex < formsIndex && formsIndex < routerIndex)) {
-  errors.push('El orden requerido es app.js → app-forms.js → app-router.js.');
+const staticFormsOrdered = appIndex >= 0 && formsIndex > appIndex && routerIndex > formsIndex;
+const lazyFormsOrdered = (
+  appIndex >= 0 && routeModulesIndex > appIndex && routerIndex > routeModulesIndex &&
+  /loadScript\(["']app-forms["']\s*,\s*["']\.\/app-forms\.js["']/.test(routeModules) &&
+  /if\s*\(current\s*===\s*["']#\/formularios["']\s*\|\|\s*current\.startsWith\(["']#\/formularios\/["']\)\)\s*return\s+ensureForms\(current\)/.test(routeModules)
+);
+if (!staticFormsOrdered && !lazyFormsOrdered) {
+  errors.push('Formularios debe quedar disponible antes del render del router, ya sea por carga estática o mediante route-modules.js.');
 }
 
 const appLines = app.split(/\r?\n/).length;
