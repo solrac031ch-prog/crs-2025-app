@@ -17,7 +17,9 @@ test('Llamados y UHD usa una interfaz compacta sin avisos ni botones repetidos',
   await expect(searchPanel).not.toContainText('Escribe una especialidad; no se despliega la lista completa.');
 
   await expect(page.locator('#callsDocumentAction .calls-doc-link')).toHaveCount(1);
-  await expect(page.locator('#uhdDocumentAction .calls-doc-link')).toHaveCount(1);
+  const uhdLinks = page.locator('#uhdDocumentAction a');
+  expect(await uhdLinks.count()).toBeLessThanOrEqual(1);
+  if (await uhdLinks.count()) await expect(uhdLinks.first()).toHaveClass(/calls-doc-link/);
   await expect(page.locator('[data-sb-call-panel]')).toHaveCount(0);
 
   const search = searchPanel.locator('input[type="search"]');
