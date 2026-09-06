@@ -3,6 +3,7 @@
   const norm = (value) => clean(value).toLowerCase();
   let recoveryActive = false;
   let authSubscription = null;
+  let recoveryProbeTimer = 0;
 
   function client() {
     return window.CRS_SUPABASE?.client?.() || null;
@@ -123,6 +124,14 @@
     authSubscription = data?.subscription || true;
   }
 
+  function scheduleRecoveryListener(attempt = 0) {
+    if (authSubscription) return;
+    listenForRecovery();
+    if (authSubscription || attempt >= 120) return;
+    window.clearTimeout(recoveryProbeTimer);
+    recoveryProbeTimer = window.setTimeout(() => scheduleRecoveryListener(attempt + 1), 50);
+  }
+
   document.addEventListener("submit", async (event) => {
     const form = event.target.closest?.("[data-crs-recovery-form]");
     if (!form) return;
@@ -163,7 +172,7 @@
   function boot() {
     const content = document.querySelector("#chiefContent");
     if (content) observer.observe(content, { childList: true, subtree: true });
-    listenForRecovery();
+    scheduleRecoveryListener();
     showUrlAuthError();
     enhanceForgotPassword();
   }
