@@ -7,7 +7,7 @@ const forms = read('app-forms.js');
 const router = read('app-router.js');
 const routeModules = read('route-modules.js');
 const gestion = read('gestion-panel-final.js');
-const patients = read('gestion-pacientes-core.js');
+const patients = read('gestion-pacientes-runtime.js');
 const compat = read('compatibilidad-global.js');
 
 const errors = [];
@@ -73,16 +73,19 @@ const patientRouteOwned = (
   patients.includes('location.hash === "#/gestion/pacientes"')
 );
 if (!patientRouteOwned || !patients.includes('renderPage()')) {
-  errors.push('gestion-pacientes-core.js debe conservar la ruta #/gestion/pacientes.');
+  errors.push('gestion-pacientes-runtime.js debe conservar la ruta #/gestion/pacientes.');
 }
 if (!patients.includes('window.CRS_PATIENT_CASES_CONFIG?.appsScriptUrl')) {
   errors.push('Gestión pacientes debe consumir su configuración explícita de Apps Script.');
 }
 if (!index.includes('./gestion-pacientes-config.js')) {
-  errors.push('index.html debe cargar gestion-pacientes-config.js antes de gestion-pacientes-core.js.');
+  errors.push('index.html debe cargar gestion-pacientes-config.js antes del bootstrap de Gestión pacientes.');
 }
 if (index.indexOf('./gestion-pacientes-config.js') > index.indexOf('./gestion-pacientes-core.js')) {
-  errors.push('La configuración de Gestión pacientes debe cargarse antes del controlador.');
+  errors.push('La configuración de Gestión pacientes debe cargarse antes del bootstrap de privacidad.');
+}
+if (!/loadScript\(["']gestion-pacientes-runtime["']\s*,\s*["']\.\/gestion-pacientes-runtime\.js["']/.test(routeModules)) {
+  errors.push('route-modules.js debe cargar Gestión pacientes bajo demanda en sus rutas activas.');
 }
 
 const formRouteMarkers = [
