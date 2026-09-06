@@ -13,9 +13,8 @@ body,
   overflow-anchor: none;
 }
 
-/* Las vistas dinámicas usan un único encabezado. En Especialidades conservamos
-   el encabezado nativo y mantenemos oculto el hero legado mientras se termina
-   de retirar su generación desde JavaScript. */
+/* Las vistas dinámicas usan un único encabezado. En Especialidades se conserva
+   el encabezado nativo para evitar duplicados visuales y saltos de layout. */
 #managementPage > .page-head,
 #chiefPage > .page-head,
 #educationPage > .page-head,
@@ -43,14 +42,6 @@ body,
   margin: 0;
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.02;
-}
-
-#specialtiesPage .specialty-lift-hero {
-  display: none !important;
-}
-
-#specialtiesPage.specialty-stable .quick-actions {
-  grid-row: 3 / span 5 !important;
 }
 
 #specialtiesPage.active,
