@@ -6,6 +6,11 @@ const allowedOrigins = new Set([
   "http://localhost:4173"
 ]);
 
+// La publishable key de Supabase es pública por diseño y ya forma parte de la
+// configuración del cliente web. Se valida aquí para impedir que clientes de
+// otros proyectos invoquen esta función por accidente. Nunca usar aquí una
+// service-role/secret key.
+const APP_PUBLISHABLE_KEY = "sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9";
 const MAX_QUESTION = 900;
 const MAX_SOURCES = 5;
 const MAX_SOURCE_TEXT = 4200;
@@ -32,12 +37,21 @@ function clean(value: unknown, max: number) {
 }
 
 function envKeys(name: string) {
+  const raw = Deno.env.get(name) || "";
+  if (!raw) return [];
   try {
-    const parsed = JSON.parse(Deno.env.get(name) || "{}");
-    return Object.values(parsed).filter((value): value is string => typeof value === "string" && Boolean(value));
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((value): value is string => typeof value === "string" && Boolean(value));
+    }
+    if (parsed && typeof parsed === "object") {
+      return Object.values(parsed).filter((value): value is string => typeof value === "string" && Boolean(value));
+    }
+    if (typeof parsed === "string" && parsed) return [parsed];
   } catch {
-    return [];
+    // Algunas versiones del runtime exponen una sola clave como texto plano.
   }
+  return raw.split(",").map((value) => value.trim()).filter(Boolean);
 }
 
 function bearer(req: Request) {
@@ -46,12 +60,18 @@ function bearer(req: Request) {
 }
 
 function isProjectClient(req: Request) {
-  const allowed = envKeys("SUPABASE_PUBLISHABLE_KEYS");
-  const legacy = Deno.env.get("SUPABASE_ANON_KEY") || "";
-  if (legacy) allowed.push(legacy);
   const apikey = req.headers.get("apikey") || "";
   const token = bearer(req);
-  return allowed.length > 0 && (allowed.includes(apikey) || allowed.includes(token));
+
+  // El SDK moderno de Supabase envía la publishable key en `apikey`. Puede
+  // enviar además un JWT de usuario en Authorization, por eso `apikey` es el
+  // identificador estable del proyecto para esta comprobación.
+  if (apikey === APP_PUBLISHABLE_KEY) return true;
+
+  const allowed = new Set(envKeys("SUPABASE_PUBLISHABLE_KEYS"));
+  const legacy = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  if (legacy) allowed.add(legacy);
+  return allowed.has(apikey) || allowed.has(token);
 }
 
 function serverSecret() {
@@ -229,7 +249,14 @@ Deno.serve(async (req: Request) => {
     const upstreamType = clean(payload?.error?.type, 80) || "unknown";
     const upstreamCode = clean(payload?.error?.code, 80) || "unknown";
     console.error("OpenAI API error", response.status, upstreamType, upstreamCode);
-    return json({ error: "El servicio de IA no pudo completar la consulta." }, 502, origin);
+    return json({
+      error: "El servicio de IA no pudo completar la consulta.",
+      diagnostic: {
+        status: response.status,
+        type: upstreamType,
+        code: upstreamCode
+      }
+    }, 502, origin);
   }
 
   const answer = extractOutputText(payload);
