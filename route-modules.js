@@ -83,6 +83,9 @@
     await Promise.all([
       loadScript("protocolos-2026-ajustes", "./protocolos-2026-ajustes.js", 4),
       loadScript("protocolos-agiles", "./protocolos-agiles.js", 6),
+      loadScript("especialidades-estable", "./especialidades-estable.js", 4, {
+        "data-especialidades-estable": true
+      }),
       current === "#/especialidades" ? ensureSupabase() : Promise.resolve()
     ]);
     disableEmbeddedPriorityManagement();
