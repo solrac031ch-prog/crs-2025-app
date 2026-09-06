@@ -5,6 +5,7 @@ html {
 html,
 body,
 .page.active,
+#specialtiesPage,
 #managementContent,
 #chiefContent,
 #educationContent,
@@ -12,12 +13,44 @@ body,
   overflow-anchor: none;
 }
 
-#specialtiesPage > .page-head,
+/* Las vistas dinámicas usan un único encabezado. En Especialidades conservamos
+   el encabezado nativo y eliminamos el hero añadido posteriormente para que la
+   página no parezca tener una tarjeta/parche superpuesta. */
 #managementPage > .page-head,
 #chiefPage > .page-head,
 #educationPage > .page-head,
 #doctorsPage > .page-head {
   display: none !important;
+}
+
+#specialtiesPage > .page-head {
+  display: flex !important;
+  grid-column: 1 / -1;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#specialtiesPage > .page-head .eyebrow {
+  display: none !important;
+}
+
+#specialtiesPage > .page-head h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.02;
+}
+
+#specialtiesPage .specialty-lift-hero {
+  display: none !important;
+}
+
+#specialtiesPage.specialty-stable .quick-actions {
+  grid-row: 3 / span 5 !important;
 }
 
 #specialtiesPage.active,
@@ -134,6 +167,16 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
   display: block;
 }
 
+@media (max-width: 900px) {
+  #specialtiesPage > .page-head {
+    margin-bottom: 12px !important;
+  }
+
+  #specialtiesPage.specialty-stable .quick-actions {
+    grid-row: auto !important;
+  }
+}
+
 @media (max-width: 720px) {
   #specialtiesPage.active,
   #managementPage.active,
@@ -149,6 +192,10 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
   #educationContent,
   #doctorsContent {
     min-height: 68vh;
+  }
+
+  #specialtiesPage > .page-head h1 {
+    font-size: clamp(1.8rem, 9vw, 2.45rem);
   }
 }
 
