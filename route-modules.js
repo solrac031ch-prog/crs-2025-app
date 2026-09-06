@@ -87,9 +87,10 @@
     disableEmbeddedPriorityManagement();
     await Promise.all([
       loadStyle("protocolo-saturacion-sea", "./protocolo-saturacion-sea.css", 1),
-      loadStyle("clave-negra-imprimible", "./clave-negra-imprimible.css", 1),
+      loadStyle("clave-negra-imprimible", "./clave-negra-imprimible.css", 2),
       loadScript("protocolo-saturacion-sea", "./protocolo-saturacion-sea.js", 1),
       loadScript("clave-negra-imprimible", "./clave-negra-imprimible.js", 1),
+      loadScript("busqueda-especialidades-segura", "./busqueda-especialidades-segura.js", 1),
       loadScript("protocolos-2026-ajustes", "./protocolos-2026-ajustes.js", 4),
       loadScript("protocolos-agiles", "./protocolos-agiles.js", 6),
       loadScript("especialidades-estable", "./especialidades-estable.js", 4, {
@@ -178,8 +179,8 @@
       loadStyle("llamados-compacto", "./llamados-compacto.css", 3),
       ensureSupabase()
     ]);
-    await loadScript("llamados-compacto", "./llamados-compacto.js", 2);
-    await loadScript("llamados-vigente", "./llamados-vigente.js", 1);
+    await loadScript("llamados-compacto", "./llamados-compacto.js", 3);
+    await loadScript("llamados-vigente", "./llamados-vigente.js", 2);
   }
 
   async function ensureForRoute(value = route()) {

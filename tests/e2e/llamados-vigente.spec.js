@@ -11,12 +11,20 @@ test('buscador de llamados usa la rotativa vigente publicada por Jefatura', asyn
 
   const date = live.locator('[data-call-live-date]');
   await expect(date).toHaveValue(/^2026-09-/);
+});
 
-  const search = live.locator('[data-call-live-query]');
-  await search.fill('uro');
+test('buscar uro devuelve Urología y nunca Neurología', async ({ page }) => {
+  await page.goto('/index.html#/llamados', { waitUntil: 'domcontentloaded' });
+  const live = page.locator('[data-call-live-search]');
+  await expect(live).toBeVisible({ timeout: 15000 });
 
-  await expect(live.locator('.on-call-live-result').first()).toBeVisible({ timeout: 20000 });
-  await expect(live.locator('.on-call-live-result').first()).toContainText(/Urolog/i);
+  await live.locator('[data-call-live-query]').fill('uro');
+
+  const cards = live.locator('.on-call-live-result');
+  await expect(cards.first()).toBeVisible({ timeout: 20000 });
+  const specialties = await cards.locator('.on-call-specialty').allTextContents();
+  expect(specialties.some((name) => /^Urolog/i.test(name))).toBeTruthy();
+  expect(specialties.some((name) => /Neurolog/i.test(name))).toBeFalsy();
   await expect(live.locator('[data-call-live-status]')).not.toContainText('No encontré');
 });
 
@@ -31,7 +39,7 @@ test('buscador de llamados deduplica coincidencias y no repite metadatos en cada
   const cards = live.locator('.on-call-live-result');
   await expect(cards.first()).toBeVisible({ timeout: 20000 });
   await expect(cards).toHaveCount(1);
-  await expect(cards.first()).toContainText(/Infectolog/i);
+  await expect(cards.first().locator('.on-call-specialty')).toHaveText(/Infectolog/i);
   await expect(cards.first()).toContainText(/Felipe Gómez/i);
   await expect(cards.first()).not.toContainText(/Vigente/i);
   await expect(cards.first()).not.toContainText(/fuente Septiembre 2026/i);
