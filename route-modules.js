@@ -109,7 +109,7 @@
       loadStyle("gestion-perfiles", "./gestion-perfiles.css", 1),
       loadStyle("gestion-uhd", "./gestion-uhd-citados.css", 3),
       ensureSupabase(),
-      current === "#/gestion/pacientes" ? ensurePatientManagement() : Promise.resolve()
+      ["#/gestion", "#/gestion/pacientes"].includes(current) ? ensurePatientManagement() : Promise.resolve()
     ]);
     await Promise.all([
       loadScript("gestion-perfiles", "./gestion-perfiles.js", 5),
