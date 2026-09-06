@@ -29,4 +29,18 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Probar navegación real
-        run: npm run test:e2e
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee playwright-output.log
+
+      - name: Guardar diagnóstico si falla
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-diagnostico
+          path: |
+            playwright-output.log
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 3
