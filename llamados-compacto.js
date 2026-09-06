@@ -54,7 +54,7 @@
 
     page.classList.add("calls-compact");
     const title = page.querySelector("#callsTitle");
-    if (title) title.textContent = "Llamados y UHD";
+    if (title && title.textContent !== "Llamados y UHD") title.textContent = "Llamados y UHD";
 
     compactDocumentAction("#callsDocumentAction", "especialistas", "Documento de respaldo");
     compactDocumentAction("#uhdDocumentAction", "uhd", "Abrir disponibilidad UHD");
