@@ -22,14 +22,18 @@ test('Llamados y UHD usa una interfaz compacta sin avisos ni botones repetidos',
   if (await uhdLinks.count()) await expect(uhdLinks.first()).toHaveClass(/calls-doc-link/);
   await expect(page.locator('[data-sb-call-panel]')).toHaveCount(0);
 
-  const search = searchPanel.locator('input[type="search"]');
+  const live = searchPanel.locator('[data-call-live-search]');
+  await expect(live).toBeVisible({ timeout: 15000 });
+  const search = live.locator('[data-call-live-query]');
   await search.fill('cardio');
-  await expect(searchPanel.locator('.on-call-result')).toHaveCount(1);
-  await expect(searchPanel.locator('.on-call-result')).toContainText(/Cardio/i);
+  await expect(live.locator('.on-call-live-result').first()).toBeVisible({ timeout: 20000 });
+  await expect(live.locator('.on-call-live-result').first()).toContainText(/Cardio/i);
 
-  const clear = searchPanel.locator('.on-call-clear');
-  await expect(clear).toHaveText('Limpiar búsqueda');
+  const clear = live.locator('[data-call-live-clear]');
+  await expect(clear).toBeVisible();
+  await expect(clear).toHaveText('Limpiar');
   await clear.click();
   await expect(search).toHaveValue('');
+  await expect(clear).toBeHidden();
   await expect(searchPanel).not.toContainText('Escribe una especialidad; no se despliega la lista completa.');
 });
