@@ -13,8 +13,6 @@ jobs:
   browser-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      MASTER_AI_LIVE: '1'
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v7
