@@ -288,7 +288,10 @@
     const right = index < sorted.length - 1 ? (x + sorted[index + 1][1]) / 2 : x + gap / 2;
 
     const parts = row.items
-      .filter((item) => item.x >= left && item.x < right)
+      .filter((item) => {
+        const center = item.x + item.width / 2;
+        return center >= left && center < right;
+      })
       .sort((a, b) => a.x - b.x)
       .map((item) => item.text)
       .filter((text) => !/^\d{1,2}$/.test(text));
