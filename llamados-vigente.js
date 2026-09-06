@@ -19,7 +19,51 @@
     .replace(/\s+/g, " ")
     .trim();
 
+  const words = (value) => clean(value).split(" ").filter(Boolean);
   const route = () => String(location.hash || "#/inicio").split("?")[0];
+
+  function phraseContains(text, phrase) {
+    const haystack = ` ${clean(text)} `;
+    const needle = ` ${clean(phrase)} `;
+    return Boolean(clean(phrase)) && haystack.includes(needle);
+  }
+
+  function prefixTokensMatch(text, query) {
+    const haystackWords = words(text);
+    const queryWords = words(query);
+    if (!queryWords.length) return false;
+    return queryWords.every((token) => token.length >= 2 && haystackWords.some((word) => word.startsWith(token)));
+  }
+
+  function termScore(query, term) {
+    const q = clean(query);
+    const value = clean(term);
+    if (!q || !value) return 0;
+    if (q === value) return 1000;
+    if (phraseContains(value, q)) return 900;
+    if (prefixTokensMatch(value, q)) return 700;
+    return 0;
+  }
+
+  function specialtyScore(row, query) {
+    const specialty = clean(row.specialty);
+    const direct = termScore(query, specialty);
+    let score = direct ? direct + 120 : 0;
+    for (const alias of row.aliases || []) {
+      score = Math.max(score, termScore(query, alias));
+    }
+    return score;
+  }
+
+  function specialtiesForQuery(query) {
+    const q = clean(query);
+    if (!q) return [];
+    return STATIC_ROWS
+      .map((row, index) => ({ row, index, score: specialtyScore(row, q) }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .map(({ row }) => row);
+  }
 
   function parseMonthYear(label = "") {
     const normalized = clean(label);
@@ -45,18 +89,6 @@
     if (!year || !month || !day) return "fecha seleccionada";
     return new Intl.DateTimeFormat("es-CL", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
       .format(new Date(year, month - 1, day, 12));
-  }
-
-  function aliasTerms(query) {
-    const q = clean(query);
-    if (!q) return [];
-    const exact = STATIC_ROWS.find((row) => {
-      const haystack = [row.specialty, ...(row.aliases || [])].map(clean);
-      return haystack.some((term) => term.includes(q) || q.includes(term));
-    });
-    return exact
-      ? [...new Set([exact.specialty, ...(exact.aliases || [])].map(clean).filter(Boolean))]
-      : [q];
   }
 
   async function latestDocument() {
@@ -158,29 +190,39 @@
   }
 
   function knownSpecialtyAnchors(page) {
-    const labels = STATIC_ROWS.map((row) => ({ label: row.specialty, terms: [row.specialty, ...(row.aliases || [])].map(clean) }));
     const anchors = [];
     page.rows.forEach((row, index) => {
-      for (const candidate of labels) {
-        if (candidate.terms.some((term) => term.length >= 4 && row.norm.includes(term))) {
-          anchors.push({ index, y: row.y, label: candidate.label, row });
-          break;
-        }
-      }
+      const candidates = STATIC_ROWS
+        .filter((candidate) => phraseContains(row.norm, candidate.specialty))
+        .sort((a, b) => clean(b.specialty).length - clean(a.specialty).length);
+      if (!candidates.length) return;
+      const candidate = candidates[0];
+      anchors.push({ index, y: row.y, label: candidate.specialty, catalogRow: candidate, row });
     });
     return anchors.sort((a, b) => b.y - a.y);
   }
 
   function matchingAnchors(query) {
-    const terms = aliasTerms(query);
+    const selected = specialtiesForQuery(query);
     const matches = [];
+
     for (const page of pdfPages || []) {
       page.rows.forEach((row, index) => {
-        if (terms.some((term) => term && (row.norm.includes(term) || term.includes(row.norm)))) {
-          matches.push({ page, row, index });
+        if (selected.length) {
+          selected.forEach((catalogRow) => {
+            if (phraseContains(row.norm, catalogRow.specialty)) {
+              matches.push({ page, row, index, catalogRow, label: catalogRow.specialty });
+            }
+          });
+          return;
+        }
+
+        if (prefixTokensMatch(row.norm, query)) {
+          matches.push({ page, row, index, catalogRow: null, label: row.text });
         }
       });
     }
+
     return matches;
   }
 
@@ -208,31 +250,48 @@
       .sort((a, b) => b.y - a.y || a.x - b.x);
 
     const text = cellItems.map((item) => item.text).join(" ").replace(/\s+/g, " ").trim();
-    return /^x$/i.test(text) ? "Sin disponibilidad registrada" : text;
+    if (/^x$/i.test(text)) return "Sin disponibilidad registrada";
+    if (text.length > 140) return "";
+    return text;
   }
 
-  function bestLabel(match, query) {
-    const q = clean(query);
-    const staticMatch = STATIC_ROWS.find((row) => [row.specialty, ...(row.aliases || [])].map(clean).some((term) => term.includes(q) || q.includes(term)));
-    if (staticMatch) return staticMatch.specialty;
-    return match?.row?.text || query;
-  }
-
-  function buildCard(match, query, dateValue) {
-    const card = document.createElement("article");
-    card.className = "on-call-result available on-call-live-result";
-    const specialty = bestLabel(match, query);
+  function resultForMatch(match, dateValue) {
     const day = Number(String(dateValue || "").split("-")[2]);
     const doctor = doctorForDay(match, day);
+    return {
+      specialty: match.label || match.catalogRow?.specialty || match.row?.text || "Especialidad",
+      doctor,
+      date: formatDate(dateValue)
+    };
+  }
+
+  function collectResults(query, dateValue) {
+    const results = [];
+    const seen = new Set();
+    for (const match of matchingAnchors(query)) {
+      const result = resultForMatch(match, dateValue);
+      const key = [result.specialty, result.doctor, result.date].map(clean).join("|");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      results.push(result);
+      if (results.length >= 4) break;
+    }
+    return results;
+  }
+
+  function buildCard(result) {
+    const card = document.createElement("article");
+    const unavailable = result.doctor === "Sin disponibilidad registrada";
+    card.className = `on-call-result ${unavailable ? "unavailable" : "available"} on-call-live-result calls-live-card`;
     card.innerHTML = `
-      <div class="on-call-result-head"><span class="on-call-specialty"></span><span class="on-call-badge available">Vigente</span></div>
+      <div class="on-call-result-head"><span class="on-call-specialty"></span></div>
       <strong></strong>
       <p></p>`;
-    card.querySelector(".on-call-specialty").textContent = specialty;
-    card.querySelector("strong").textContent = doctor || "Coincidencia encontrada en la rotativa vigente";
-    card.querySelector("p").textContent = doctor
-      ? `${formatDate(dateValue)} · fuente ${source?.meta?.label || source?.title || "publicada por Jefatura"}`
-      : `Encontré la especialidad en el PDF vigente, pero esa celda no pudo leerse automáticamente. Usa “Documento global” para verificarla.`;
+    card.querySelector(".on-call-specialty").textContent = result.specialty;
+    card.querySelector("strong").textContent = result.doctor || "No pude leer con seguridad el nombre del especialista";
+    card.querySelector("p").textContent = result.doctor
+      ? result.date
+      : "Verifica este resultado en Documento global antes de usarlo.";
     return card;
   }
 
@@ -255,14 +314,14 @@
     panel.dataset.callsLiveSource = source.url;
     panel.innerHTML = `
       <section class="on-call-search on-call-live" data-call-live-search>
-        <div class="on-call-live-source" data-call-live-source><strong></strong><span>Fuente vigente publicada por Jefatura</span></div>
+        <div class="on-call-live-source" data-call-live-source><strong></strong><span>Rotativa vigente · Jefatura</span></div>
         <div class="on-call-controls">
           <label class="on-call-field"><span>Fecha consultada</span><input type="date" data-call-live-date></label>
           <label class="on-call-field"><span>Buscar especialidad</span><input type="search" data-call-live-query placeholder="Ej: cardiología, infectología, uro..." autocomplete="off" inputmode="search"></label>
         </div>
         <div class="on-call-live-status" data-call-live-status aria-live="polite"></div>
         <div class="on-call-results" data-call-live-results></div>
-        <div class="route-actions calls-route-actions"><button class="back-link on-call-clear" type="button" data-call-live-clear>Limpiar búsqueda</button></div>
+        <div class="route-actions calls-route-actions"><button class="back-link on-call-clear" type="button" data-call-live-clear hidden>Limpiar</button></div>
       </section>`;
 
     panel.querySelector("[data-call-live-source] strong").textContent = meta?.label || source.title || source.file_name || "Rotativa vigente";
@@ -270,6 +329,7 @@
     const queryInput = panel.querySelector("[data-call-live-query]");
     const status = panel.querySelector("[data-call-live-status]");
     const results = panel.querySelector("[data-call-live-results]");
+    const clearButton = panel.querySelector("[data-call-live-clear]");
     dateInput.value = defaultDate;
     if (min) dateInput.min = min;
     if (max) dateInput.max = max;
@@ -277,6 +337,7 @@
     const render = () => {
       const ticket = ++renderTicket;
       const query = queryInput.value.trim();
+      clearButton.hidden = !query;
       results.replaceChildren();
       if (!query) {
         status.textContent = pdfPages ? "" : "Cargando rotativa vigente…";
@@ -286,28 +347,21 @@
         status.textContent = "Cargando rotativa vigente…";
         return;
       }
-      const matches = matchingAnchors(query);
+
+      const found = collectResults(query, dateInput.value);
       if (ticket !== renderTicket) return;
-      if (!matches.length) {
+      if (!found.length) {
         status.textContent = "No encontré esa especialidad en la rotativa vigente.";
         return;
       }
+
       status.textContent = "";
-      const unique = [];
-      const seen = new Set();
-      for (const match of matches) {
-        const key = `${match.page.pageNo}:${Math.round(match.row.y)}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        unique.push(match);
-        if (unique.length >= 4) break;
-      }
-      unique.forEach((match) => results.append(buildCard(match, query, dateInput.value)));
+      found.forEach((result) => results.append(buildCard(result)));
     };
 
     queryInput.addEventListener("input", render);
     dateInput.addEventListener("change", render);
-    panel.querySelector("[data-call-live-clear]").addEventListener("click", () => {
+    clearButton.addEventListener("click", () => {
       queryInput.value = "";
       dateInput.value = defaultDate;
       render();
@@ -330,10 +384,11 @@
       } catch (error) {
         console.error("No se pudo leer la rotativa vigente", error);
         const status = document.querySelector("[data-call-live-status]");
-        if (status) status.textContent = "No pude leer el PDF automáticamente. Usa “Documento global” para abrir la rotativa vigente.";
+        if (status) status.textContent = "No pude leer el PDF automáticamente. Usa Documento global para abrir la rotativa vigente.";
         return;
       }
-      mountSearch();
+      const status = document.querySelector("[data-call-live-status]");
+      if (status && !document.querySelector("[data-call-live-query]")?.value) status.textContent = "";
       const query = document.querySelector("[data-call-live-query]");
       if (query?.value) query.dispatchEvent(new Event("input", { bubbles: true }));
     })().finally(() => {
@@ -357,6 +412,11 @@
     watch();
     boot().catch((error) => console.error("No se pudo preparar la rotativa vigente", error));
   }
+
+  window.CRS_CALLS_SEARCH_SAFE = Object.freeze({
+    specialtiesForQuery,
+    version: 2
+  });
 
   window.addEventListener("hashchange", routeChanged);
   window.addEventListener("crs:ui-section-ready", routeChanged);
