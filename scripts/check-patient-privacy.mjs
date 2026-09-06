@@ -1,18 +1,22 @@
 import fs from 'node:fs';
 
-const source = fs.readFileSync('gestion-pacientes-core.js', 'utf8');
+const source = fs.readFileSync('gestion-pacientes-runtime.js', 'utf8');
+const bootstrap = fs.readFileSync('gestion-pacientes-core.js', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
 const router = fs.readFileSync('app-router.js', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 const errors = [];
 
-if (/localStorage\.setItem\s*\(/.test(source)) {
+if (/localStorage\.setItem\s*\(/.test(source) || /localStorage\.setItem\s*\(/.test(bootstrap)) {
   errors.push('Gestión pacientes no puede persistir datos clínicos identificables en localStorage.');
 }
 
 for (const key of ['crsPatientCasesBackupV1', 'crsPriorityCases']) {
   if (!source.includes(key) || !/localStorage\.removeItem\(key\)/.test(source)) {
-    errors.push(`Debe purgarse el respaldo local legado ${key}.`);
+    errors.push(`El runtime debe seguir purgando el respaldo local legado ${key}.`);
+  }
+  if (!bootstrap.includes(key) || !/localStorage\.removeItem\(key\)/.test(bootstrap)) {
+    errors.push(`El arranque liviano debe purgar inmediatamente el respaldo local legado ${key}.`);
   }
   if (app.includes(key) || router.includes(key)) {
     errors.push(`app.js y app-router.js no deben conocer la clave clínica legada ${key}.`);
@@ -41,7 +45,7 @@ if (fs.existsSync('patient-storage-guard.js') || index.includes('./patient-stora
 }
 
 if (!source.includes('[data-priority-form]') || !source.includes('event.stopImmediatePropagation()')) {
-  errors.push('gestion-pacientes-core.js debe ser el único dueño del submit prioritario y detener handlers posteriores.');
+  errors.push('gestion-pacientes-runtime.js debe ser el único dueño del submit prioritario y detener handlers posteriores.');
 }
 
 if (!/source:\s*["']unavailable["'][\s\S]*rows:\s*\[\]/.test(source)) {
@@ -63,9 +67,9 @@ if (/guardado localmente|Modo respaldo local/i.test(source) || !app.includes('no
 const patientIndex = index.indexOf('./gestion-pacientes-core.js');
 const appIndex = index.indexOf('./app.js');
 if (patientIndex < 0 || appIndex < 0 || patientIndex >= appIndex) {
-  errors.push('gestion-pacientes-core.js debe cargar antes de app.js para ser dueño del submit prioritario.');
+  errors.push('El bootstrap de privacidad de Gestión pacientes debe cargar antes de app.js.');
 }
 
 for (const error of errors) console.error(`ERROR: ${error}`);
 if (errors.length) process.exit(1);
-console.log('Privacidad de Gestión pacientes OK: sin persistencia clínica local heredada.');
+console.log('Privacidad de Gestión pacientes OK: purga temprana y runtime sin persistencia clínica local.');
