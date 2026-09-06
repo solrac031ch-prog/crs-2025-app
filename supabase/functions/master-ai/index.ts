@@ -67,6 +67,10 @@ function containsIdentifier(value: string) {
   ].some((pattern) => pattern.test(value));
 }
 
+function looksLikeOpenAIKey(value: string) {
+  return /^sk-(?:proj-)?[A-Za-z0-9_-]{20,}$/.test(value.trim());
+}
+
 function extractOutputText(payload: any) {
   if (typeof payload?.output_text === "string" && payload.output_text.trim()) return payload.output_text.trim();
   const chunks: string[] = [];
@@ -76,16 +80,6 @@ function extractOutputText(payload: any) {
     }
   }
   return chunks.join("\n").trim();
-}
-
-function safeUpstreamError(payload: any) {
-  const error = payload?.error || {};
-  return {
-    status: Number(payload?.status || 0) || undefined,
-    type: clean(error?.type, 80) || undefined,
-    code: clean(error?.code, 80) || undefined,
-    message: clean(error?.message, 240) || undefined
-  };
 }
 
 async function sha256(value: string) {
@@ -118,14 +112,14 @@ async function takeQuota(req: Request) {
       body: JSON.stringify({ p_client_hash: clientHash, p_limit: DAILY_LIMIT })
     });
     if (!response.ok) {
-      console.error("MASTER IA quota RPC", response.status, await response.text());
+      console.error("MASTER IA quota RPC", response.status);
       return { ok: false, remaining: 0 };
     }
     const data = await response.json();
     const row = Array.isArray(data) ? data[0] : data;
     return { ok: Boolean(row?.allowed), remaining: Number(row?.remaining || 0) };
   } catch (error) {
-    console.error("MASTER IA quota error", error);
+    console.error("MASTER IA quota error", error instanceof Error ? error.name : "error");
     return { ok: false, remaining: 0 };
   }
 }
@@ -177,6 +171,12 @@ Deno.serve(async (req: Request) => {
       sources
     }, 200, origin);
   }
+  if (!looksLikeOpenAIKey(apiKey)) {
+    return json({
+      configured: false,
+      error: "La credencial configurada en OPENAI_API_KEY no tiene formato de API key de OpenAI."
+    }, 503, origin);
+  }
 
   const quota = await takeQuota(req);
   if (!quota.ok) {
@@ -215,7 +215,7 @@ Deno.serve(async (req: Request) => {
       })
     });
   } catch (error) {
-    console.error("OpenAI network error", error);
+    console.error("OpenAI network error", error instanceof Error ? error.name : "error");
     return json({ error: "No fue posible contactar el servicio de IA." }, 502, origin);
   }
 
@@ -226,11 +226,10 @@ Deno.serve(async (req: Request) => {
     payload = null;
   }
   if (!response.ok) {
-    console.error("OpenAI API error", response.status, payload);
-    return json({
-      error: "El servicio de IA no pudo completar la consulta.",
-      upstream: { ...safeUpstreamError(payload), status: response.status }
-    }, 502, origin);
+    const upstreamType = clean(payload?.error?.type, 80) || "unknown";
+    const upstreamCode = clean(payload?.error?.code, 80) || "unknown";
+    console.error("OpenAI API error", response.status, upstreamType, upstreamCode);
+    return json({ error: "El servicio de IA no pudo completar la consulta." }, 502, origin);
   }
 
   const answer = extractOutputText(payload);
