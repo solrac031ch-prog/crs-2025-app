@@ -6,6 +6,7 @@ const operationalSource = read('app-operational-data.js');
 const dataSource = read('app-forms-data.js');
 const appSource = read('app.js');
 const formsSource = read('app-forms.js');
+const routeModulesSource = read('route-modules.js');
 const indexSource = read('index.html');
 const errors = [];
 
@@ -67,8 +68,19 @@ const operationalIndex = indexSource.indexOf('./app-operational-data.js');
 const formsDataIndex = indexSource.indexOf('./app-forms-data.js');
 const appIndex = indexSource.indexOf('./app.js');
 const formsIndex = indexSource.indexOf('./app-forms.js');
-if ([operationalIndex, formsDataIndex, appIndex, formsIndex].some((value) => value < 0) || !(operationalIndex < formsDataIndex && formsDataIndex < appIndex && appIndex < formsIndex)) {
-  errors.push('index.html debe cargar app-operational-data.js → app-forms-data.js → app.js → app-forms.js.');
+const routeModulesIndex = indexSource.indexOf('./route-modules.js');
+const routerIndex = indexSource.indexOf('./app-router.js');
+
+const dataOrderedBeforeApp = operationalIndex >= 0 && formsDataIndex > operationalIndex && appIndex > formsDataIndex;
+const staticFormsOrdered = dataOrderedBeforeApp && formsIndex > appIndex;
+const lazyFormsOrdered = (
+  dataOrderedBeforeApp && routeModulesIndex > appIndex && routerIndex > routeModulesIndex &&
+  /loadScript\(["']app-forms["']\s*,\s*["']\.\/app-forms\.js["']/.test(routeModulesSource) &&
+  /if\s*\(current\s*===\s*["']#\/formularios["']\s*\|\|\s*current\.startsWith\(["']#\/formularios\/["']\)\)\s*return\s+ensureForms\(current\)/.test(routeModulesSource)
+);
+
+if (!staticFormsOrdered && !lazyFormsOrdered) {
+  errors.push('Los datos de formularios deben cargar antes de app.js y app-forms.js debe estar disponible antes del render, de forma estática o mediante route-modules.js.');
 }
 
 for (const error of errors) console.error(`ERROR: ${error}`);
