@@ -14,8 +14,8 @@ body,
 }
 
 /* Las vistas dinámicas usan un único encabezado. En Especialidades conservamos
-   el encabezado nativo y eliminamos el hero añadido posteriormente para que la
-   página no parezca tener una tarjeta/parche superpuesta. */
+   el encabezado nativo y mantenemos oculto el hero legado mientras se termina
+   de retirar su generación desde JavaScript. */
 #managementPage > .page-head,
 #chiefPage > .page-head,
 #educationPage > .page-head,
@@ -172,8 +172,40 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
     margin-bottom: 12px !important;
   }
 
+  #specialtiesPage.specialty-stable .control-panel {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
   #specialtiesPage.specialty-stable .quick-actions {
     grid-row: auto !important;
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
+  }
+
+  #specialtiesPage.specialty-stable .quick-actions .chip {
+    min-width: 158px !important;
+    min-height: 56px !important;
+    scroll-snap-align: start;
+  }
+
+  #specialtiesPage .specialty-shortcuts {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    padding-bottom: 4px !important;
+  }
+
+  #specialtiesPage .shortcut-label,
+  #specialtiesPage .shortcut-chip {
+    flex: 0 0 auto;
   }
 }
 
@@ -196,6 +228,22 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
 
   #specialtiesPage > .page-head h1 {
     font-size: clamp(1.8rem, 9vw, 2.45rem);
+  }
+
+  #specialtiesPage.specialty-stable .specialty-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #specialtiesPage .specialty-card-upgraded {
+    min-height: 96px !important;
+    grid-template-columns: 46px minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  #specialtiesPage .specialty-card-upgraded .specialty-sticker {
+    width: 46px !important;
+    height: 46px !important;
   }
 }
 
