@@ -7,6 +7,15 @@
     return String(location.hash || "#/inicio").split("?")[0] || "#/inicio";
   }
 
+  function normalize(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function rememberGlobalDocument(panel, type) {
     if (!panel) return null;
     const globalPanel = panel.querySelector(`[data-sb-call-panel="${type}"]`);
@@ -47,6 +56,40 @@
     container.replaceChildren(wrapper);
   }
 
+  function simplifyLiveResults(panel) {
+    const sourceNote = panel.querySelector("[data-call-live-source] span");
+    if (sourceNote && sourceNote.textContent !== "Rotativa vigente · Jefatura") {
+      sourceNote.textContent = "Rotativa vigente · Jefatura";
+    }
+
+    const results = panel.querySelector("[data-call-live-results]");
+    if (!results) return;
+
+    const seen = new Set();
+    results.querySelectorAll(".on-call-live-result").forEach((card) => {
+      card.classList.add("calls-live-card");
+      card.querySelectorAll(".on-call-badge").forEach((badge) => badge.remove());
+
+      const dateLine = card.querySelector("p");
+      if (dateLine) {
+        const cleaned = String(dateLine.textContent || "").replace(/\s*·\s*fuente\s+.*$/i, "").trim();
+        if (cleaned && cleaned !== dateLine.textContent) dateLine.textContent = cleaned;
+      }
+
+      const specialty = card.querySelector(".on-call-specialty")?.textContent || "";
+      const doctor = card.querySelector("strong")?.textContent || "";
+      const date = dateLine?.textContent || "";
+      const key = [specialty, doctor, date].map(normalize).join("|");
+      if (!key.replace(/\|/g, "")) return;
+
+      if (seen.has(key)) {
+        card.remove();
+        return;
+      }
+      seen.add(key);
+    });
+  }
+
   function compactSearch() {
     const panel = document.querySelector("#callsSearchPanel");
     if (!panel) return;
@@ -58,11 +101,17 @@
       if (/Escribe una especialidad/i.test(item.textContent || "")) item.remove();
     });
 
+    simplifyLiveResults(panel);
+
     const actions = panel.querySelector(".route-actions");
     if (actions) {
       actions.classList.add("calls-route-actions");
       const clear = actions.querySelector(".on-call-clear");
-      if (clear) clear.textContent = "Limpiar búsqueda";
+      if (clear) {
+        clear.textContent = "Limpiar";
+        const query = panel.querySelector("[data-call-live-query]");
+        clear.hidden = !String(query?.value || "").trim();
+      }
     }
   }
 
@@ -90,7 +139,7 @@
     const page = document.querySelector("#callsPage");
     if (!page) return;
     observer = new MutationObserver(schedule);
-    observer.observe(page, { childList: true, subtree: true });
+    observer.observe(page, { childList: true, subtree: true, characterData: true });
   }
 
   function routeChanged() {
