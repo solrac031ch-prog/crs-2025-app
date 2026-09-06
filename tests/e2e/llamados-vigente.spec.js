@@ -1,0 +1,27 @@
+const { test, expect } = require('@playwright/test');
+
+test('buscador de llamados usa la rotativa vigente publicada por Jefatura', async ({ page }) => {
+  await page.goto('/index.html#/llamados', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#callsPage')).toHaveClass(/\bactive\b/);
+
+  const live = page.locator('[data-call-live-search]');
+  await expect(live).toBeVisible({ timeout: 15000 });
+  await expect(live.locator('[data-call-live-source]')).toContainText('Septiembre 2026');
+
+  const date = live.locator('[data-call-live-date]');
+  await expect(date).toHaveValue(/^2026-09-/);
+
+  const search = live.locator('[data-call-live-query]');
+  await search.fill('uro');
+
+  await expect(live.locator('.on-call-live-result').first()).toBeVisible({ timeout: 20000 });
+  await expect(live.locator('.on-call-live-result').first()).toContainText(/Urolog/i);
+  await expect(live.locator('[data-call-live-status]')).not.toContainText('No encontré');
+});
+
+test('buscador de llamados no vuelve a mostrar Mayo 2026 como fuente activa', async ({ page }) => {
+  await page.goto('/index.html#/llamados', { waitUntil: 'domcontentloaded' });
+  const live = page.locator('[data-call-live-search]');
+  await expect(live).toBeVisible({ timeout: 15000 });
+  await expect(live.locator('[data-call-live-source]')).not.toContainText('Mayo 2026');
+});
