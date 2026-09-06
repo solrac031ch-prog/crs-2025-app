@@ -29,20 +29,12 @@ test('diagnóstico de la rotativa real publicada por Jefatura', async ({ page })
       const rows = [];
       const items = (content.items || [])
         .filter((item) => String(item.str || '').trim())
-        .map((item) => ({
-          text: String(item.str || '').trim(),
-          x: Number(item.transform?.[4] || 0),
-          y: Number(item.transform?.[5] || 0),
-          width: Number(item.width || 0)
-        }))
+        .map((item) => ({ text: String(item.str || '').trim(), x: Number(item.transform?.[4] || 0), y: Number(item.transform?.[5] || 0), width: Number(item.width || 0) }))
         .sort((a, b) => b.y - a.y || a.x - b.x);
 
       for (const item of items) {
         let row = rows.find((candidate) => Math.abs(candidate.y - item.y) <= 2.6);
-        if (!row) {
-          row = { y: item.y, items: [] };
-          rows.push(row);
-        }
+        if (!row) { row = { y: item.y, items: [] }; rows.push(row); }
         row.items.push(item);
       }
 
@@ -53,15 +45,21 @@ test('diagnóstico de la rotativa real publicada por Jefatura', async ({ page })
       });
       rows.sort((a, b) => b.y - a.y);
 
-      const selected = rows
-        .filter((row) => {
-          const norm = clean(row.text);
-          const dayCount = (row.text.match(/\b(?:[1-9]|[12]\d|3[01])\b/g) || []).length;
-          return wanted.some((term) => norm.includes(term)) || dayCount >= 10;
-        })
+      const headers = rows
+        .map((row) => ({
+          y: Math.round(row.y * 10) / 10,
+          text: row.text,
+          nums: row.items
+            .filter((item) => /^\d{1,2}$/.test(item.text) && Number(item.text) >= 1 && Number(item.text) <= 31)
+            .map((item) => ({ value: Number(item.text), x: Math.round((item.x + item.width / 2) * 10) / 10 }))
+        }))
+        .filter((row) => row.nums.length >= 3);
+
+      const specialties = rows
+        .filter((row) => wanted.some((term) => clean(row.text).includes(term)))
         .map(({ y, firstX, text }) => ({ y: Math.round(y * 10) / 10, firstX: Math.round(firstX * 10) / 10, text }));
 
-      pages.push({ pageNo, selected });
+      pages.push({ pageNo, headers, specialties });
     }
 
     return { numPages: pdf.numPages, pages };
