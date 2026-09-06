@@ -14,6 +14,8 @@ test('diagnóstico de la rotativa real publicada por Jefatura', async ({ page })
   await page.waitForFunction(() => Boolean(window.pdfjsLib?.getDocument), null, { timeout: 20000 });
 
   const diagnostic = await page.evaluate(async (url) => {
+    const clean = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const wanted = ['bronco', 'cardio', 'diab', 'endocr', 'endosc', 'gastro', 'geria', 'onco', 'hemato', 'infect', 'nefro', 'neuro', 'reuma', 'uro'];
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`PDF ${response.status}`);
     const buffer = await response.arrayBuffer();
@@ -49,13 +51,20 @@ test('diagnóstico de la rotativa real publicada por Jefatura', async ({ page })
         row.firstX = Math.min(...row.items.map((item) => item.x));
       });
       rows.sort((a, b) => b.y - a.y);
-      pages.push({ pageNo, rows: rows.map(({ y, firstX, text }) => ({ y, firstX, text })) });
+
+      const selected = rows
+        .filter((row) => {
+          const norm = clean(row.text);
+          const dayCount = (row.text.match(/\b(?:[1-9]|[12]\d|3[01])\b/g) || []).length;
+          return wanted.some((term) => norm.includes(term)) || dayCount >= 10;
+        })
+        .map(({ y, firstX, text }) => ({ y: Math.round(y * 10) / 10, firstX: Math.round(firstX * 10) / 10, text: text.slice(0, 500) }));
+
+      pages.push({ pageNo, selected });
     }
 
-    return pages;
+    return { numPages: pdf.numPages, pages };
   }, source.url);
 
-  console.log('CRS_CALLS_DIAGNOSTIC_START');
-  console.log(JSON.stringify({ title: source.title, file_name: source.file_name, pages: diagnostic }, null, 2));
-  console.log('CRS_CALLS_DIAGNOSTIC_END');
+  throw new Error(`CRS_CALLS_DIAG ${JSON.stringify({ title: source.title, file_name: source.file_name, diagnostic })}`);
 });
