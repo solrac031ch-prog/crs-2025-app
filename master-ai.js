@@ -1,7 +1,7 @@
 (() => {
   const MAX_QUESTION = 900;
   const MAX_SOURCES = 5;
-  const MAX_SOURCE_TEXT = 4200;
+  const MAX_SOURCE_TEXT = 5200;
   const examples = [
     'TVP en horario inhábil: ¿cuál es el flujo?',
     '¿Cómo activo Clave Negra?',
@@ -23,6 +23,7 @@
     shock: ['choque'],
     choque: ['shock']
   };
+  const stopWords = new Set(['como','cual','cuales','donde','cuando','para','por','que','del','las','los','una','uno','unos','unas','con','sin','sobre','desde','hasta','este','esta','estos','estas','hay','hago','hacer','activo','activar']);
   let dialog = null;
   let previousFocus = null;
 
@@ -41,6 +42,10 @@
     return [...expanded];
   }
 
+  function meaningfulTokens(value) {
+    return tokens(value).filter((item) => item.length > 2 && !stopWords.has(item));
+  }
+
   function protocolText(protocol) {
     const lines = [];
     if (protocol.summary) lines.push(`Resumen: ${protocol.summary}`);
@@ -48,7 +53,6 @@
       if (Array.isArray(field) && field.length >= 2) lines.push(`${field[0]}: ${field[1]}`);
     });
     if (Array.isArray(protocol.flow) && protocol.flow.length) {
-      lines.push('Flujo:');
       protocol.flow.forEach((step, index) => lines.push(`${index + 1}. ${step}`));
     }
     if (protocol.warning) lines.push(`Advertencia: ${protocol.warning}`);
@@ -96,6 +100,10 @@
         category: String(protocol.category || ''),
         page: String(protocol.page || ''),
         summary: String(protocol.summary || ''),
+        fields: Array.isArray(protocol.fields) ? protocol.fields.filter((field) => Array.isArray(field) && field.length >= 2).map((field) => [String(field[0]), String(field[1])]) : [],
+        flow: Array.isArray(protocol.flow) ? protocol.flow.map(String) : [],
+        warning: String(protocol.warning || ''),
+        pathologies: Array.isArray(protocol.pathologies) ? protocol.pathologies : [],
         text: protocolText(protocol),
         score
       }));
@@ -110,34 +118,46 @@
     ].some((pattern) => pattern.test(text));
   }
 
-  function localSourceAnswer(sources) {
-    const lines = [];
-    const titles = [];
-    sources.slice(0, 3).forEach((source) => {
-      titles.push(source.title);
-      const candidates = [source.summary, ...(String(source.text || '').split(/\n+/))]
-        .map((item) => String(item || '').trim())
-        .filter((item) => item.length >= 12);
-      for (const item of candidates) {
-        if (lines.some((line) => normalize(line) === normalize(item))) continue;
-        lines.push(item.slice(0, 520));
-        if (lines.length >= 5) break;
-      }
+  function matchingPathologies(source, question) {
+    const terms = meaningfulTokens(question);
+    if (!terms.length) return [];
+    const matches = [];
+    (source.pathologies || []).forEach((group) => {
+      if (!Array.isArray(group)) return;
+      const label = String(group[0] || 'Patologías');
+      const items = Array.isArray(group[1]) ? group[1].map(String) : [];
+      const selected = items.filter((item) => terms.some((term) => normalize(item).includes(term))).slice(0, 6);
+      if (selected.length) matches.push([label, selected]);
     });
-    if (!lines.length) {
-      return 'No encuentro respaldo suficiente en MASTER para responder con seguridad.';
-    }
-    return `Respuesta extractiva basada solo en las fuentes recuperadas de MASTER:\n${lines.map((line, index) => `${index + 1}. ${line}`).join('\n')}\n\nFuente MASTER: ${[...new Set(titles)].join('; ')}`;
+    return matches;
   }
 
-  function localSourceResult(sources, notice) {
-    return {
-      configured: false,
-      mode: 'sources',
-      answer: localSourceAnswer(sources),
-      sources,
-      notice
-    };
+  function localAnswer(question, sources) {
+    if (!sources.length) return 'No encuentro respaldo suficiente en MASTER para responder con seguridad.';
+    const source = sources[0];
+    const lines = [`Según MASTER — ${source.title}`];
+
+    if (source.summary) lines.push('', source.summary);
+
+    if (source.fields.length) {
+      lines.push('', 'Datos del flujo:');
+      source.fields.slice(0, 10).forEach(([label, value]) => lines.push(`• ${label}: ${value}`));
+    }
+
+    if (source.flow.length) {
+      lines.push('', 'Pasos:');
+      source.flow.slice(0, 10).forEach((step, index) => lines.push(`${index + 1}. ${step}`));
+    }
+
+    const pathologyMatches = matchingPathologies(source, question);
+    pathologyMatches.forEach(([label, items]) => {
+      lines.push('', `${label}:`);
+      items.forEach((item) => lines.push(`• ${item}`));
+    });
+
+    if (source.warning) lines.push('', `⚠️ Advertencia: ${source.warning}`);
+    lines.push('', `Fuente MASTER: ${source.title}${source.page ? ` · ${source.page}` : ''}`);
+    return lines.join('\n');
   }
 
   function setStatus(message, error = false) {
@@ -155,9 +175,10 @@
     const title = document.createElement('h3');
     title.textContent = `Fuentes de MASTER (${sources.length})`;
     target.append(title);
-    sources.forEach((source) => {
+    sources.forEach((source, index) => {
       const card = document.createElement('div');
       card.className = 'master-ai-source';
+      if (index === 0) card.dataset.masterAiPrimarySource = 'true';
       const strong = document.createElement('strong');
       strong.textContent = source.title;
       const meta = document.createElement('span');
@@ -167,47 +188,22 @@
     });
   }
 
-  function renderAnswer(answer, sources, notice = '') {
+  function renderAnswer(answer, sources) {
     const box = dialog?.querySelector('[data-master-ai-answer]');
     const text = dialog?.querySelector('[data-master-ai-answer-text]');
     const config = dialog?.querySelector('[data-master-ai-config]');
     if (!box || !text || !config) return;
     text.textContent = answer;
     renderSources(sources);
-    config.textContent = notice;
-    config.hidden = !notice;
+    config.textContent = 'Modo local $0: esta consulta no se envió a OpenAI, Cloudflare ni otro servicio de IA externo.';
+    config.hidden = false;
     box.hidden = false;
   }
 
-  async function ask(question, sources) {
-    const api = window.CRS_SUPABASE?.client?.();
-    if (!api?.functions?.invoke) {
-      return localSourceResult(
-        sources,
-        'La conexión con el servidor no está disponible; se muestra únicamente contenido recuperado de MASTER.'
-      );
-    }
-    const { data, error } = await api.functions.invoke('master-ai', {
-      body: {
-        question,
-        sources: sources.map(({ title, category, page, summary, text }) => ({ title, category, page, summary, text }))
-      }
-    });
-    if (error) {
-      console.warn('MASTER IA usó modo fuentes por error de Edge Function.', error?.name || 'error');
-      return localSourceResult(
-        sources,
-        'La redacción generativa no está disponible en este momento; se muestra únicamente contenido recuperado de MASTER.'
-      );
-    }
-    return data || localSourceResult(sources, 'La respuesta del servidor no estuvo disponible; se muestran únicamente las fuentes de MASTER.');
-  }
-
-  async function submit(event) {
+  function submit(event) {
     event.preventDefault();
     const form = event.currentTarget;
     const input = form.querySelector('textarea');
-    const button = form.querySelector('button[type="submit"]');
     const question = String(input?.value || '').trim();
     const answerBox = dialog?.querySelector('[data-master-ai-answer]');
     if (answerBox) answerBox.hidden = true;
@@ -228,38 +224,13 @@
 
     const sources = retrieve(question);
     if (!sources.length) {
-      renderSources([]);
       renderAnswer('No encontré respaldo suficiente dentro de los protocolos cargados en MASTER para responder esa consulta. Prueba con el nombre del flujo, especialidad o procedimiento.', []);
       setStatus('Sin fuentes institucionales suficientes.', true);
       return;
     }
 
-    button.disabled = true;
-    setStatus(`Revisando ${sources.length} fuente${sources.length === 1 ? '' : 's'} de MASTER…`);
-    try {
-      const result = await ask(question, sources);
-      const answer = String(result.answer || '').trim() || localSourceAnswer(sources);
-      const resultSources = Array.isArray(result.sources) && result.sources.length ? result.sources : sources;
-      const mode = String(result.mode || (result.configured ? 'generative' : 'sources'));
-      renderAnswer(answer, resultSources, String(result.notice || ''));
-      if (mode === 'generative') {
-        setStatus('Respuesta generada únicamente con las fuentes recuperadas.');
-      } else if (mode === 'sources') {
-        setStatus('Respuesta extractiva: solo contenido recuperado de MASTER.');
-      } else {
-        setStatus('Sin fuentes institucionales suficientes.', true);
-      }
-    } catch (error) {
-      console.error('MASTER IA', error);
-      renderAnswer(
-        localSourceAnswer(sources),
-        sources,
-        'La redacción generativa no está disponible en este momento; se muestra únicamente contenido recuperado de MASTER.'
-      );
-      setStatus('Respuesta extractiva: solo contenido recuperado de MASTER.');
-    } finally {
-      button.disabled = false;
-    }
+    renderAnswer(localAnswer(question, sources), sources);
+    setStatus('Respuesta local · $0 · solo contenido de MASTER.');
   }
 
   function close() {
@@ -281,11 +252,11 @@
     dialog.innerHTML = `
       <section class="master-ai-sheet" role="dialog" aria-modal="true" aria-labelledby="masterAiTitle">
         <header class="master-ai-head">
-          <div class="master-ai-head-copy"><span class="master-ai-kicker">Asistente institucional beta</span><h2 id="masterAiTitle">Preguntar al MASTER</h2><p>Busca primero en los protocolos de la app y responde solo con ese respaldo.</p></div>
+          <div class="master-ai-head-copy"><span class="master-ai-kicker">Asistente institucional local · $0</span><h2 id="masterAiTitle">Preguntar al MASTER</h2><p>Busca dentro de los protocolos cargados en la app y muestra únicamente contenido institucional.</p></div>
           <button class="master-ai-close" type="button" data-master-ai-close aria-label="Cerrar">×</button>
         </header>
         <div class="master-ai-body">
-          <div class="master-ai-notice">No ingreses nombre, RUT, ficha, correo ni otros datos identificatorios de pacientes. Esta herramienta apoya el acceso al protocolo; no reemplaza el juicio clínico ni la verificación del documento vigente.</div>
+          <div class="master-ai-notice">No ingreses nombre, RUT, ficha, correo ni otros datos identificatorios de pacientes. La consulta se procesa localmente en este dispositivo y no reemplaza el juicio clínico ni la verificación del documento vigente.</div>
           <div class="master-ai-examples" data-master-ai-examples></div>
           <form class="master-ai-form" data-master-ai-form>
             <label for="masterAiQuestion">Pregunta sobre un flujo, protocolo o procedimiento HPH</label>
@@ -299,7 +270,7 @@
             <div class="master-ai-sources" data-master-ai-sources></div>
             <div class="master-ai-config" data-master-ai-config hidden></div>
           </section>
-          <p class="master-ai-footer">Si el contenido recuperado no respalda la pregunta, el asistente debe decirlo en vez de completar información por conocimiento general.</p>
+          <p class="master-ai-footer">Motor local de recuperación clínica: no usa una API de IA de pago. Si el contenido cargado no respalda la pregunta, MASTER debe decirlo.</p>
         </div>
       </section>`;
 
@@ -337,9 +308,9 @@
     const launcher = document.querySelector('[data-master-ai-launcher]');
     launcher?.setAttribute('aria-expanded', 'true');
     launcher && (launcher.disabled = false);
-    setStatus('Escribe una consulta. Primero buscaré respaldo dentro de MASTER.');
+    setStatus('Escribe una consulta. Se procesará localmente sin costo por uso.');
     window.setTimeout(() => dialog.querySelector('textarea')?.focus({ preventScroll: true }), 0);
   }
 
-  window.CRS_MASTER_AI = Object.freeze({ open, close, retrieve, localSourceAnswer });
+  window.CRS_MASTER_AI = Object.freeze({ open, close, retrieve, localAnswer });
 })();
