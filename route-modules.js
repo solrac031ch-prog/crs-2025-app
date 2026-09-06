@@ -66,7 +66,7 @@
   }
 
   async function ensureSupabase() {
-    await loadScript("supabase-config", "./supabase-config.js", 18);
+    await loadScript("supabase-config", "./supabase-config.js", 19);
     await loadScript("supabase-backend", "./supabase-backend.js", 8);
   }
 
@@ -88,12 +88,13 @@
     await Promise.all([
       loadStyle("protocolo-saturacion-sea", "./protocolo-saturacion-sea.css", 1),
       loadStyle("clave-negra-imprimible", "./clave-negra-imprimible.css", 2),
+      loadStyle("especialidades-estable", "./especialidades-estable.css", 1),
       loadScript("protocolo-saturacion-sea", "./protocolo-saturacion-sea.js", 1),
       loadScript("clave-negra-imprimible", "./clave-negra-imprimible.js", 1),
       loadScript("busqueda-especialidades-segura", "./busqueda-especialidades-segura.js", 1),
       loadScript("protocolos-2026-ajustes", "./protocolos-2026-ajustes.js", 4),
       loadScript("protocolos-agiles", "./protocolos-agiles.js", 6),
-      loadScript("especialidades-estable", "./especialidades-estable.js", 4, {
+      loadScript("especialidades-estable", "./especialidades-estable.js", 5, {
         "data-especialidades-estable": true
       }),
       loadScript("protocolos-detalle-polish-runtime", "./protocolos-detalle-polish-runtime.js", 1),
