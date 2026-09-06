@@ -49,7 +49,6 @@
     const page = document.querySelector("#specialtiesPage.active.specialty-stable");
     if (!page) return false;
     return Boolean(
-      page.querySelector(".specialty-lift-hero") &&
       page.querySelector("#specialtyShortcutPanel") &&
       page.querySelector("#specialtyFocusCard") &&
       page.querySelector("#specialtyGroups .specialty-card-upgraded")
