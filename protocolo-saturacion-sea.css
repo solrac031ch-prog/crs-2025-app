@@ -1,0 +1,135 @@
+.sea-evaluator {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.sea-evaluator-head h2,
+.sea-stage h3,
+.sea-action-box h3 {
+  margin: 0;
+}
+
+.sea-evaluator-head p:last-child,
+.sea-stage-copy {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.sea-stage {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--bg);
+}
+
+.sea-black-stage {
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--line));
+}
+
+.sea-check-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.sea-check-row input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.sea-check-row span {
+  line-height: 1.4;
+}
+
+.sea-state {
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.sea-state[data-state="pending"] {
+  color: var(--muted);
+  background: #eef1ef;
+}
+
+.sea-state[data-state="ready"] {
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+}
+
+.sea-state[data-state="black"] {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.sea-action-box {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--line));
+  background: var(--danger-soft);
+}
+
+.sea-action-box ol {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-left: 24px;
+}
+
+.sea-reset {
+  justify-self: start;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--panel);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sea-reset:focus-visible,
+.sea-check-row:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--blue) 35%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .sea-evaluator {
+    gap: 14px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .sea-stage,
+  .sea-action-box {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .sea-check-row {
+    padding: 12px;
+  }
+
+  .sea-reset {
+    width: 100%;
+    justify-self: stretch;
+  }
+}
