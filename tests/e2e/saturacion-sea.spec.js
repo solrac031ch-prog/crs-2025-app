@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('protocolo de Saturación SEA y Clave Negra carga, evalúa y prepara la notificación imprimible', async ({ page }) => {
+test('protocolo de Saturación SEA y Clave Negra carga, evalúa y prepara la notificación imprimible Carta', async ({ page }) => {
   await page.addInitScript(() => {
     window.__seaPrintCalled = false;
     window.print = () => { window.__seaPrintCalled = true; };
@@ -44,6 +44,28 @@ test('protocolo de Saturación SEA y Clave Negra carga, evalúa y prepara la not
   await expect(paper).toContainText('Página 5 de 5');
   await expect(paper.locator('[data-sea-print-date]')).not.toHaveText('');
   await expect(paper.locator('[data-sea-print-time]')).not.toHaveText('');
+
+  await page.emulateMedia({ media: 'print' });
+  const printMetrics = await paper.evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      clientWidth: node.clientWidth,
+      clientHeight: node.clientHeight,
+      scrollWidth: node.scrollWidth,
+      scrollHeight: node.scrollHeight,
+      bodyHeight: Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)
+    };
+  });
+  expect(printMetrics.width).toBeGreaterThanOrEqual(814);
+  expect(printMetrics.width).toBeLessThanOrEqual(818);
+  expect(printMetrics.height).toBeGreaterThanOrEqual(1054);
+  expect(printMetrics.height).toBeLessThanOrEqual(1058);
+  expect(printMetrics.scrollWidth).toBeLessThanOrEqual(printMetrics.clientWidth + 1);
+  expect(printMetrics.scrollHeight).toBeLessThanOrEqual(printMetrics.clientHeight + 1);
+  expect(printMetrics.bodyHeight).toBeLessThanOrEqual(1058);
+  await page.emulateMedia({ media: 'screen' });
 
   await notification.locator('.sea-print-button').click();
   await expect.poll(() => page.evaluate(() => window.__seaPrintCalled)).toBe(true);
