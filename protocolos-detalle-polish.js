@@ -5,7 +5,7 @@
   // La interfaz y estilos completos se cargan al primer uso.
   if (!document.querySelector('script[data-master-ai-launcher-script]')) {
     const script = document.createElement('script');
-    script.src = './master-ai-launcher.js?v=1';
+    script.src = './master-ai-launcher.js?v=2';
     script.dataset.masterAiLauncherScript = 'true';
     script.async = false;
     document.body.append(script);
