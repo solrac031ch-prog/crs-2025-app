@@ -47,12 +47,13 @@ test('la rotativa mensual valida mes, días, bloques y especialidades sin depend
   expect(result.specialtyCount).toBeGreaterThanOrEqual(6);
 });
 
-test('rechaza una rotativa mensual si falta un día del mes', async ({ page }) => {
+test('rechaza una rotativa mensual si falta o sobra un día para ese mes', async ({ page }) => {
   await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
   const rows = syntheticSeptemberRows();
   rows.find((row) => row.items.some((item) => item.text === '30')).items = [
     { text: '28', x: 200, y: 140, width: 8 },
-    { text: '29', x: 270, y: 140, width: 8 }
+    { text: '29', x: 270, y: 140, width: 8 },
+    { text: '31', x: 340, y: 140, width: 8 }
   ];
 
   const message = await page.evaluate((fixture) => {
@@ -66,6 +67,7 @@ test('rechaza una rotativa mensual si falta un día del mes', async ({ page }) =
 
   expect(message).not.toBe('ACEPTADO');
   expect(message).toMatch(/Faltan días: 30/i);
+  expect(message).toMatch(/Sobran días.*31/i);
 });
 
 test('el guard mensual entiende todos los meses sin fechas hardcodeadas', async ({ page }) => {
