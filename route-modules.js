@@ -93,6 +93,7 @@
 
   async function ensureManagement() {
     await Promise.all([
+      loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2),
       loadStyle("gestion-perfiles", "./gestion-perfiles.css", 1),
       loadStyle("gestion-uhd", "./gestion-uhd-citados.css", 3),
       ensureSupabase()
@@ -101,6 +102,7 @@
       loadScript("gestion-perfiles", "./gestion-perfiles.js", 5),
       loadScript("gestion-uhd", "./gestion-uhd-citados.js", 6)
     ]);
+    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
   }
 
   async function ensureJefatura() {
@@ -111,7 +113,7 @@
       ensureSupabase()
     ]);
     await Promise.all([
-      loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 16, {
+      loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 17, {
         "data-supabase-jefatura-panel": true
       }),
       loadScript("supabase-admin-users", "./supabase-admin-users.js", 6),

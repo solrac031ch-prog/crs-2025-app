@@ -12,6 +12,7 @@ const chiefHelper = read('supabase-jefatura-panel.js');
 const chiefController = read('supabase-admin-users.js');
 const backend = read('supabase-backend.js');
 const gestion = read('gestion-panel-final.js');
+const routeModules = read('route-modules.js');
 
 if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
   errors.push('supabase-admin-users.js debe exponer CRS_SUPABASE_JEFATURA.');
@@ -19,12 +20,12 @@ if (!chiefController.includes('window.CRS_SUPABASE_JEFATURA')) {
 
 const backendIndex = index.indexOf('./supabase-backend.js');
 const recoveryIndex = index.indexOf('./supabase-jefatura-panel.js');
-const chiefIndex = index.indexOf('./supabase-admin-users.js');
-if (
-  backendIndex < 0 || recoveryIndex < 0 || chiefIndex < 0 ||
-  !(backendIndex < recoveryIndex && recoveryIndex < chiefIndex)
-) {
-  errors.push('index.html debe cargar backend, recuperación y luego Jefatura, en ese orden.');
+if (backendIndex < 0 || recoveryIndex < 0 || backendIndex >= recoveryIndex) {
+  errors.push('index.html debe cargar backend antes del helper temprano de recuperación.');
+}
+
+if (!/loadScript\(["']supabase-admin-users["']\s*,\s*["']\.\/supabase-admin-users\.js["']/.test(routeModules)) {
+  errors.push('route-modules.js debe cargar el controlador administrativo de Jefatura al entrar a esa ruta.');
 }
 
 if (index.includes('./supabase-login-compat.js')) {
@@ -107,7 +108,7 @@ if (!scheduleMatch) {
   }
 }
 
-if (!/let\s+renderTimer\s*=\s*null/.test(gestion) || !/clearTimeout\(renderTimer\)/.test(gestion)) {
+if (!/let\s+renderTimer\s*=\s*(?:null|0)/.test(gestion) || !/(?:window\.)?clearTimeout\(renderTimer\)/.test(gestion)) {
   errors.push('gestion-panel-final.js debe usar un timer cancelable para agrupar renders consecutivos.');
 }
 

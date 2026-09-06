@@ -17,7 +17,7 @@ if (!css.includes('@media(max-width:700px)')) {
   errors.push('gestion-pacientes-core.css debe conservar el breakpoint móvil existente.');
 }
 
-if (!index.includes('<link rel="stylesheet" href="./gestion-pacientes-core.css?v=1" />')) {
+if (!/<link[^>]+href=["']\.\/gestion-pacientes-core\.css\?v=\d+["'][^>]*>/.test(index)) {
   errors.push('index.html debe cargar gestion-pacientes-core.css desde <head>.');
 }
 

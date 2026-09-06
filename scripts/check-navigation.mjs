@@ -5,6 +5,7 @@ const index = read('index.html');
 const app = read('app.js');
 const forms = read('app-forms.js');
 const router = read('app-router.js');
+const routeModules = read('route-modules.js');
 const gestion = read('gestion-panel-final.js');
 const patients = read('gestion-pacientes-core.js');
 const compat = read('compatibilidad-global.js');
@@ -56,9 +57,9 @@ const gestionOwned = [
   ['#/gestion', 'renderGestion()'],
   ['#/jefatura', 'renderJefaturaShell()'],
   ['#/noticias', 'renderList("news"'],
-  ['#/educacion', 'renderList("education"'],
+  ['#/educacion', 'renderEducation()'],
   ['#/paper', 'renderPaper()'],
-  ['#/procedimientos', 'renderList("procedure"']
+  ['#/procedimientos', 'renderProcedures()']
 ];
 
 for (const [route, marker] of gestionOwned) {
@@ -67,7 +68,11 @@ for (const [route, marker] of gestionOwned) {
   }
 }
 
-if (!patients.includes('location.hash === "#/gestion/pacientes"') || !patients.includes('renderPage()')) {
+const patientRouteOwned = (
+  patients.includes('currentRoute() === "#/gestion/pacientes"') ||
+  patients.includes('location.hash === "#/gestion/pacientes"')
+);
+if (!patientRouteOwned || !patients.includes('renderPage()')) {
   errors.push('gestion-pacientes-core.js debe conservar la ruta #/gestion/pacientes.');
 }
 if (!patients.includes('window.CRS_PATIENT_CASES_CONFIG?.appsScriptUrl')) {
@@ -91,7 +96,11 @@ for (const marker of formRouteMarkers) {
   if (!forms.includes(marker)) errors.push(`Falta contrato de navegación de formularios: ${marker}.`);
 }
 
-if (!router.includes('window.addEventListener("hashchange", renderRoute)')) {
+const routerOwnsHashchange = (
+  router.includes('window.addEventListener("hashchange", renderRoute)') ||
+  /window\.addEventListener\(["']hashchange["']\s*,\s*\(\)\s*=>\s*scheduleRoute\(\)\s*\)/.test(router)
+);
+if (!routerOwnsHashchange) {
   errors.push('app-router.js debe ser dueño del evento hashchange base.');
 }
 if (!router.includes('window.location.hash = "#/inicio"')) {
@@ -115,9 +124,16 @@ if (fs.existsSync('jefatura-usuarios.js')) {
 
 const appIndex = index.indexOf('./app.js');
 const formsIndex = index.indexOf('./app-forms.js');
+const routeModulesIndex = index.indexOf('./route-modules.js');
 const routerIndex = index.indexOf('./app-router.js');
-if (appIndex < 0 || formsIndex < 0 || routerIndex < 0 || formsIndex <= appIndex || routerIndex <= formsIndex) {
-  errors.push('index.html debe cargar app.js → app-forms.js → app-router.js en ese orden.');
+const staticFormsOrdered = appIndex >= 0 && formsIndex > appIndex && routerIndex > formsIndex;
+const lazyFormsOrdered = (
+  appIndex >= 0 && routeModulesIndex > appIndex && routerIndex > routeModulesIndex &&
+  /loadScript\(["']app-forms["']\s*,\s*["']\.\/app-forms\.js["']/.test(routeModules) &&
+  /if\s*\(current\s*===\s*["']#\/formularios["']\s*\|\|\s*current\.startsWith\(["']#\/formularios\/["']\)\)\s*return\s+ensureForms\(current\)/.test(routeModules)
+);
+if (!staticFormsOrdered && !lazyFormsOrdered) {
+  errors.push('Formularios debe cargarse antes de que app-router.js intente renderizar su ruta, de forma estática o mediante route-modules.js.');
 }
 if (/pages\.jefatura\s*=|pages\["equipo-urgencia"\]\s*=/.test(index)) {
   errors.push('index.html no debe volver a parchear el mapa pages después de cargar app-router.js.');

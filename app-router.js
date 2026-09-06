@@ -53,13 +53,12 @@
 
   async function enhanceSpecialties(version) {
     try {
-      window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
-      if (!window.CRS_ESPECIALIDADES_ESTABLE) {
+      const alreadyLoaded = Boolean(window.CRS_ESPECIALIDADES_ESTABLE);
+      if (!alreadyLoaded) {
         await window.CRS_SPECIALTIES_UI?.load?.();
       }
       if (version !== routeVersion) return;
-      window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
-      window.CRS_SPECIALTIES_UI?.refresh?.();
+      if (alreadyLoaded) window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
     } catch (error) {
       console.error(error);
     }
@@ -130,8 +129,11 @@
     specialtyRenderFrame = window.requestAnimationFrame(() => {
       specialtyRenderFrame = 0;
       renderSpecialties();
-      window.CRS_ESPECIALIDADES_ESTABLE?.refresh?.();
-      window.CRS_SPECIALTIES_UI?.refresh?.();
+      if (window.CRS_ESPECIALIDADES_ESTABLE) {
+        window.CRS_ESPECIALIDADES_ESTABLE.refresh?.();
+      } else {
+        window.CRS_SPECIALTIES_UI?.load?.().catch(console.error);
+      }
       revealSpecialtyRefresh();
     });
   }
