@@ -49,6 +49,9 @@ jobs:
       - name: Validar contrato de navegación
         run: node scripts/check-navigation.mjs
 
+      - name: Validar carga bajo demanda
+        run: node scripts/check-performance-boundary.mjs
+
       - name: Validar alcance de caché
         run: node scripts/check-cache-scope.mjs
 
@@ -86,7 +89,7 @@ jobs:
         shell: python
         run: |
           from html.parser import HTMLParser
-          from pathlib import Path
+          from pathlib import import Path
           from urllib.parse import urlsplit
 
           root = Path('.')
