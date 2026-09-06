@@ -107,7 +107,7 @@ if (!scheduleMatch) {
   }
 }
 
-if (!/let\s+renderTimer\s*=\s*null/.test(gestion) || !/clearTimeout\(renderTimer\)/.test(gestion)) {
+if (!/let\s+renderTimer\s*=\s*(?:null|0)/.test(gestion) || !/(?:window\.)?clearTimeout\(renderTimer\)/.test(gestion)) {
   errors.push('gestion-panel-final.js debe usar un timer cancelable para agrupar renders consecutivos.');
 }
 
