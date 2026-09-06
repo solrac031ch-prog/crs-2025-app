@@ -164,6 +164,14 @@
     ]);
   }
 
+  async function ensureCalls() {
+    await Promise.all([
+      loadStyle("llamados-compacto", "./llamados-compacto.css", 1),
+      ensureSupabase()
+    ]);
+    await loadScript("llamados-compacto", "./llamados-compacto.js", 1);
+  }
+
   async function ensureForRoute(value = route()) {
     const current = route(value);
     if (routePromises.has(current)) return routePromises.get(current);
@@ -179,7 +187,7 @@
         await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2);
         return loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
       }
-      if (current === "#/llamados") return ensureSupabase();
+      if (current === "#/llamados") return ensureCalls();
       return undefined;
     })().catch((error) => {
       routePromises.delete(current);
