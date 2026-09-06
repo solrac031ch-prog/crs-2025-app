@@ -4,6 +4,7 @@ const read = (path) => fs.readFileSync(path, 'utf8');
 const size = (path) => fs.statSync(path).size;
 const errors = [];
 
+const index = read('index.html');
 const patientBootstrap = read('gestion-pacientes-core.js');
 const protocolBootstrap = read('protocolos-detalle-polish.js');
 const routes = read('route-modules.js');
@@ -18,8 +19,9 @@ if (size('protocolos-detalle-polish.js') > 2048) {
 if (!fs.existsSync('gestion-pacientes-runtime.js') || !fs.existsSync('protocolos-detalle-polish-runtime.js')) {
   errors.push('Faltan runtimes diferidos necesarios para las rutas clínicas.');
 }
-if (!routes.includes('./gestion-pacientes-runtime.js') || !routes.includes('./protocolos-detalle-polish-runtime.js')) {
-  errors.push('route-modules.js debe cargar los runtimes pesados sólo al entrar a sus rutas.');
+for (const file of ['gestion-pacientes-runtime.js', 'protocolos-detalle-polish-runtime.js']) {
+  if (index.includes(`./${file}`)) errors.push(`${file} no debe volver al arranque global de index.html.`);
+  if (!routes.includes(`./${file}`)) errors.push(`${file} debe permanecer controlado por route-modules.js.`);
 }
 if (!patientBootstrap.includes('localStorage.removeItem(key)')) {
   errors.push('La optimización no puede retrasar la purga de respaldos clínicos heredados.');
