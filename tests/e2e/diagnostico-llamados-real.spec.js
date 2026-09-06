@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
 
 test('diagnóstico de la rotativa real publicada por Jefatura', async ({ page }) => {
   await page.goto('/index.html#/llamados');
@@ -58,7 +59,7 @@ test('diagnóstico de la rotativa real publicada por Jefatura', async ({ page })
           const dayCount = (row.text.match(/\b(?:[1-9]|[12]\d|3[01])\b/g) || []).length;
           return wanted.some((term) => norm.includes(term)) || dayCount >= 10;
         })
-        .map(({ y, firstX, text }) => ({ y: Math.round(y * 10) / 10, firstX: Math.round(firstX * 10) / 10, text: text.slice(0, 500) }));
+        .map(({ y, firstX, text }) => ({ y: Math.round(y * 10) / 10, firstX: Math.round(firstX * 10) / 10, text }));
 
       pages.push({ pageNo, selected });
     }
@@ -66,5 +67,5 @@ test('diagnóstico de la rotativa real publicada por Jefatura', async ({ page })
     return { numPages: pdf.numPages, pages };
   }, source.url);
 
-  throw new Error(`CRS_CALLS_DIAG ${JSON.stringify({ title: source.title, file_name: source.file_name, diagnostic })}`);
+  writeFileSync('diagnostico-llamados.json', JSON.stringify({ title: source.title, file_name: source.file_name, url: source.url, diagnostic }, null, 2));
 });
