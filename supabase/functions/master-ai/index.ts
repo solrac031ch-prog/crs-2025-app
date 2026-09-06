@@ -10,6 +10,7 @@ const MAX_QUESTION = 900;
 const MAX_SOURCES = 5;
 const MAX_SOURCE_TEXT = 4200;
 const DEFAULT_MODEL = "gpt-5.6-sol";
+const DAILY_LIMIT = 250;
 
 function corsHeaders(origin: string | null) {
   const safeOrigin = origin && allowedOrigins.has(origin) ? origin : "https://solrac031ch-prog.github.io";
@@ -28,6 +29,34 @@ function json(body: unknown, status = 200, origin: string | null = null) {
 
 function clean(value: unknown, max: number) {
   return String(value ?? "").replace(/\u0000/g, "").trim().slice(0, max);
+}
+
+function envKeys(name: string) {
+  try {
+    const parsed = JSON.parse(Deno.env.get(name) || "{}");
+    return Object.values(parsed).filter((value): value is string => typeof value === "string" && Boolean(value));
+  } catch {
+    return [];
+  }
+}
+
+function bearer(req: Request) {
+  const value = req.headers.get("authorization") || "";
+  return value.toLowerCase().startsWith("bearer ") ? value.slice(7).trim() : "";
+}
+
+function isProjectClient(req: Request) {
+  const allowed = envKeys("SUPABASE_PUBLISHABLE_KEYS");
+  const legacy = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  if (legacy) allowed.push(legacy);
+  const apikey = req.headers.get("apikey") || "";
+  const token = bearer(req);
+  return allowed.length > 0 && (allowed.includes(apikey) || allowed.includes(token));
+}
+
+function serverSecret() {
+  const modern = envKeys("SUPABASE_SECRET_KEYS")[0];
+  return modern || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 }
 
 function containsIdentifier(value: string) {
@@ -49,11 +78,54 @@ function extractOutputText(payload: any) {
   return chunks.join("\n").trim();
 }
 
+async function sha256(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function clientIp(req: Request) {
+  const forwarded = (req.headers.get("x-forwarded-for") || "").split(",")[0]?.trim();
+  return forwarded || req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || "unknown";
+}
+
+async function takeQuota(req: Request) {
+  const url = Deno.env.get("SUPABASE_URL") || "";
+  const secret = serverSecret();
+  if (!url || !secret) return { ok: false, remaining: 0 };
+
+  const clientHash = await sha256(`${clientIp(req)}|${secret.slice(-24)}`);
+  const headers: Record<string, string> = {
+    "apikey": secret,
+    "Content-Type": "application/json"
+  };
+  if (!secret.startsWith("sb_secret_")) headers.Authorization = `Bearer ${secret}`;
+
+  try {
+    const response = await fetch(`${url}/rest/v1/rpc/crs_take_ai_quota`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ p_client_hash: clientHash, p_limit: DAILY_LIMIT })
+    });
+    if (!response.ok) {
+      console.error("MASTER IA quota RPC", response.status, await response.text());
+      return { ok: false, remaining: 0 };
+    }
+    const data = await response.json();
+    const row = Array.isArray(data) ? data[0] : data;
+    return { ok: Boolean(row?.allowed), remaining: Number(row?.remaining || 0) };
+  } catch (error) {
+    console.error("MASTER IA quota error", error);
+    return { ok: false, remaining: 0 };
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
   if (req.method !== "POST") return json({ error: "Método no permitido." }, 405, origin);
   if (origin && !allowedOrigins.has(origin)) return json({ error: "Origen no autorizado." }, 403, origin);
+  if (!isProjectClient(req)) return json({ error: "Cliente no autorizado." }, 401, origin);
 
   let body: any;
   try {
@@ -94,6 +166,11 @@ Deno.serve(async (req: Request) => {
       answer: "Encontré fuentes pertinentes dentro de MASTER. La recuperación documental ya está funcionando; falta activar la credencial de IA en el servidor para redactar la respuesta.",
       sources
     }, 200, origin);
+  }
+
+  const quota = await takeQuota(req);
+  if (!quota.ok) {
+    return json({ error: "MASTER IA alcanzó su límite temporal de consultas o no pudo validar la cuota. Intenta más tarde." }, 429, origin);
   }
 
   const sourceBlock = sources.map((source: any, index: number) => [
@@ -150,6 +227,7 @@ Deno.serve(async (req: Request) => {
     configured: true,
     answer,
     sources,
-    model
+    model,
+    remaining: quota.remaining
   }, 200, origin);
 });
