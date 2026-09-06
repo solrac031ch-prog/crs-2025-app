@@ -14,7 +14,7 @@ const APP_PUBLISHABLE_KEY = "sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9";
 const MAX_QUESTION = 900;
 const MAX_SOURCES = 5;
 const MAX_SOURCE_TEXT = 4200;
-const DEFAULT_MODEL = "gpt-5.6-sol";
+const DEFAULT_MODEL = "gpt-5.4-mini";
 const DAILY_LIMIT = 250;
 
 function corsHeaders(origin: string | null) {
