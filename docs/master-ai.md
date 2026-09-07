@@ -21,7 +21,9 @@ Es el proveedor principal. Variables esperadas en Supabase Edge Functions > Secr
 
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_MODEL` opcional; por defecto `@cf/meta/llama-3.1-8b-instruct-fp8`
+- `CLOUDFLARE_MODEL` opcional; por defecto `@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+
+El modelo por defecto se eligió después de una prueba real de respuesta institucional con Clave Negra. La integración acepta también un token pegado accidentalmente dentro de un comando de ejemplo, extrayendo únicamente el valor `cfut_...`; aun así, la forma recomendada es guardar solo el token en el secreto.
 
 Las credenciales nunca se exponen en el navegador ni se guardan en GitHub.
 
@@ -63,4 +65,4 @@ MASTER IA responde sobre flujos, protocolos y procedimientos presentes en MASTER
 
 ## Pruebas
 
-Las pruebas normales de navegador validan interfaz, recuperación, privacidad, modo generativo simulado, modo extractivo y móvil sin consumir cuota externa. La prueba real contra la Edge Function es opt-in para evitar consumir cuota gratuita de proveedores en cada PR.
+Las pruebas normales de navegador validan interfaz, recuperación, privacidad, modo generativo simulado, modo extractivo y móvil sin consumir cuota externa. La integración Cloudflare se validó además contra la Edge Function real con un caso de Clave Negra antes de habilitarla en producción. Las pruebas reales recurrentes se mantienen fuera del flujo normal para no consumir cuota gratuita de proveedores en cada PR.
