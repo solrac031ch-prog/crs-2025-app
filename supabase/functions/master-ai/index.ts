@@ -7,14 +7,13 @@ const allowedOrigins = new Set([
 ]);
 
 // La publishable key de Supabase es pública por diseño y ya forma parte de la
-// configuración del cliente web. Se valida aquí para impedir que clientes de
-// otros proyectos invoquen esta función por accidente. Nunca usar aquí una
-// service-role/secret key.
+// configuración del cliente web. Nunca usar aquí una service-role/secret key.
 const APP_PUBLISHABLE_KEY = "sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9";
 const MAX_QUESTION = 900;
 const MAX_SOURCES = 5;
 const MAX_SOURCE_TEXT = 4200;
-const DEFAULT_MODEL = "gpt-5.4-mini";
+const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
+const DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
 const DAILY_LIMIT = 250;
 const STOP_WORDS = new Set([
   "como", "cual", "cuales", "donde", "cuando", "para", "por", "que", "del", "las", "los", "una", "uno", "unos", "unas",
@@ -27,6 +26,15 @@ type MasterSource = {
   page: string;
   summary: string;
   text: string;
+};
+
+type ProviderResult = {
+  ok: boolean;
+  answer?: string;
+  provider?: "cloudflare" | "openai";
+  model?: string;
+  status?: number;
+  code?: string;
 };
 
 function corsHeaders(origin: string | null) {
@@ -77,6 +85,12 @@ function envKeys(name: string) {
   return raw.split(",").map((value) => value.trim()).filter(Boolean);
 }
 
+function envFlag(name: string, fallback = false) {
+  const raw = String(Deno.env.get(name) ?? "").trim().toLowerCase();
+  if (!raw) return fallback;
+  return ["1", "true", "yes", "on", "si", "sí"].includes(raw);
+}
+
 function bearer(req: Request) {
   const value = req.headers.get("authorization") || "";
   return value.toLowerCase().startsWith("bearer ") ? value.slice(7).trim() : "";
@@ -110,7 +124,33 @@ function looksLikeOpenAIKey(value: string) {
   return /^sk-(?:proj-)?[A-Za-z0-9_-]{20,}$/.test(value.trim());
 }
 
-function extractOutputText(payload: any) {
+function cloudflareModel() {
+  const configured = clean(Deno.env.get("CLOUDFLARE_MODEL") || DEFAULT_CLOUDFLARE_MODEL, 180);
+  return /^@cf\/[A-Za-z0-9._/-]+$/.test(configured) ? configured : DEFAULT_CLOUDFLARE_MODEL;
+}
+
+function cloudflareConfig() {
+  const accountId = clean(Deno.env.get("CLOUDFLARE_ACCOUNT_ID"), 80);
+  const token = clean(Deno.env.get("CLOUDFLARE_API_TOKEN") || Deno.env.get("CLOUDFLARE_AUTH_TOKEN"), 500);
+  return {
+    accountId,
+    token,
+    model: cloudflareModel(),
+    configured: Boolean(accountId && token)
+  };
+}
+
+function openAIConfig() {
+  const apiKey = Deno.env.get("OPENAI_API_KEY") || "";
+  return {
+    apiKey,
+    model: clean(Deno.env.get("OPENAI_MODEL") || DEFAULT_OPENAI_MODEL, 120),
+    configured: looksLikeOpenAIKey(apiKey),
+    enabled: envFlag("OPENAI_FALLBACK_ENABLED", false)
+  };
+}
+
+function extractOpenAIText(payload: any) {
   if (typeof payload?.output_text === "string" && payload.output_text.trim()) return payload.output_text.trim();
   const chunks: string[] = [];
   for (const item of Array.isArray(payload?.output) ? payload.output : []) {
@@ -119,6 +159,14 @@ function extractOutputText(payload: any) {
     }
   }
   return chunks.join("\n").trim();
+}
+
+function extractCloudflareText(payload: any) {
+  const direct = payload?.result?.response;
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const nested = payload?.result?.result?.response;
+  if (typeof nested === "string" && nested.trim()) return nested.trim();
+  return "";
 }
 
 function meaningfulTerms(value: string) {
@@ -200,11 +248,111 @@ function sourceModeResponse(question: string, sources: MasterSource[], configure
   return {
     configured,
     mode: "sources",
+    provider: "local",
     answer: buildSourceOnlyAnswer(question, sources),
     sources,
     notice,
     ...(typeof remaining === "number" ? { remaining } : {})
   };
+}
+
+function sourceBlock(sources: MasterSource[]) {
+  return sources.map((source, index) => [
+    `FUENTE ${index + 1}: ${source.title}`,
+    source.category ? `Categoría: ${source.category}` : "",
+    source.page ? `Referencia: ${source.page}` : "",
+    source.summary ? `Resumen: ${source.summary}` : "",
+    source.text
+  ].filter(Boolean).join("\n")).join("\n\n---\n\n");
+}
+
+function prompts(question: string, sources: MasterSource[]) {
+  const developer = `Eres MASTER IA, un asistente institucional para Urgencia Adulto HPH.\n\nREGLAS OBLIGATORIAS:\n1. Responde ÚNICAMENTE usando el material de FUENTES incluido en la consulta.\n2. No completes información por conocimiento general, memoria, internet ni suposiciones.\n3. Si las fuentes no bastan, responde exactamente: \"No encuentro respaldo suficiente en MASTER para responder con seguridad.\" y explica brevemente qué falta verificar.\n4. No inventes nombres de médicos, teléfonos, anexos, dosis, horarios, criterios, formularios ni destinos de derivación.\n5. Conserva la terminología institucional de las fuentes.\n6. Si hay conflicto entre fuentes, indícalo y pide verificar el documento vigente.\n7. No solicites ni repitas datos identificatorios de pacientes.\n8. Responde en español, de manera breve, práctica y orientada al turno. Usa pasos numerados solo si ayudan.\n9. Termina con una línea: \"Fuente MASTER: ...\" usando uno o más títulos de las fuentes realmente utilizadas.\n10. No presentes la respuesta como sustituto del juicio clínico.`;
+  const user = `PREGUNTA:\n${question}\n\nFUENTES RECUPERADAS DE MASTER:\n${sourceBlock(sources)}`;
+  return { developer, user };
+}
+
+async function callCloudflare(question: string, sources: MasterSource[]): Promise<ProviderResult> {
+  const config = cloudflareConfig();
+  if (!config.configured) return { ok: false, provider: "cloudflare", code: "not_configured" };
+  const { developer, user } = prompts(question, sources);
+
+  try {
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${config.accountId}/ai/run/${config.model}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${config.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: developer },
+          { role: "user", content: user }
+        ],
+        max_tokens: 700,
+        temperature: 0.1
+      }),
+      signal: AbortSignal.timeout(18000)
+    });
+
+    let payload: any = null;
+    try { payload = await response.json(); } catch { payload = null; }
+    if (!response.ok || payload?.success === false) {
+      const code = clean(payload?.errors?.[0]?.code || payload?.error?.code || "unknown", 80);
+      console.error("Cloudflare AI error", response.status, code);
+      return { ok: false, provider: "cloudflare", status: response.status, code };
+    }
+
+    const answer = extractCloudflareText(payload);
+    if (!answer) return { ok: false, provider: "cloudflare", status: response.status, code: "empty_response" };
+    return { ok: true, provider: "cloudflare", model: config.model, answer };
+  } catch (error) {
+    console.error("Cloudflare AI network error", error instanceof Error ? error.name : "error");
+    return { ok: false, provider: "cloudflare", code: "network_error" };
+  }
+}
+
+async function callOpenAI(question: string, sources: MasterSource[]): Promise<ProviderResult> {
+  const config = openAIConfig();
+  if (!config.enabled) return { ok: false, provider: "openai", code: "disabled_zero_cost" };
+  if (!config.configured) return { ok: false, provider: "openai", code: "not_configured" };
+  const { developer, user } = prompts(question, sources);
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: config.model,
+        store: false,
+        max_output_tokens: 700,
+        input: [
+          { role: "developer", content: [{ type: "input_text", text: developer }] },
+          { role: "user", content: [{ type: "input_text", text: user }] }
+        ]
+      }),
+      signal: AbortSignal.timeout(18000)
+    });
+
+    let payload: any = null;
+    try { payload = await response.json(); } catch { payload = null; }
+    if (!response.ok) {
+      const type = clean(payload?.error?.type, 80) || "unknown";
+      const code = clean(payload?.error?.code, 80) || "unknown";
+      console.error("OpenAI API error", response.status, type, code);
+      return { ok: false, provider: "openai", status: response.status, code };
+    }
+
+    const answer = extractOpenAIText(payload);
+    if (!answer) return { ok: false, provider: "openai", status: response.status, code: "empty_response" };
+    return { ok: true, provider: "openai", model: config.model, answer };
+  } catch (error) {
+    console.error("OpenAI network error", error instanceof Error ? error.name : "error");
+    return { ok: false, provider: "openai", code: "network_error" };
+  }
 }
 
 async function sha256(value: string) {
@@ -280,31 +428,27 @@ Deno.serve(async (req: Request) => {
     text: clean(source?.text, MAX_SOURCE_TEXT)
   })).filter((source: MasterSource) => source.title && (source.text || source.summary));
 
+  const cf = cloudflareConfig();
+  const oa = openAIConfig();
+  const anyGenerativeConfigured = cf.configured || (oa.configured && oa.enabled);
+
   if (!sources.length) {
     return json({
-      configured: Boolean(Deno.env.get("OPENAI_API_KEY")),
+      configured: anyGenerativeConfigured,
       mode: "none",
+      provider: "none",
       answer: "No encuentro respaldo suficiente dentro de las fuentes recuperadas de MASTER para responder esa consulta.",
       sources: []
     }, 200, origin);
   }
 
-  const apiKey = Deno.env.get("OPENAI_API_KEY") || "";
-  if (!apiKey) {
-    return json(sourceModeResponse(
-      question,
-      sources,
-      false,
-      "La redacción generativa no está configurada; se muestra únicamente contenido extraído de MASTER."
-    ), 200, origin);
-  }
-  if (!looksLikeOpenAIKey(apiKey)) {
-    return json(sourceModeResponse(
-      question,
-      sources,
-      false,
-      "La redacción generativa no está disponible por una configuración del servidor; se muestra únicamente contenido extraído de MASTER."
-    ), 200, origin);
+  if (!anyGenerativeConfigured) {
+    const notice = cf.configured
+      ? "Cloudflare AI está disponible, pero no hay proveedor generativo habilitado para esta solicitud."
+      : oa.configured
+        ? "OpenAI está integrado pero desactivado en modo costo $0; falta configurar Cloudflare AI para redacción gratuita."
+        : "No hay proveedor generativo gratuito configurado; se muestra únicamente contenido extraído de MASTER.";
+    return json(sourceModeResponse(question, sources, false, notice), 200, origin);
   }
 
   const quota = await takeQuota(req);
@@ -313,90 +457,46 @@ Deno.serve(async (req: Request) => {
       question,
       sources,
       true,
-      "La redacción generativa alcanzó su límite temporal; se muestra únicamente contenido extraído de MASTER.",
+      "MASTER IA alcanzó su límite temporal de redacción; se muestra únicamente contenido extraído de MASTER.",
       quota.remaining
     ), 200, origin);
   }
 
-  const sourceBlock = sources.map((source, index) => [
-    `FUENTE ${index + 1}: ${source.title}`,
-    source.category ? `Categoría: ${source.category}` : "",
-    source.page ? `Referencia: ${source.page}` : "",
-    source.summary ? `Resumen: ${source.summary}` : "",
-    source.text
-  ].filter(Boolean).join("\n")).join("\n\n---\n\n");
-
-  const developerPrompt = `Eres MASTER IA, un asistente institucional para Urgencia Adulto HPH.\n\nREGLAS OBLIGATORIAS:\n1. Responde ÚNICAMENTE usando el material de FUENTES incluido en la consulta.\n2. No completes información por conocimiento general, memoria, internet ni suposiciones.\n3. Si las fuentes no bastan, responde exactamente: \"No encuentro respaldo suficiente en MASTER para responder con seguridad.\" y explica brevemente qué falta verificar.\n4. No inventes nombres de médicos, teléfonos, anexos, dosis, horarios, criterios, formularios ni destinos de derivación.\n5. Conserva la terminología institucional de las fuentes.\n6. Si hay conflicto entre fuentes, indícalo y pide verificar el documento vigente.\n7. No solicites ni repitas datos identificatorios de pacientes.\n8. Responde en español, de manera breve, práctica y orientada al turno. Usa pasos numerados solo si ayudan.\n9. Termina con una línea: \"Fuente MASTER: ...\" usando uno o más títulos de las fuentes realmente utilizadas.\n10. No presentes la respuesta como sustituto del juicio clínico.`;
-
-  const userPrompt = `PREGUNTA:\n${question}\n\nFUENTES RECUPERADAS DE MASTER:\n${sourceBlock}`;
-  const model = Deno.env.get("OPENAI_MODEL") || DEFAULT_MODEL;
-
-  let response: Response;
-  try {
-    response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model,
-        store: false,
-        max_output_tokens: 700,
-        input: [
-          { role: "developer", content: [{ type: "input_text", text: developerPrompt }] },
-          { role: "user", content: [{ type: "input_text", text: userPrompt }] }
-        ]
-      }),
-      signal: AbortSignal.timeout(18000)
-    });
-  } catch (error) {
-    console.error("OpenAI network error", error instanceof Error ? error.name : "error");
-    return json(sourceModeResponse(
-      question,
-      sources,
-      true,
-      "La redacción generativa no respondió a tiempo; se muestra únicamente contenido extraído de MASTER.",
-      quota.remaining
-    ), 200, origin);
+  if (cf.configured) {
+    const cloudflare = await callCloudflare(question, sources);
+    if (cloudflare.ok && cloudflare.answer) {
+      return json({
+        configured: true,
+        mode: "generative",
+        provider: "cloudflare",
+        answer: cloudflare.answer,
+        sources,
+        model: cloudflare.model,
+        remaining: quota.remaining
+      }, 200, origin);
+    }
   }
 
-  let payload: any = null;
-  try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
-  if (!response.ok) {
-    const upstreamType = clean(payload?.error?.type, 80) || "unknown";
-    const upstreamCode = clean(payload?.error?.code, 80) || "unknown";
-    console.error("OpenAI API error", response.status, upstreamType, upstreamCode);
-    return json(sourceModeResponse(
-      question,
-      sources,
-      true,
-      "La redacción generativa está temporalmente no disponible; se muestra únicamente contenido extraído de MASTER.",
-      quota.remaining
-    ), 200, origin);
+  if (oa.enabled && oa.configured) {
+    const openai = await callOpenAI(question, sources);
+    if (openai.ok && openai.answer) {
+      return json({
+        configured: true,
+        mode: "generative",
+        provider: "openai",
+        answer: openai.answer,
+        sources,
+        model: openai.model,
+        remaining: quota.remaining
+      }, 200, origin);
+    }
   }
 
-  const answer = extractOutputText(payload);
-  if (!answer) {
-    return json(sourceModeResponse(
-      question,
-      sources,
-      true,
-      "La redacción generativa no devolvió una respuesta utilizable; se muestra únicamente contenido extraído de MASTER.",
-      quota.remaining
-    ), 200, origin);
-  }
+  const fallbackNotice = cf.configured
+    ? (oa.enabled
+      ? "Cloudflare AI y OpenAI no pudieron redactar la respuesta; se muestra únicamente contenido extraído de MASTER."
+      : "Cloudflare AI no pudo redactar la respuesta y OpenAI está desactivado para mantener costo $0; se muestra únicamente contenido extraído de MASTER.")
+    : "OpenAI no pudo redactar la respuesta; se muestra únicamente contenido extraído de MASTER.";
 
-  return json({
-    configured: true,
-    mode: "generative",
-    answer,
-    sources,
-    model,
-    remaining: quota.remaining
-  }, 200, origin);
+  return json(sourceModeResponse(question, sources, true, fallbackNotice, quota.remaining), 200, origin);
 });
