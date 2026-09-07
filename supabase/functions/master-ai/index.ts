@@ -13,7 +13,7 @@ const MAX_QUESTION = 900;
 const MAX_SOURCES = 5;
 const MAX_SOURCE_TEXT = 4200;
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
-const DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
+const DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const DAILY_LIMIT = 250;
 const STOP_WORDS = new Set([
   "como", "cual", "cuales", "donde", "cuando", "para", "por", "que", "del", "las", "los", "una", "uno", "unos", "unas",
