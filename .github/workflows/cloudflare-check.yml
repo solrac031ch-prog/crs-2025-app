@@ -1,0 +1,30 @@
+name: Verificar Cloudflare MASTER IA
+
+on:
+  push:
+    branches: [master-ai-cloudflare-dual-20260906]
+
+permissions:
+  contents: read
+
+jobs:
+  cloudflare-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probar Cloudflare AI a través de Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --fail-with-body --silent --show-error \
+            -X POST 'https://mjrcymctfnnyabvmfgda.supabase.co/functions/v1/master-ai-cloudflare-check' \
+            -H 'apikey: sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9' \
+            -H 'Content-Type: application/json' \
+            --data '{}')"
+          echo "$response"
+          node -e '
+            const body = JSON.parse(process.argv[1]);
+            if (body.ok !== true) throw new Error(`Cloudflare check failed: ${JSON.stringify(body)}`);
+            if (body.provider !== "cloudflare") throw new Error(`Unexpected provider: ${body.provider}`);
+            if (!String(body.answer || "").includes("OK MASTER")) throw new Error(`Unexpected answer: ${body.answer}`);
+          ' "$response"
