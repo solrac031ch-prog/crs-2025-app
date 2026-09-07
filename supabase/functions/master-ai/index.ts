@@ -129,9 +129,15 @@ function cloudflareModel() {
   return /^@cf\/[A-Za-z0-9._/-]+$/.test(configured) ? configured : DEFAULT_CLOUDFLARE_MODEL;
 }
 
+function normalizeCloudflareToken(value: unknown) {
+  const raw = String(value ?? "").replace(/\u0000/g, "").trim();
+  const embedded = raw.match(/\bcfut_[A-Za-z0-9_-]+\b/);
+  return embedded?.[0] || raw;
+}
+
 function cloudflareConfig() {
   const accountId = clean(Deno.env.get("CLOUDFLARE_ACCOUNT_ID"), 80);
-  const token = clean(Deno.env.get("CLOUDFLARE_API_TOKEN") || Deno.env.get("CLOUDFLARE_AUTH_TOKEN"), 500);
+  const token = normalizeCloudflareToken(Deno.env.get("CLOUDFLARE_API_TOKEN") || Deno.env.get("CLOUDFLARE_AUTH_TOKEN"));
   return {
     accountId,
     token,
