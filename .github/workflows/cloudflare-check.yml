@@ -12,16 +12,41 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Comparar modelos Cloudflare
+      - name: Consultar MASTER IA real
         shell: bash
         run: |
-          curl --silent --show-error \
-            -X POST 'https://mjrcymctfnnyabvmfgda.supabase.co/functions/v1/master-ai-cloudflare-check' \
-            -H 'apikey: sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9' \
-            -H 'Content-Type: application/json' \
-            --data '{}' \
-            -o cloudflare-check.json
-          cat cloudflare-check.json
+          node <<'NODE'
+          const fs = require('fs');
+          const url = 'https://mjrcymctfnnyabvmfgda.supabase.co/functions/v1/master-ai';
+          const key = 'sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9';
+          const payload = {
+            question: '¿Cómo activo Clave Negra?',
+            sources: [{
+              title: 'Saturación SEA y Clave Negra',
+              category: 'Protocolo',
+              page: 'HPH · Mayo 2022',
+              summary: 'Protocolo institucional de sobresaturación del SEA y Clave Negra.',
+              text: 'Clave Negra requiere cumplir y registrar el checklist institucional. Jefatura médica y de enfermería informan a las jefaturas correspondientes y Gestión de Camas. El registro debe incluir fecha y hora.'
+            }]
+          };
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              apikey: key,
+              Authorization: `Bearer ${key}`,
+              Origin: 'https://solrac031ch-prog.github.io',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          }).then(async (response) => {
+            const text = await response.text();
+            fs.writeFileSync('cloudflare-check.json', text);
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${text}`);
+          }).catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
 
       - name: Guardar diagnóstico
         if: always()
@@ -38,6 +63,10 @@ jobs:
           node -e '
             const fs = require("fs");
             const body = JSON.parse(fs.readFileSync("cloudflare-check.json", "utf8"));
-            if (body.ok !== true) throw new Error(`No usable Cloudflare model: ${JSON.stringify(body)}`);
-            if (!body.winner) throw new Error(`Missing winner: ${JSON.stringify(body)}`);
+            if (body.mode !== "generative") throw new Error(`Unexpected mode: ${JSON.stringify(body)}`);
+            if (body.provider !== "cloudflare") throw new Error(`Unexpected provider: ${JSON.stringify(body)}`);
+            if (body.model !== "@cf/meta/llama-3.3-70b-instruct-fp8-fast") throw new Error(`Unexpected model: ${JSON.stringify(body)}`);
+            const answer = String(body.answer || "");
+            if (!/Clave Negra/i.test(answer)) throw new Error(`Missing clinical topic: ${answer}`);
+            if (!/Fuente MASTER/i.test(answer)) throw new Error(`Missing source line: ${answer}`);
           '
