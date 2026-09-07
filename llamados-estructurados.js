@@ -421,6 +421,15 @@
       .map(({ row }) => row);
   }
 
+  function minimumStructuredSpecialties() {
+    return Math.max(5, Math.ceil(catalog().length * 0.6));
+  }
+
+  function structuredRowsHealthy(rows) {
+    const specialties = new Set((rows || []).map((row) => clean(row.specialty)));
+    return rows.length >= 1 && specialties.size >= minimumStructuredSpecialties();
+  }
+
   async function loadRows(force = false) {
     if (cachedRows && !force) return cachedRows;
     if (loadPromise && !force) return loadPromise;
@@ -440,9 +449,17 @@
         .lte('schedule_date', last)
         .order('schedule_date', { ascending: true });
       if (error) throw error;
+      const rows = data || [];
+      if (!structuredRowsHealthy(rows)) {
+        console.warn('Base estructurada incompleta; se mantiene el lector PDF como respaldo.');
+        currentDoc = null;
+        currentMeta = null;
+        cachedRows = [];
+        return cachedRows;
+      }
       currentDoc = doc;
       currentMeta = meta;
-      cachedRows = data || [];
+      cachedRows = rows;
       return cachedRows;
     })().finally(() => { loadPromise = null; });
     return loadPromise;
