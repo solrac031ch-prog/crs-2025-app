@@ -12,8 +12,9 @@ test.describe('MASTER búsqueda y trazabilidad', () => {
     await expect(search).toBeFocused();
     await search.fill('TVP');
 
-    const result = page.locator('.master-search-result').filter({ hasText: 'TVP - sospecha, ECO y horario inhábil' }).first();
+    const result = page.locator('.master-search-result[href="#/especialidad/tvp-sospecha-eco-y-horario-inhabil"]').first();
     await expect(result).toBeVisible();
+    await expect(result).toContainText(/TVP/i);
     await expect(page.locator('.master-search-ask')).toContainText(/Preguntar.*MASTER IA/i);
     await result.click();
     await expect(page).toHaveURL(/#\/especialidad\/tvp-sospecha-eco-y-horario-inhabil$/);
@@ -22,6 +23,8 @@ test.describe('MASTER búsqueda y trazabilidad', () => {
 
   test('atajo Ctrl+K abre y Escape cierra el buscador', async ({ page }) => {
     await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-master-global-trigger]')).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => Boolean(window.CRS_MASTER_SEARCH))).toBe(true);
     await page.keyboard.press('Control+K');
     await expect(page.locator('[data-master-global-search]')).toBeVisible();
     await page.keyboard.press('Escape');
