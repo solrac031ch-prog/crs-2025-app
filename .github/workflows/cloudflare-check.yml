@@ -12,19 +12,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Probar Cloudflare AI a través de Supabase
+      - name: Consultar Cloudflare AI a través de Supabase
         shell: bash
         run: |
-          set -euo pipefail
-          response="$(curl --fail-with-body --silent --show-error \
+          set -u
+          curl --silent --show-error \
             -X POST 'https://mjrcymctfnnyabvmfgda.supabase.co/functions/v1/master-ai-cloudflare-check' \
             -H 'apikey: sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9' \
             -H 'Content-Type: application/json' \
-            --data '{}')"
-          echo "$response"
+            --data '{}' \
+            -o cloudflare-check.json
+          cat cloudflare-check.json
+
+      - name: Guardar diagnóstico
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: cloudflare-check
+          path: cloudflare-check.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Validar resultado
+        shell: bash
+        run: |
           node -e '
-            const body = JSON.parse(process.argv[1]);
+            const fs = require("fs");
+            const body = JSON.parse(fs.readFileSync("cloudflare-check.json", "utf8"));
             if (body.ok !== true) throw new Error(`Cloudflare check failed: ${JSON.stringify(body)}`);
             if (body.provider !== "cloudflare") throw new Error(`Unexpected provider: ${body.provider}`);
             if (!String(body.answer || "").includes("OK MASTER")) throw new Error(`Unexpected answer: ${body.answer}`);
-          ' "$response"
+          '
