@@ -30,6 +30,8 @@ set public = false
 where id = 'crs-public';
 
 -- Sustituye la lectura global por una política ligada al estado publicado.
+-- El helper por operación es deliberado: permite consultar/servir un objeto conocido
+-- para generar/usar una URL firmada, pero no concede object.list sobre el bucket.
 drop policy if exists crs_storage_public_read on storage.objects;
 drop policy if exists crs_storage_published_read on storage.objects;
 
@@ -39,6 +41,10 @@ for select
 to anon, authenticated
 using (
   bucket_id = 'crs-public'
+  and storage.allow_any_operation(array[
+    'object.get_authenticated_info',
+    'object.get_authenticated'
+  ])
   and (
     exists (
       select 1
