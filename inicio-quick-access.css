@@ -1,3 +1,5 @@
+@import url("./formularios-estable.css?v=1");
+
 /* Buscador universal compacto de portada. Sin lógica clínica ni datos identificables. */
 #homePage .home-quick-access {
   position: relative;
