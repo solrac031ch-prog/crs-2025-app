@@ -155,16 +155,22 @@
   async function ensureForms(current) {
     await Promise.all([
       loadScript("app-forms", "./app-forms.js", 2),
-      ensureSupabase()
-    ]);
-    await Promise.all([
-      loadScript("arsenal-form-entry", "./arsenal-form-entry.js", 1),
-      loadScript("documentos-institucionales", "./documentos-institucionales.js", 3)
+      loadScript("arsenal-form-entry", "./arsenal-form-entry.js", 1)
     ]);
 
+    const enhancements = Promise.all([
+      ensureSupabase(),
+      loadScript("documentos-institucionales", "./documentos-institucionales.js", 3)
+    ]).catch((error) => {
+      console.warn("No se pudieron precargar todos los complementos de Formularios", error);
+    });
+
     if (current === "#/formularios/arsenal-terapeutico") {
-      await loadScript("arsenal-terapeutico", "./arsenal-terapeutico.js", 2);
-      await loadScript("arsenal-uso-ocasional", "./arsenal-uso-ocasional.js", 2);
+      await Promise.all([
+        enhancements,
+        loadScript("arsenal-terapeutico", "./arsenal-terapeutico.js", 2),
+        loadScript("arsenal-uso-ocasional", "./arsenal-uso-ocasional.js", 2)
+      ]);
     }
   }
 
@@ -221,6 +227,15 @@
     if (targetRoute) ensureForRoute(targetRoute).catch(() => {});
   }
 
+  function warmForms() {
+    const preload = () => ensureForRoute("#/formularios").catch(() => {});
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(preload, { timeout: 1200 });
+    } else {
+      window.setTimeout(preload, 250);
+    }
+  }
+
   document.addEventListener("pointerover", prefetchFromEvent, { passive: true });
   document.addEventListener("focusin", prefetchFromEvent);
   document.addEventListener("touchstart", prefetchFromEvent, { passive: true });
@@ -229,4 +244,6 @@
     ensure: ensureForRoute,
     prefetch: ensureForRoute
   });
+
+  warmForms();
 })();
