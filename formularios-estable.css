@@ -1,0 +1,7 @@
+/* Estabilidad visual de Formularios.
+   El panel global legacy de Supabase duplica documentos que ya administra
+   documentos-institucionales.js. Mantenerlo fuera del layout evita CLS al
+   entrar a #/formularios mientras la sincronización remota termina. */
+#formsPage [data-sb-forms-panel] {
+  display: none !important;
+}
