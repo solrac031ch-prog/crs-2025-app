@@ -42,14 +42,13 @@
     return (window.CRS_PROTOCOLS || [])
       .filter((item) => item?.title && item.category !== "Regla general")
       .map((item) => {
-        const slug = normalize(item.title)
-          .replace(/^poli choque\s+/i, "")
-          .replace(/^flujo\s+/i, "")
+        const display = String(item.title).replace(/^Poli Choque\s+/i, "").replace(/^Flujo\s+/i, "");
+        const slug = normalize(display)
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "");
         return {
           type: "protocol",
-          title: String(item.title).replace(/^Poli Choque\s+/i, "").replace(/^Flujo\s+/i, ""),
+          title: display,
           href: `#/especialidad/${slug}`,
           summary: item.summary || item.category || "Protocolo",
           kicker: item.category || "Protocolo",
@@ -59,7 +58,10 @@
             item.summary,
             ...(item.tags || []),
             ...(item.fields || []).flat(),
-            ...(item.flow || [])
+            ...(item.flow || []),
+            ...((item.moments || []).flatMap((moment) => [moment.title, moment.text, moment.alert || "", ...(moment.steps || [])])),
+            ...((item.pathologies || []).flat(2)),
+            item.warning || ""
           ].join(" "))
         };
       });
@@ -70,12 +72,13 @@
   }
 
   function findItem(href) {
-    return allItems().find((item) => item.href === href) || routeItems.find((item) => item.href === href);
+    return allItems().find((item) => item.href === href) || null;
   }
 
   function recordVisit(href) {
     if (!href || href === "#/inicio") return;
-    const item = findItem(href.split("?")[0]);
+    const cleanHref = href.split("?")[0];
+    const item = findItem(cleanHref);
     if (!item) return;
     const state = safeRead();
     state.counts[item.href] = (Number(state.counts[item.href]) || 0) + 1;
@@ -83,18 +86,50 @@
     safeWrite(state);
   }
 
-  function makeQuickLink(item, className = "quick-access-chip") {
+  function toggleFavorite(href) {
+    const item = findItem(href);
+    if (!item) return;
+    const state = safeRead();
+    const active = state.favorites.includes(href);
+    state.favorites = active
+      ? state.favorites.filter((value) => value !== href)
+      : [href, ...state.favorites.filter((value) => value !== href)].slice(0, 8);
+    safeWrite(state);
+    renderPersonalized();
+    const input = document.querySelector("#homeQuickSearch");
+    if (input) renderResults(input.value);
+  }
+
+  function makeQuickLink(item) {
     const link = document.createElement("a");
-    link.className = className;
+    link.className = "quick-access-chip";
     link.href = item.href;
-    link.innerHTML = `<span>${item.kicker || "Acceso"}</span><strong>${item.title}</strong>`;
+
+    const kicker = document.createElement("span");
+    kicker.textContent = item.kicker || "Acceso";
+    const title = document.createElement("strong");
+    title.textContent = item.title;
+    link.append(kicker, title);
     return link;
+  }
+
+  function renderCollection(host, items, emptyText) {
+    host.innerHTML = "";
+    if (!items.length) {
+      const empty = document.createElement("span");
+      empty.className = "quick-access-empty";
+      empty.textContent = emptyText;
+      host.append(empty);
+      return;
+    }
+    items.forEach((item) => host.append(makeQuickLink(item)));
   }
 
   function renderPersonalized() {
     const frequentHost = document.querySelector("#homeFrequent");
     const recentHost = document.querySelector("#homeRecent");
-    if (!frequentHost || !recentHost) return;
+    const favoriteHost = document.querySelector("#homeFavorites");
+    if (!frequentHost || !recentHost || !favoriteHost) return;
 
     const state = safeRead();
     const ranked = Object.entries(state.counts)
@@ -104,11 +139,11 @@
       .slice(0, 4);
     const frequent = ranked.length ? ranked : routeItems.slice(0, 4);
     const recent = state.recents.map(findItem).filter(Boolean).slice(0, 4);
+    const favorites = state.favorites.map(findItem).filter(Boolean).slice(0, 4);
 
-    frequentHost.innerHTML = "";
-    recentHost.innerHTML = "";
-    frequent.forEach((item) => frequentHost.append(makeQuickLink(item)));
-    (recent.length ? recent : routeItems.slice(0, 3)).forEach((item) => recentHost.append(makeQuickLink(item)));
+    renderCollection(frequentHost, frequent, "Se ajustará según tu uso.");
+    renderCollection(recentHost, recent, "Aparecerán después de abrir tus primeros flujos.");
+    renderCollection(favoriteHost, favorites, "Marca ☆ en una búsqueda para fijar un acceso.");
   }
 
   function searchItems(query) {
@@ -140,26 +175,51 @@
     const status = document.querySelector("#homeQuickStatus");
     if (!resultsHost || !status) return;
     const results = searchItems(query);
+    const state = safeRead();
     resultsHost.innerHTML = "";
     resultsHost.hidden = !query.trim();
+
     if (!query.trim()) {
       status.textContent = "Busca un flujo o abre uno de tus accesos frecuentes.";
       return;
     }
+
     status.textContent = results.length ? `${results.length} coincidencias` : "Sin coincidencias";
     results.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "quick-search-row";
+
       const link = document.createElement("a");
       link.className = "quick-search-result";
       link.href = item.href;
-      const typeLabel = item.type === "protocol" ? item.kicker : "Módulo";
-      link.innerHTML = `<span class="quick-search-type">${typeLabel}</span><strong>${item.title}</strong><span>${item.summary || ""}</span>`;
-      resultsHost.append(link);
+
+      const type = document.createElement("span");
+      type.className = "quick-search-type";
+      type.textContent = item.type === "protocol" ? item.kicker : "Módulo";
+      const title = document.createElement("strong");
+      title.textContent = item.title;
+      const summary = document.createElement("span");
+      summary.textContent = item.summary || "";
+      link.append(type, title, summary);
+
+      const favorite = document.createElement("button");
+      const active = state.favorites.includes(item.href);
+      favorite.type = "button";
+      favorite.className = "quick-favorite-button";
+      favorite.dataset.favoriteHref = item.href;
+      favorite.setAttribute("aria-label", active ? `Quitar ${item.title} de favoritos` : `Agregar ${item.title} a favoritos`);
+      favorite.setAttribute("aria-pressed", String(active));
+      favorite.textContent = active ? "★" : "☆";
+
+      row.append(link, favorite);
+      resultsHost.append(row);
     });
   }
 
   function setup() {
     const input = document.querySelector("#homeQuickSearch");
     if (!input) return;
+
     input.addEventListener("input", () => renderResults(input.value));
     input.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && input.value) {
@@ -167,7 +227,7 @@
         renderResults("");
       }
       if (event.key === "Enter") {
-        const first = document.querySelector("#homeQuickResults a");
+        const first = document.querySelector("#homeQuickResults .quick-search-result");
         if (first) {
           event.preventDefault();
           first.click();
@@ -185,9 +245,15 @@
     });
 
     document.addEventListener("click", (event) => {
+      const favorite = event.target.closest("[data-favorite-href]");
+      if (favorite) {
+        toggleFavorite(favorite.dataset.favoriteHref);
+        return;
+      }
       const link = event.target.closest("a[href^='#/']");
       if (link) recordVisit(link.getAttribute("href"));
     });
+
     window.addEventListener("hashchange", () => {
       recordVisit(window.location.hash);
       if ((window.location.hash || "#/inicio").startsWith("#/inicio")) renderPersonalized();
