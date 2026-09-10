@@ -2,9 +2,18 @@
   const ROUTE = "#/llamados";
   let observer = null;
   let frame = 0;
+  const searchState = { date: "", query: "" };
 
   function currentRoute() {
     return String(location.hash || "#/inicio").split("?")[0] || "#/inicio";
+  }
+
+  function rememberSearchState(event) {
+    if (currentRoute() !== ROUTE) return;
+    const target = event?.target;
+    if (!(target instanceof HTMLInputElement) || !target.closest("#callsSearchPanel")) return;
+    if (target.matches("[data-call-live-date], input[type='date']")) searchState.date = target.value;
+    if (target.matches("[data-call-live-query], input[type='search']")) searchState.query = target.value;
   }
 
   function rememberGlobalDocument(panel, type) {
@@ -60,11 +69,13 @@
     // automatización ni acciones del usuario que ya estaban en curso.
     live.dataset.callLiveSearch = "true";
 
+    const source = live.querySelector("[data-call-live-source], .on-call-live-source");
     const dateInput = live.querySelector("[data-call-live-date], input[type='date']");
     const queryInput = live.querySelector("[data-call-live-query], input[type='search']");
     const status = live.querySelector("[data-call-live-status], .on-call-live-status");
     const results = live.querySelector("[data-call-live-results], .on-call-results");
 
+    if (source) source.dataset.callLiveSource = "true";
     if (dateInput) dateInput.dataset.callLiveDate = "true";
     if (queryInput) queryInput.dataset.callLiveQuery = "true";
     if (status) status.dataset.callLiveStatus = "true";
@@ -74,6 +85,23 @@
 
     if (!live.dataset.callsDefaultDate && dateInput?.value) {
       live.dataset.callsDefaultDate = dateInput.value;
+    }
+
+    // Si el motor estructurado sustituyó al PDF mientras el usuario ya estaba
+    // escribiendo, restituye fecha y consulta antes de renderizar. Esto elimina
+    // la carrera sin acoplar los dos motores entre sí.
+    let restored = false;
+    if (dateInput && searchState.date && dateInput.value !== searchState.date) {
+      const withinMin = !dateInput.min || searchState.date >= dateInput.min;
+      const withinMax = !dateInput.max || searchState.date <= dateInput.max;
+      if (withinMin && withinMax) {
+        dateInput.value = searchState.date;
+        restored = true;
+      }
+    }
+    if (searchState.query && queryInput.value !== searchState.query) {
+      queryInput.value = searchState.query;
+      restored = true;
     }
 
     let clear = live.querySelector("[data-call-live-clear]");
@@ -106,8 +134,10 @@
     if (clear.dataset.callsCompactBound !== "true") {
       clear.dataset.callsCompactBound = "true";
       clear.addEventListener("click", () => {
+        searchState.query = "";
         queryInput.value = "";
         if (dateInput && live.dataset.callsDefaultDate) {
+          searchState.date = live.dataset.callsDefaultDate;
           dateInput.value = live.dataset.callsDefaultDate;
           dateInput.dispatchEvent(new Event("change", { bubbles: true }));
         }
@@ -124,6 +154,11 @@
       dateInput.addEventListener("input", () => {
         dateInput.dispatchEvent(new Event("change", { bubbles: true }));
       });
+    }
+
+    if (restored) {
+      if (dateInput) dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+      queryInput.dispatchEvent(new Event("input", { bubbles: true }));
     }
   }
 
@@ -169,6 +204,8 @@
     }));
   }
 
+  document.addEventListener("input", rememberSearchState, true);
+  document.addEventListener("change", rememberSearchState, true);
   window.addEventListener("hashchange", routeChanged);
   window.addEventListener("crs:ui-section-ready", routeChanged);
   window.addEventListener("crs:supabase-ready", supabaseReady);
