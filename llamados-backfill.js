@@ -109,13 +109,18 @@
     if (rows.length < expected * 3 || uniqueDays.size < Math.max(3, expected - 2) || specialties.size < 5) {
       throw new Error('No fue seguro transformar el PDF vigente a filas. No se modificó la base estructurada.');
     }
+    const coverage = structuredApi()?.coverageFor?.(rows);
+    if (!coverage?.complete) {
+      const detail = coverage ? ` (${coverage.present}/${coverage.expected} especialidades reconocidas)` : '';
+      throw new Error(`La extracción estructurada quedó incompleta${detail}. No se modificó la base estructurada.`);
+    }
   }
 
   async function currentRows(api, meta) {
     const first = dateValue(meta.year, meta.month, 1);
     const last = dateValue(meta.year, meta.month, daysInMonth(meta.year, meta.month));
     const { data, error } = await api.from(TABLE)
-      .select('id,source_updated_at')
+      .select('id,specialty,source_updated_at')
       .eq('type', 'especialistas')
       .gte('schedule_date', first)
       .lte('schedule_date', last);
@@ -126,6 +131,8 @@
   function alreadyCurrent(rows, meta, doc) {
     const minimum = daysInMonth(meta.year, meta.month) * 3;
     if (rows.length < minimum) return false;
+    const coverage = structuredApi()?.coverageFor?.(rows);
+    if (!coverage?.complete) return false;
     const sourceTime = Date.parse(doc?.updated_at || doc?.updatedAt || 0);
     if (!sourceTime) return true;
     return rows.every((row) => Date.parse(row.source_updated_at || 0) >= sourceTime - 1000);
@@ -188,7 +195,7 @@
       const api = window.CRS_SUPABASE?.client?.();
       if (!api) throw new Error('Supabase no está disponible.');
       const structured = structuredApi();
-      if (!structured?.extractAssignments || !structured?.parseMonthYear) {
+      if (!structured?.extractAssignments || !structured?.parseMonthYear || !structured?.coverageFor) {
         throw new Error('El indexador estructurado todavía no está listo. Recarga la página e intenta otra vez.');
       }
       const { data: userData, error: userError } = await api.auth.getUser();
@@ -261,7 +268,7 @@
     }
   }
 
-  window.CRS_CALLS_BACKFILL = Object.freeze({ indexCurrentPublished, mount, version: 1 });
+  window.CRS_CALLS_BACKFILL = Object.freeze({ indexCurrentPublished, mount, version: 2 });
   window.addEventListener('hashchange', () => setTimeout(mount, 60));
   window.addEventListener('crs:ui-section-ready', () => setTimeout(mount, 100));
   window.addEventListener('crs:supabase-ready', () => setTimeout(mount, 100));
