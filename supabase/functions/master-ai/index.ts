@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import JSON5 from "npm:json5@2.2.3";
 
 const allowedOrigins = new Set([
   "https://solrac031ch-prog.github.io",
@@ -12,6 +13,8 @@ const APP_PUBLISHABLE_KEY = "sb_publishable_sjDVmSUC3o1qtc50_xemoQ_ZZObT1y9";
 const MAX_QUESTION = 900;
 const MAX_SOURCES = 5;
 const MAX_SOURCE_TEXT = 4200;
+const MAX_REQUEST_BYTES = 32_000;
+const CANONICAL_PROTOCOLS_URL = "https://solrac031ch-prog.github.io/crs-2025-app/app-protocol-data.js";
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 const DEFAULT_CLOUDFLARE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const DAILY_LIMIT = 250;
@@ -28,6 +31,17 @@ type MasterSource = {
   text: string;
 };
 
+type CanonicalProtocol = {
+  title?: unknown;
+  category?: unknown;
+  page?: unknown;
+  summary?: unknown;
+  fields?: unknown;
+  flow?: unknown;
+  warning?: unknown;
+  pathologies?: unknown;
+};
+
 type ProviderResult = {
   ok: boolean;
   answer?: string;
@@ -36,6 +50,8 @@ type ProviderResult = {
   status?: number;
   code?: string;
 };
+
+let canonicalCatalogCache: { loadedAt: number; sources: MasterSource[] } | null = null;
 
 function corsHeaders(origin: string | null) {
   const safeOrigin = origin && allowedOrigins.has(origin) ? origin : "https://solrac031ch-prog.github.io";
@@ -177,6 +193,87 @@ function extractCloudflareText(payload: any) {
 
 function meaningfulTerms(value: string) {
   return [...new Set(normalize(value).split(" ").filter((term) => term.length > 2 && !STOP_WORDS.has(term)))];
+}
+
+function canonicalProtocolText(protocol: CanonicalProtocol) {
+  const lines: string[] = [];
+  const summary = clean(protocol.summary, 700);
+  if (summary) lines.push(`Resumen: ${summary}`);
+  if (Array.isArray(protocol.fields)) {
+    protocol.fields.forEach((field) => {
+      if (Array.isArray(field) && field.length >= 2) lines.push(`${clean(field[0], 180)}: ${clean(field[1], 1200)}`);
+    });
+  }
+  if (Array.isArray(protocol.flow) && protocol.flow.length) {
+    lines.push("Flujo:");
+    protocol.flow.forEach((step, index) => lines.push(`${index + 1}. ${clean(step, 1200)}`));
+  }
+  const warning = clean(protocol.warning, 1200);
+  if (warning) lines.push(`Advertencia: ${warning}`);
+  if (Array.isArray(protocol.pathologies)) {
+    protocol.pathologies.forEach((group) => {
+      if (!Array.isArray(group)) return;
+      const label = clean(group[0] || "Patologías", 180);
+      const items = Array.isArray(group[1]) ? group[1].map((item) => clean(item, 500)).filter(Boolean) : [];
+      if (items.length) lines.push(`${label}: ${items.join("; ")}`);
+    });
+  }
+  return lines.join("\n").slice(0, MAX_SOURCE_TEXT);
+}
+
+function parseCanonicalProtocols(script: string) {
+  const marker = "window.CRS_PROTOCOLS =";
+  const start = script.indexOf(marker);
+  if (start < 0) throw new Error("canonical_marker_missing");
+  const arrayStart = script.indexOf("[", start + marker.length);
+  const arrayEnd = script.lastIndexOf("];");
+  if (arrayStart < 0 || arrayEnd <= arrayStart) throw new Error("canonical_array_missing");
+  const parsed = JSON5.parse(script.slice(arrayStart, arrayEnd + 1));
+  if (!Array.isArray(parsed)) throw new Error("canonical_not_array");
+  return parsed as CanonicalProtocol[];
+}
+
+async function canonicalCatalog() {
+  const now = Date.now();
+  if (canonicalCatalogCache && now - canonicalCatalogCache.loadedAt < 5 * 60_000) return canonicalCatalogCache.sources;
+  const response = await fetch(CANONICAL_PROTOCOLS_URL, {
+    headers: { "Accept": "text/javascript" },
+    signal: AbortSignal.timeout(6000)
+  });
+  if (!response.ok) throw new Error(`canonical_http_${response.status}`);
+  const script = await response.text();
+  if (script.length > 250_000) throw new Error("canonical_too_large");
+  const sources = parseCanonicalProtocols(script).map((protocol) => ({
+    title: clean(protocol.title, 160),
+    category: clean(protocol.category, 80),
+    page: clean(protocol.page, 40),
+    summary: clean(protocol.summary, 700),
+    text: canonicalProtocolText(protocol)
+  })).filter((source) => source.title && (source.text || source.summary));
+  if (!sources.length) throw new Error("canonical_empty");
+  canonicalCatalogCache = { loadedAt: now, sources };
+  return sources;
+}
+
+async function validatedSources(incoming: unknown[]) {
+  const catalog = await canonicalCatalog();
+  const byKey = new Map(catalog.map((source) => [
+    `${normalize(source.title)}|${normalize(source.category)}|${normalize(source.page)}`,
+    source
+  ]));
+  const accepted: MasterSource[] = [];
+  const seen = new Set<string>();
+  for (const candidate of incoming.slice(0, MAX_SOURCES)) {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) continue;
+    const source = candidate as Record<string, unknown>;
+    const key = `${normalize(clean(source.title, 160))}|${normalize(clean(source.category, 80))}|${normalize(clean(source.page, 40))}`;
+    if (!key || seen.has(key)) continue;
+    const canonical = byKey.get(key);
+    if (!canonical) continue;
+    seen.add(key);
+    accepted.push(canonical);
+  }
+  return accepted;
 }
 
 function sourceSegments(source: MasterSource) {
@@ -410,9 +507,19 @@ Deno.serve(async (req: Request) => {
   if (origin && !allowedOrigins.has(origin)) return json({ error: "Origen no autorizado." }, 403, origin);
   if (!isProjectClient(req)) return json({ error: "Cliente no autorizado." }, 401, origin);
 
+  const declaredLength = Number(req.headers.get("content-length") || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) {
+    return json({ error: "Solicitud demasiado grande." }, 413, origin);
+  }
+
   let body: any;
   try {
-    body = await req.json();
+    const raw = await req.text();
+    if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+      return json({ error: "Solicitud demasiado grande." }, 413, origin);
+    }
+    body = JSON.parse(raw);
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("invalid_body");
   } catch {
     return json({ error: "Solicitud inválida." }, 400, origin);
   }
@@ -425,14 +532,21 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Retira datos identificatorios del paciente antes de consultar." }, 400, origin);
   }
 
-  const incoming = Array.isArray(body?.sources) ? body.sources.slice(0, MAX_SOURCES) : [];
-  const sources: MasterSource[] = incoming.map((source: any) => ({
-    title: clean(source?.title, 160),
-    category: clean(source?.category, 80),
-    page: clean(source?.page, 40),
-    summary: clean(source?.summary, 700),
-    text: clean(source?.text, MAX_SOURCE_TEXT)
-  })).filter((source: MasterSource) => source.title && (source.text || source.summary));
+  const incoming = Array.isArray(body?.sources) ? body.sources : [];
+  let sources: MasterSource[] = [];
+  try {
+    sources = await validatedSources(incoming);
+  } catch (error) {
+    console.error("MASTER IA canonical source validation", error instanceof Error ? error.message : "error");
+    return json({
+      configured: false,
+      mode: "none",
+      provider: "none",
+      answer: "No fue posible validar las fuentes institucionales de MASTER en este momento.",
+      sources: [],
+      notice: "La consulta no se envió a ningún proveedor externo porque el catálogo canónico no pudo verificarse."
+    }, 503, origin);
+  }
 
   const cf = cloudflareConfig();
   const oa = openAIConfig();
@@ -443,7 +557,7 @@ Deno.serve(async (req: Request) => {
       configured: anyGenerativeConfigured,
       mode: "none",
       provider: "none",
-      answer: "No encuentro respaldo suficiente dentro de las fuentes recuperadas de MASTER para responder esa consulta.",
+      answer: "No encuentro respaldo suficiente dentro de las fuentes canónicas de MASTER para responder esa consulta.",
       sources: []
     }, 200, origin);
   }

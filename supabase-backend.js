@@ -8,6 +8,7 @@
     ...(cfg.tables || {})
   };
   const bucket = cfg.bucket || "crs-public";
+  const SIGNED_URL_TTL_SECONDS = 15 * 60;
   let client = null;
   let publicRenderTimer = null;
 
@@ -27,6 +28,13 @@
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "") || "item";
   const route = () => location.hash.split("?")[0] || "#/inicio";
+  const safeUrl = (value) => window.CRS_URL_POLICY?.safe?.(value) || "";
+
+  function requiredUrl(value, field = "URL") {
+    const policy = window.CRS_URL_POLICY;
+    if (!policy?.required) throw new Error("La política de URLs seguras no está disponible.");
+    return policy.required(value, field);
+  }
 
   function enabled() {
     return Boolean(cfg.enabled && cfg.url && cfg.anonKey && window.supabase?.createClient);
@@ -92,10 +100,35 @@
     return user;
   }
 
-  function filePublicUrl(path) {
+  function isStorageObjectUrl(value) {
+    const href = safeUrl(value);
+    if (!href || !cfg.url) return false;
+    try {
+      const current = new URL(href, location.href);
+      const project = new URL(cfg.url);
+      const prefix = `/storage/v1/object/public/${bucket}/`;
+      return current.origin === project.origin && current.pathname.startsWith(prefix);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function fileAccessUrl(path) {
     const api = sb();
     if (!api || !path) return "";
-    return api.storage.from(bucket).getPublicUrl(path).data?.publicUrl || "";
+    const { data, error } = await api.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+    if (error) {
+      console.warn("No se pudo firmar archivo publicado de Storage", error?.message || error);
+      return "";
+    }
+    return safeUrl(data?.signedUrl || "");
+  }
+
+  async function rowAccessUrl(item) {
+    const explicit = safeUrl(item?.url);
+    if (explicit && !isStorageObjectUrl(explicit)) return explicit;
+    if (item?.file_path) return fileAccessUrl(item.file_path);
+    return explicit;
   }
 
   async function removeStoredFile(path) {
@@ -103,7 +136,7 @@
     const api = sb();
     if (!api) return;
     const { error } = await api.storage.from(bucket).remove([path]);
-    if (error) console.warn("No se pudo limpiar archivo de Storage", path, error);
+    if (error) console.warn("No se pudo limpiar archivo de Storage", error?.message || error);
   }
 
   async function rollbackUploadedFile(uploaded) {
@@ -126,8 +159,7 @@
       file_path: path,
       file_name: file.name,
       file_type: file.type || "",
-      file_size: file.size || 0,
-      url: filePublicUrl(path)
+      file_size: file.size || 0
     };
   }
 
@@ -141,17 +173,17 @@
       .eq("status", "published")
       .order(kind === "paper" ? "month" : "created_at", { ascending: false });
     if (error) throw error;
-    const mapped = (data || []).map((item) => ({
+    const mapped = await Promise.all((data || []).map(async (item) => ({
       id: item.id,
       title: item.title,
       description: item.description,
       category: item.category,
       month: item.month,
-      eventUrl: item.event_url,
-      url: item.url || filePublicUrl(item.file_path),
-      imageUrl: item.image_url || "",
+      eventUrl: safeUrl(item.event_url),
+      url: await rowAccessUrl(item),
+      imageUrl: safeUrl(item.image_url),
       createdAt: item.created_at
-    }));
+    })));
     const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
     const staticItems = window.CRS_STATIC_CONTENT?.[staticKey] || [];
     return [...mapped, ...staticItems];
@@ -168,7 +200,7 @@
     if (groupNames.length) query = query.in("group_name", groupNames);
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return Promise.all((data || []).map(async (item) => ({ ...item, url: await rowAccessUrl(item) })));
   }
 
   async function fetchFlows() {
@@ -180,11 +212,11 @@
       .eq("status", "published")
       .order("updated_at", { ascending: false });
     if (error) throw error;
-    return data || [];
+    return Promise.all((data || []).map(async (item) => ({ ...item, url: await rowAccessUrl(item) })));
   }
 
   function documentButton(row, label = "Abrir") {
-    const href = row.url || filePublicUrl(row.file_path);
+    const href = safeUrl(row.url);
     if (!href) return "";
     return `<a class="document-button" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
   }
@@ -286,6 +318,8 @@
     const user = await requireUser();
     const formData = new FormData(form);
     const kind = form.dataset.content === "paper" ? "paper" : form.dataset.content === "procedure" ? "procedure" : String(formData.get("kind") || "news");
+    const explicitEventUrl = requiredUrl(formData.get("eventUrl"), "URL de evento");
+    const explicitUrl = requiredUrl(formData.get("url"), "URL del contenido");
     const file = form.file?.files?.[0] || null;
     const extracted = kind === "paper" ? await extractPaperMeta(file) : {};
     const uploaded = await uploadFile(file, kind);
@@ -295,8 +329,8 @@
       description: formData.get("description") || formData.get("summary") || extracted.description || "",
       category: formData.get("category") || "",
       month: formData.get("month") || "",
-      event_url: formData.get("eventUrl") || "",
-      url: formData.get("url") || uploaded.url || "",
+      event_url: explicitEventUrl,
+      url: explicitUrl || null,
       file_path: uploaded.file_path || null,
       file_name: uploaded.file_name || null,
       file_type: uploaded.file_type || null,
@@ -333,6 +367,7 @@
     const api = sb();
     const user = await requireUser();
     const formData = new FormData(form);
+    const explicitUrl = requiredUrl(formData.get("url"), "URL del documento");
     const file = form.file?.files?.[0] || null;
     const isBase = form.hasAttribute("data-form-base");
     const isCall = form.hasAttribute("data-upload-call");
@@ -342,13 +377,13 @@
     const groupName = isCall ? "llamados" : isBase ? "formulario-base" : "formulario-extra";
     const previous = await existingDocument(api, key);
     const uploaded = await uploadFile(file, groupName);
-    const explicitUrl = String(formData.get("url") || "").trim();
+    const previousExternalUrl = isStorageObjectUrl(previous?.url) ? "" : safeUrl(previous?.url);
     const row = {
       key,
       group_name: groupName,
       title,
       description,
-      url: explicitUrl || uploaded.url || previous?.url || "",
+      url: explicitUrl || (uploaded.file_path ? null : previousExternalUrl || null),
       file_path: uploaded.file_path || previous?.file_path || null,
       file_name: uploaded.file_name || previous?.file_name || null,
       file_type: uploaded.file_type || previous?.file_type || null,
@@ -374,13 +409,14 @@
     const api = sb();
     const user = await requireUser();
     const formData = new FormData(form);
+    const explicitUrl = requiredUrl(formData.get("url"), "URL del flujo");
     const file = form.file?.files?.[0] || null;
     const uploaded = await uploadFile(file, "flujos");
     const row = {
       category: formData.get("category") || "Flujo",
       title: formData.get("title") || "Sin título",
       summary: formData.get("summary") || "",
-      url: formData.get("url") || uploaded.url || "",
+      url: explicitUrl || null,
       file_path: uploaded.file_path || null,
       file_name: uploaded.file_name || null,
       file_type: uploaded.file_type || null,

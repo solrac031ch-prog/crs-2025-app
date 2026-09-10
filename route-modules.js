@@ -66,8 +66,9 @@
   }
 
   async function ensureSupabase() {
+    await loadScript("safe-url", "./safe-url.js", 1);
     await loadScript("supabase-config", "./supabase-config.js", 19);
-    await loadScript("supabase-backend", "./supabase-backend.js", 8);
+    await loadScript("supabase-backend", "./supabase-backend.js", 9);
   }
 
   function ensurePatientManagement() {
@@ -117,7 +118,7 @@
       loadScript("gestion-perfiles", "./gestion-perfiles.js", 5),
       loadScript("gestion-uhd", "./gestion-uhd-citados.js", 6)
     ]);
-    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
+    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 16);
   }
 
   async function ensureJefatura() {
@@ -127,13 +128,15 @@
       loadStyle("jefatura-centro", "./jefatura-centro-gestion.css", 2),
       ensureSupabase()
     ]);
+    await loadScript("llamados-estructurados", "./llamados-estructurados.js", 3);
     await Promise.all([
       loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 17, {
         "data-supabase-jefatura-panel": true
       }),
       loadScript("supabase-admin-users", "./supabase-admin-users.js", 6),
       loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 4),
-      loadScript("documentos-institucionales", "./documentos-institucionales.js", 3)
+      loadScript("documentos-institucionales", "./documentos-institucionales.js", 3),
+      loadScript("llamados-backfill", "./llamados-backfill.js", 2)
     ]);
   }
 
@@ -147,7 +150,7 @@
       paperRoute ? loadStyle("paper-mensual", "./paper-mensual.css", 2) : Promise.resolve(),
       ensureSupabase()
     ]);
-    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
+    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 16);
     if (educationRoute) await loadScript("educacion-uniforme", "./educacion-uniforme.js", 2);
     if (paperRoute) await loadScript("paper-mensual", "./paper-mensual-ui.js", 1);
   }
@@ -181,7 +184,19 @@
       ensureSupabase()
     ]);
     await loadScript("llamados-compacto", "./llamados-compacto.js", 4);
-    await loadScript("llamados-vigente", "./llamados-vigente.js", 4);
+    await loadScript("llamados-estructurados", "./llamados-estructurados.js", 3);
+
+    let structuredReady = false;
+    try {
+      const rows = await window.CRS_STRUCTURED_CALLS?.loadRows?.();
+      structuredReady = Boolean(rows?.length && window.CRS_STRUCTURED_CALLS?.isComplete?.(rows));
+    } catch (error) {
+      console.warn("No se pudo validar la base estructurada de llamados; se usará el PDF vigente.", error);
+    }
+
+    if (!structuredReady) {
+      await loadScript("llamados-vigente", "./llamados-vigente.js", 4);
+    }
   }
 
   async function ensureForRoute(value = route()) {
@@ -197,7 +212,7 @@
       if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent(current);
       if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
         await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2);
-        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
+        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 16);
       }
       if (current === "#/llamados") return ensureCalls();
       return undefined;

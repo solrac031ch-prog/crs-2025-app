@@ -95,3 +95,11 @@ Aparecera el panel Supabase para iniciar sesion y publicar globalmente.
 ## Importante
 
 No guardar datos sensibles de pacientes en este backend publico sin disenar reglas especificas para datos clinicos. Para casos de pacientes se debe usar un esquema privado separado, con permisos mas estrictos.
+
+## Permisos de administración de usuarios
+
+Después del setup y del hardening general, ejecutar `supabase-user-permissions.sql`.
+La política limita escrituras en `crs_admins` a creador, admin y diseñador,
+coincidiendo con la interfaz. Reejecutar el setup antiguo sin este último archivo
+restauraría permisos excesivos. La función `crs-admin-users` debe desplegarse desde
+la versión del repositorio que aplica la misma restricción en servidor.

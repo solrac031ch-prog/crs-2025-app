@@ -29,6 +29,20 @@ if (!patientBootstrap.includes('localStorage.removeItem(key)')) {
 if (!protocolBootstrap.includes('CRS_PROTOCOL_POLISH_BOOTSTRAP')) {
   errors.push('El bootstrap liviano de protocolos debe permanecer identificable.');
 }
+
+const callsRouteOnly = ['llamados-estructurados.js', 'llamados-backfill.js', 'llamados-vigente.js'];
+for (const file of callsRouteOnly) {
+  if (protocolBootstrap.includes(file)) {
+    errors.push(`${file} es específico de Llamados/Jefatura y no debe cargarse desde protocolos-detalle-polish.js.`);
+  }
+  if (!routes.includes(`./${file}`)) {
+    errors.push(`${file} debe permanecer bajo propiedad explícita de route-modules.js.`);
+  }
+}
+if (!routes.includes('CRS_STRUCTURED_CALLS') || !routes.includes('isComplete')) {
+  errors.push('La ruta de Llamados debe validar completitud de la base estructurada antes de omitir el respaldo PDF.');
+}
+
 if (/requestIdleCallback\s*\(\s*ensureSupabaseClient|setTimeout\s*\(\s*ensureSupabaseClient/.test(supabase)) {
   errors.push('Supabase no debe descargarse por inactividad en Inicio; sólo por ruta remota o callback de Auth.');
 }
