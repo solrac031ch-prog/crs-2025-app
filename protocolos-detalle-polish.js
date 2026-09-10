@@ -20,8 +20,6 @@
   }
 
   addStyle('./master-upgrade.css?v=1', 'style');
-  addScript('./llamados-estructurados.js?v=2', 'calls-structured');
-  addScript('./llamados-backfill.js?v=1', 'calls-backfill');
   addScript('./master-source-audit.js?v=1', 'source-audit');
   addScript('./master-search.js?v=1', 'search');
 
