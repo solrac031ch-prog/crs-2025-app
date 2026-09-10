@@ -8,6 +8,7 @@
     ...(cfg.tables || {})
   };
   const bucket = cfg.bucket || "crs-public";
+  const SIGNED_URL_TTL_SECONDS = 15 * 60;
   let client = null;
   let publicRenderTimer = null;
 
@@ -99,10 +100,35 @@
     return user;
   }
 
-  function filePublicUrl(path) {
+  function isStorageObjectUrl(value) {
+    const href = safeUrl(value);
+    if (!href || !cfg.url) return false;
+    try {
+      const current = new URL(href, location.href);
+      const project = new URL(cfg.url);
+      const prefix = `/storage/v1/object/public/${bucket}/`;
+      return current.origin === project.origin && current.pathname.startsWith(prefix);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function fileAccessUrl(path) {
     const api = sb();
     if (!api || !path) return "";
-    return safeUrl(api.storage.from(bucket).getPublicUrl(path).data?.publicUrl || "");
+    const { data, error } = await api.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+    if (error) {
+      console.warn("No se pudo firmar archivo publicado de Storage", error?.message || error);
+      return "";
+    }
+    return safeUrl(data?.signedUrl || "");
+  }
+
+  async function rowAccessUrl(item) {
+    const explicit = safeUrl(item?.url);
+    if (explicit && !isStorageObjectUrl(explicit)) return explicit;
+    if (item?.file_path) return fileAccessUrl(item.file_path);
+    return explicit;
   }
 
   async function removeStoredFile(path) {
@@ -110,7 +136,7 @@
     const api = sb();
     if (!api) return;
     const { error } = await api.storage.from(bucket).remove([path]);
-    if (error) console.warn("No se pudo limpiar archivo de Storage", path, error);
+    if (error) console.warn("No se pudo limpiar archivo de Storage", error?.message || error);
   }
 
   async function rollbackUploadedFile(uploaded) {
@@ -133,8 +159,7 @@
       file_path: path,
       file_name: file.name,
       file_type: file.type || "",
-      file_size: file.size || 0,
-      url: filePublicUrl(path)
+      file_size: file.size || 0
     };
   }
 
@@ -148,17 +173,17 @@
       .eq("status", "published")
       .order(kind === "paper" ? "month" : "created_at", { ascending: false });
     if (error) throw error;
-    const mapped = (data || []).map((item) => ({
+    const mapped = await Promise.all((data || []).map(async (item) => ({
       id: item.id,
       title: item.title,
       description: item.description,
       category: item.category,
       month: item.month,
       eventUrl: safeUrl(item.event_url),
-      url: safeUrl(item.url || filePublicUrl(item.file_path)),
+      url: await rowAccessUrl(item),
       imageUrl: safeUrl(item.image_url),
       createdAt: item.created_at
-    }));
+    })));
     const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
     const staticItems = window.CRS_STATIC_CONTENT?.[staticKey] || [];
     return [...mapped, ...staticItems];
@@ -175,7 +200,7 @@
     if (groupNames.length) query = query.in("group_name", groupNames);
     const { data, error } = await query;
     if (error) throw error;
-    return (data || []).map((item) => ({ ...item, url: safeUrl(item.url || filePublicUrl(item.file_path)) }));
+    return Promise.all((data || []).map(async (item) => ({ ...item, url: await rowAccessUrl(item) })));
   }
 
   async function fetchFlows() {
@@ -187,11 +212,11 @@
       .eq("status", "published")
       .order("updated_at", { ascending: false });
     if (error) throw error;
-    return (data || []).map((item) => ({ ...item, url: safeUrl(item.url || filePublicUrl(item.file_path)) }));
+    return Promise.all((data || []).map(async (item) => ({ ...item, url: await rowAccessUrl(item) })));
   }
 
   function documentButton(row, label = "Abrir") {
-    const href = safeUrl(row.url || filePublicUrl(row.file_path));
+    const href = safeUrl(row.url);
     if (!href) return "";
     return `<a class="document-button" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
   }
@@ -305,7 +330,7 @@
       category: formData.get("category") || "",
       month: formData.get("month") || "",
       event_url: explicitEventUrl,
-      url: explicitUrl || safeUrl(uploaded.url),
+      url: explicitUrl || null,
       file_path: uploaded.file_path || null,
       file_name: uploaded.file_name || null,
       file_type: uploaded.file_type || null,
@@ -352,12 +377,13 @@
     const groupName = isCall ? "llamados" : isBase ? "formulario-base" : "formulario-extra";
     const previous = await existingDocument(api, key);
     const uploaded = await uploadFile(file, groupName);
+    const previousExternalUrl = isStorageObjectUrl(previous?.url) ? "" : safeUrl(previous?.url);
     const row = {
       key,
       group_name: groupName,
       title,
       description,
-      url: explicitUrl || safeUrl(uploaded.url) || safeUrl(previous?.url),
+      url: explicitUrl || (uploaded.file_path ? null : previousExternalUrl || null),
       file_path: uploaded.file_path || previous?.file_path || null,
       file_name: uploaded.file_name || previous?.file_name || null,
       file_type: uploaded.file_type || previous?.file_type || null,
@@ -390,7 +416,7 @@
       category: formData.get("category") || "Flujo",
       title: formData.get("title") || "Sin título",
       summary: formData.get("summary") || "",
-      url: explicitUrl || safeUrl(uploaded.url),
+      url: explicitUrl || null,
       file_path: uploaded.file_path || null,
       file_name: uploaded.file_name || null,
       file_type: uploaded.file_type || null,
