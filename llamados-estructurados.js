@@ -54,6 +54,22 @@
     return { month, year, label: `${MONTH_LABELS[month]} ${year}` };
   }
 
+  function coverageFor(rows = []) {
+    const expectedNames = [...new Set(catalog().map((row) => clean(row?.specialty)).filter(Boolean))];
+    const presentNames = new Set((rows || []).map((row) => clean(row?.specialty)).filter(Boolean));
+    const missing = expectedNames.filter((name) => !presentNames.has(name));
+    return Object.freeze({
+      expected: expectedNames.length,
+      present: expectedNames.length - missing.length,
+      missing: Object.freeze(missing),
+      complete: expectedNames.length > 0 && missing.length === 0
+    });
+  }
+
+  function hasCompleteCoverage(rows = []) {
+    return coverageFor(rows).complete;
+  }
+
   function pdfJs() {
     if (window.pdfjsLib?.getDocument) return Promise.resolve(window.pdfjsLib);
     return new Promise((resolve, reject) => {
@@ -195,6 +211,10 @@
     const expected = daysInMonth(meta.year, meta.month);
     if (rows.length < expected * 3 || uniqueDays.size < Math.max(3, expected - 2) || specialties.size < 5) {
       throw new Error('No fue seguro transformar este PDF a filas. El buscador PDF seguirá siendo el respaldo.');
+    }
+    const coverage = coverageFor(rows);
+    if (!coverage.complete) {
+      throw new Error(`La extracción estructurada quedó incompleta (${coverage.present}/${coverage.expected} especialidades reconocidas). El PDF vigente seguirá siendo la fuente de respaldo.`);
     }
   }
 
@@ -365,48 +385,73 @@
   }
 
   function mountStructuredSearch() {
-    if (mounting || route() !== ROUTE || !cachedRows?.length || !currentMeta) return;
+    if (mounting || route() !== ROUTE || !cachedRows?.length || !currentMeta || !hasCompleteCoverage(cachedRows)) return;
     const panel = document.querySelector('#callsSearchPanel');
     if (!panel || panel.querySelector('[data-calls-structured-search]')) return;
     mounting = true;
     try {
+      const previousDate = panel.querySelector('[data-call-live-date], input[type="date"]')?.value || '';
+      const previousQuery = panel.querySelector('[data-call-live-query], input[type="search"]')?.value || '';
       const now = new Date();
       const defaultDate = now.getFullYear() === currentMeta.year && now.getMonth() + 1 === currentMeta.month ? localDateValue(now) : dateValue(currentMeta.year, currentMeta.month, 1);
       panel.replaceChildren();
-      const shell = document.createElement('section'); shell.className = 'on-call-search on-call-live'; shell.dataset.callsStructuredSearch = 'true';
-      const source = document.createElement('div'); source.className = 'on-call-live-source';
+      const shell = document.createElement('section'); shell.className = 'on-call-search on-call-live'; shell.dataset.callsStructuredSearch = 'true'; shell.dataset.callLiveSearch = 'true';
+      const source = document.createElement('div'); source.className = 'on-call-live-source'; source.dataset.callLiveSource = 'true';
       const copy = document.createElement('div'); const strong = document.createElement('strong'); strong.textContent = currentMeta.label;
       const span = document.createElement('span'); span.textContent = 'Rotativa vigente · Jefatura'; copy.append(strong, span);
       const badge = document.createElement('span'); badge.className = 'calls-structured-badge'; badge.textContent = '✓ Base estructurada'; source.append(copy, badge);
       const controls = document.createElement('div'); controls.className = 'on-call-controls';
       const dateLabel = document.createElement('label'); dateLabel.className = 'on-call-field'; dateLabel.innerHTML = '<span>Fecha consultada</span>';
-      const dateInput = document.createElement('input'); dateInput.type = 'date'; dateInput.value = defaultDate; dateInput.min = dateValue(currentMeta.year, currentMeta.month, 1); dateInput.max = dateValue(currentMeta.year, currentMeta.month, daysInMonth(currentMeta.year, currentMeta.month)); dateLabel.append(dateInput);
+      const dateInput = document.createElement('input'); dateInput.type = 'date'; dateInput.dataset.callLiveDate = 'true'; dateInput.value = defaultDate; dateInput.min = dateValue(currentMeta.year, currentMeta.month, 1); dateInput.max = dateValue(currentMeta.year, currentMeta.month, daysInMonth(currentMeta.year, currentMeta.month)); dateLabel.append(dateInput);
       const queryLabel = document.createElement('label'); queryLabel.className = 'on-call-field'; queryLabel.innerHTML = '<span>Buscar especialidad</span>';
-      const queryInput = document.createElement('input'); queryInput.type = 'search'; queryInput.placeholder = 'Ej: cardiología, infectología, uro...'; queryInput.autocomplete = 'off'; queryLabel.append(queryInput); controls.append(dateLabel, queryLabel);
-      const status = document.createElement('div'); status.className = 'on-call-live-status'; status.setAttribute('aria-live', 'polite');
-      const results = document.createElement('div'); results.className = 'on-call-results';
+      const queryInput = document.createElement('input'); queryInput.type = 'search'; queryInput.dataset.callLiveQuery = 'true'; queryInput.placeholder = 'Ej: cardiología, infectología, uro...'; queryInput.autocomplete = 'off'; queryLabel.append(queryInput); controls.append(dateLabel, queryLabel);
+      const status = document.createElement('div'); status.className = 'on-call-live-status'; status.dataset.callLiveStatus = 'true'; status.setAttribute('aria-live', 'polite');
+      const results = document.createElement('div'); results.className = 'on-call-results'; results.dataset.callLiveResults = 'true';
       const note = document.createElement('p'); note.className = 'calls-structured-note'; note.textContent = 'Consulta filas confirmadas de la rotativa mensual. El Documento global queda disponible como respaldo visual.';
-      shell.append(source, controls, status, results, note); panel.append(shell);
+      const actions = document.createElement('div'); actions.className = 'route-actions calls-route-actions';
+      const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'back-link on-call-clear'; clear.dataset.callLiveClear = 'true'; clear.textContent = 'Limpiar'; clear.hidden = true; actions.append(clear);
+      shell.append(source, controls, status, results, note, actions); panel.append(shell);
+
+      const withinRange = (value) => Boolean(value && value >= dateInput.min && value <= dateInput.max);
+      if (withinRange(previousDate)) dateInput.value = previousDate;
+      if (previousQuery) queryInput.value = previousQuery;
+
       const render = () => {
         results.replaceChildren(); const query = queryInput.value.trim();
+        clear.hidden = !query;
         if (!query) { status.textContent = ''; return; }
         const found = resultsFor(query, dateInput.value);
         if (!found.length) { status.textContent = 'No encontré esa especialidad para la fecha seleccionada en la base estructurada vigente.'; return; }
         status.textContent = ''; found.forEach((item) => results.append(buildCard(item)));
       };
-      queryInput.addEventListener('input', render); dateInput.addEventListener('change', render);
+      queryInput.addEventListener('input', render);
+      dateInput.addEventListener('input', render);
+      dateInput.addEventListener('change', render);
+      clear.addEventListener('click', () => {
+        queryInput.value = '';
+        dateInput.value = defaultDate;
+        render();
+        queryInput.focus({ preventScroll: true });
+      });
+      render();
     } finally { mounting = false; }
   }
+
   async function prepareRoute(force = false) {
     if (route() !== ROUTE) return;
     try {
       const rows = await loadRows(force);
       if (!rows.length) return;
+      const coverage = coverageFor(rows);
+      if (!coverage.complete) {
+        console.warn(`Base estructurada incompleta (${coverage.present}/${coverage.expected} especialidades); se mantiene el lector PDF.`);
+        return;
+      }
       mountStructuredSearch();
       const panel = document.querySelector('#callsSearchPanel');
       if (panel && !panelObserver) {
         panelObserver = new MutationObserver(() => {
-          if (route() === ROUTE && cachedRows?.length && !panel.querySelector('[data-calls-structured-search]')) setTimeout(mountStructuredSearch, 0);
+          if (route() === ROUTE && cachedRows?.length && hasCompleteCoverage(cachedRows) && !panel.querySelector('[data-calls-structured-search]')) setTimeout(mountStructuredSearch, 0);
         });
         panelObserver.observe(panel, { childList: true, subtree: false });
       }
@@ -414,14 +459,23 @@
   }
   async function searchToday(query) {
     const rows = await loadRows();
-    if (!rows.length || !currentMeta) return [];
+    if (!rows.length || !currentMeta || !hasCompleteCoverage(rows)) return [];
     const today = localDateValue();
     const [year, month] = today.split('-').map(Number);
     if (year !== currentMeta.year || month !== currentMeta.month) return [];
     return resultsFor(query, today, rows);
   }
 
-  window.CRS_STRUCTURED_CALLS = Object.freeze({ parseMonthYear, extractAssignments, specialtiesForQuery, searchToday, loadRows, version: 2 });
+  window.CRS_STRUCTURED_CALLS = Object.freeze({
+    parseMonthYear,
+    extractAssignments,
+    specialtiesForQuery,
+    searchToday,
+    loadRows,
+    coverageFor,
+    isComplete: hasCompleteCoverage,
+    version: 3
+  });
   window.addEventListener('hashchange', () => setTimeout(() => prepareRoute(), 80));
   window.addEventListener('crs:ui-section-ready', () => setTimeout(() => prepareRoute(), 120));
   window.addEventListener('crs:calls-structured-updated', () => { cachedRows = null; currentDoc = null; currentMeta = null; prepareRoute(true); });
