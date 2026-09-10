@@ -61,6 +61,14 @@ if (!/create policy crs_storage_published_read/i.test(migration)) {
   errors.push('La migración debe instalar una política SELECT ligada a publicaciones.');
 }
 
+if (!/storage\.allow_any_operation\(array\[[\s\S]*?'object\.get_authenticated_info'[\s\S]*?'object\.get_authenticated'[\s\S]*?\]\)/i.test(migration)) {
+  errors.push('La política de Storage debe permitir lectura/firma de objetos conocidos sin conceder object.list.');
+}
+
+if (/['"]object\.list['"]/i.test(migration)) {
+  errors.push('La política pública de Storage no debe conceder object.list.');
+}
+
 for (const table of ['crs_content_items', 'crs_documents', 'crs_flows']) {
   const pattern = new RegExp(`from public\\.${table}[\\s\\S]*?status = 'published'`, 'i');
   if (!pattern.test(migration)) {
