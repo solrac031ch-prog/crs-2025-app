@@ -56,9 +56,12 @@ test('Supabase valida URLs al ingresar, leer y renderizar documentos', async () 
   const backend = source('supabase-backend.js');
 
   expect(backend).toContain('const safeUrl = (value) => window.CRS_URL_POLICY?.safe?.(value) || ""');
-  expect(backend).toContain('const href = safeUrl(row.url || filePublicUrl(row.file_path));');
+  expect(backend).toContain('const href = safeUrl(row.url);');
   expect(backend).toContain('eventUrl: safeUrl(item.event_url)');
   expect(backend).toContain('imageUrl: safeUrl(item.image_url)');
+  expect(backend).toContain('createSignedUrl(path, SIGNED_URL_TTL_SECONDS)');
+  expect(backend).toContain('if (item?.file_path) return fileAccessUrl(item.file_path);');
+  expect(backend).not.toContain('getPublicUrl(');
   expect(backend).toContain('const explicitEventUrl = requiredUrl(formData.get("eventUrl"), "URL de evento")');
   expect(backend).toContain('const explicitUrl = requiredUrl(formData.get("url"), "URL del documento")');
   expect(backend).toContain('const explicitUrl = requiredUrl(formData.get("url"), "URL del flujo")');
