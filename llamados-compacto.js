@@ -47,6 +47,86 @@
     container.replaceChildren(wrapper);
   }
 
+  function normalizeSearchContract() {
+    const panel = document.querySelector("#callsSearchPanel");
+    if (!panel) return;
+
+    const structured = panel.querySelector("[data-calls-structured-search]");
+    const live = structured || panel.querySelector("[data-call-live-search]");
+    if (!live) return;
+
+    // Ambos motores (base estructurada y PDF de respaldo) exponen el mismo
+    // contrato DOM. Así una sustitución asíncrona no rompe accesibilidad,
+    // automatización ni acciones del usuario que ya estaban en curso.
+    live.dataset.callLiveSearch = "true";
+
+    const dateInput = live.querySelector("[data-call-live-date], input[type='date']");
+    const queryInput = live.querySelector("[data-call-live-query], input[type='search']");
+    const status = live.querySelector("[data-call-live-status], .on-call-live-status");
+    const results = live.querySelector("[data-call-live-results], .on-call-results");
+
+    if (dateInput) dateInput.dataset.callLiveDate = "true";
+    if (queryInput) queryInput.dataset.callLiveQuery = "true";
+    if (status) status.dataset.callLiveStatus = "true";
+    if (results) results.dataset.callLiveResults = "true";
+
+    if (!structured || !queryInput) return;
+
+    if (!live.dataset.callsDefaultDate && dateInput?.value) {
+      live.dataset.callsDefaultDate = dateInput.value;
+    }
+
+    let clear = live.querySelector("[data-call-live-clear]");
+    if (!clear) {
+      let actions = live.querySelector(".route-actions");
+      if (!actions) {
+        actions = document.createElement("div");
+        actions.className = "route-actions calls-route-actions";
+        live.append(actions);
+      }
+
+      clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "back-link on-call-clear";
+      clear.dataset.callLiveClear = "true";
+      clear.textContent = "Limpiar";
+      clear.hidden = !queryInput.value.trim();
+      actions.append(clear);
+    }
+
+    if (queryInput.dataset.callsCompactClearBound !== "true") {
+      queryInput.dataset.callsCompactClearBound = "true";
+      const syncClear = () => {
+        clear.hidden = !queryInput.value.trim();
+      };
+      queryInput.addEventListener("input", syncClear);
+      syncClear();
+    }
+
+    if (clear.dataset.callsCompactBound !== "true") {
+      clear.dataset.callsCompactBound = "true";
+      clear.addEventListener("click", () => {
+        queryInput.value = "";
+        if (dateInput && live.dataset.callsDefaultDate) {
+          dateInput.value = live.dataset.callsDefaultDate;
+          dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        queryInput.dispatchEvent(new Event("input", { bubbles: true }));
+        queryInput.focus({ preventScroll: true });
+      });
+    }
+
+    // Playwright y algunos navegadores emiten input al modificar date sin
+    // esperar un blur. El motor estructurado escucha change: se puentean ambos
+    // eventos para que cambiar la fecha con una búsqueda activa sea inmediato.
+    if (dateInput && dateInput.dataset.callsCompactDateBound !== "true") {
+      dateInput.dataset.callsCompactDateBound = "true";
+      dateInput.addEventListener("input", () => {
+        dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    }
+  }
+
   function compactPage() {
     if (currentRoute() !== ROUTE) return;
     const page = document.querySelector("#callsPage");
@@ -58,6 +138,7 @@
 
     compactDocumentAction("#callsDocumentAction", "especialistas", "Documento de respaldo");
     compactDocumentAction("#uhdDocumentAction", "uhd", "Abrir disponibilidad UHD");
+    normalizeSearchContract();
   }
 
   function schedule() {
