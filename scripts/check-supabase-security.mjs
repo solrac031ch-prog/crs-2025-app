@@ -102,7 +102,9 @@ for (const [pattern, message] of urlPolicyRequirements) {
 const backendUrlRequirements = [
   [/eventUrl:\s*safeUrl\(item\.event_url\)/, 'Contenido Supabase debe sanear event_url al leer.'],
   [/imageUrl:\s*safeUrl\(item\.image_url\)/, 'Contenido Supabase debe sanear image_url al leer.'],
-  [/const href = safeUrl\(row\.url \|\| filePublicUrl\(row\.file_path\)\)/, 'documentButton debe validar el esquema antes de renderizar href.'],
+  [/const href = safeUrl\(row\.url\)/, 'documentButton debe validar el esquema antes de renderizar href.'],
+  [/createSignedUrl\(path, SIGNED_URL_TTL_SECONDS\)/, 'Archivos Storage deben resolverse con URL firmada temporal.'],
+  [/if \(item\?\.file_path\) return fileAccessUrl\(item\.file_path\)/, 'file_path debe ser la fuente canónica para objetos Storage.'],
   [/requiredUrl\(formData\.get\("eventUrl"\),\s*"URL de evento"\)/, 'Publicaciones deben validar event_url antes de persistir.'],
   [/requiredUrl\(formData\.get\("url"\),\s*"URL del documento"\)/, 'Documentos deben validar URL antes de persistir.'],
   [/requiredUrl\(formData\.get\("url"\),\s*"URL del flujo"\)/, 'Flujos deben validar URL antes de persistir.']
@@ -110,6 +112,10 @@ const backendUrlRequirements = [
 
 for (const [pattern, message] of backendUrlRequirements) {
   if (!pattern.test(supabaseBackend)) failures.push(message);
+}
+
+if (/getPublicUrl\s*\(/.test(supabaseBackend)) {
+  failures.push('El frontend no debe reconstruir URLs públicas permanentes para objetos Storage.');
 }
 
 const rendererUrlRequirements = [
