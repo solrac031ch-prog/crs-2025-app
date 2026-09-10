@@ -52,6 +52,30 @@ test('las rutas principales renderizan su vista en un navegador real', async ({ 
   await expect(page.locator('#chiefTitle')).toHaveText('Centro de Gestión Jefatura');
 });
 
+test('inicio permite buscar, fijar favoritos y recordar accesos recientes', async ({ page }) => {
+  await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => localStorage.removeItem('crs_quick_access_v1'));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  const search = page.locator('#homeQuickSearch');
+  await expect(search).toBeVisible();
+  await search.fill('TVP');
+  await expect(page.locator('#homeQuickResults .quick-search-result').first()).toBeVisible();
+  await expect(page.locator('#homeQuickStatus')).toContainText('coincidencias');
+
+  const firstRow = page.locator('#homeQuickResults .quick-search-row').first();
+  const firstHref = await firstRow.locator('.quick-search-result').getAttribute('href');
+  expect(firstHref).toContain('#/especialidad/');
+  await firstRow.locator('.quick-favorite-button').click();
+  await expect(page.locator('#homeFavorites a')).toHaveCount(1);
+
+  await firstRow.locator('.quick-search-result').click();
+  await expect(page.locator('#protocolPage')).toHaveClass(/\bactive\b/);
+  await page.evaluate(() => { window.location.hash = '#/inicio'; });
+  await expect(page.locator('#homePage')).toHaveClass(/\bactive\b/);
+  await expect(page.locator('#homeRecent a').first()).toHaveAttribute('href', firstHref);
+});
+
 test('Gestión y Jefatura no pasan por una página equivocada al cambiar de ruta', async ({ page }) => {
   await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
 
@@ -114,6 +138,7 @@ test('no reaparecen parches heredados ni Service Worker', async ({ page }) => {
 test('las hojas separadas se cargan como CSS y no como style dinámico', async ({ page }) => {
   await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
 
+  await expect(page.locator('head link[rel="stylesheet"][href*="inicio-quick-access.css"]')).toHaveCount(1);
   await setRoute(page, '#/gestion', '#managementPage');
   await expect(page.locator('head link[rel="stylesheet"][href*="gestion-panel-final.css"]')).toHaveCount(1);
   await expect(page.locator('head link[rel="stylesheet"][href*="gestion-pacientes-core.css"]')).toHaveCount(1);
