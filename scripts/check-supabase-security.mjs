@@ -8,6 +8,7 @@ function read(file) {
 
 const setup = read('supabase-setup.sql');
 const hardening = read('supabase-security-hardening.sql');
+const masterAi = read('supabase/functions/master-ai/index.ts');
 const frontendFiles = fs.readdirSync('.')
   .filter((name) => name.endsWith('.js') || name.endsWith('.html'));
 
@@ -63,6 +64,25 @@ for (const signature of guardedFunctions) {
 
 if (!/bucket_id\s*=\s*'crs-public'\s+and\s+public\.crs_is_admin\(\)/i.test(setup)) {
   failures.push('supabase-setup.sql: las escrituras de Storage deben exigir crs_is_admin().');
+}
+
+const masterAiRequirements = [
+  [/npm:json5@2\.2\.3/, 'MASTER IA debe fijar la versión del parser del catálogo canónico.'],
+  [/CANONICAL_PROTOCOLS_URL/, 'MASTER IA debe declarar una fuente canónica server-side para protocolos.'],
+  [/async function canonicalCatalog\(/, 'MASTER IA debe cargar el catálogo canónico en servidor.'],
+  [/async function validatedSources\(/, 'MASTER IA debe validar los identificadores de fuente contra el catálogo canónico.'],
+  [/sources\s*=\s*await\s+validatedSources\(incoming\)/, 'MASTER IA no debe usar directamente las fuentes recibidas del navegador.'],
+  [/MAX_REQUEST_BYTES/, 'MASTER IA debe limitar el tamaño total de la solicitud antes de procesarla.'],
+  [/await\s+req\.text\(\)/, 'MASTER IA debe medir el body antes de parsear JSON.'],
+  [/La consulta no se envió a ningún proveedor externo porque el catálogo canónico no pudo verificarse/, 'MASTER IA debe fallar cerrado si no puede validar el catálogo canónico.']
+];
+
+for (const [pattern, message] of masterAiRequirements) {
+  if (!pattern.test(masterAi)) failures.push(message);
+}
+
+if (/incoming\.map\([\s\S]{0,900}source\?\.text/.test(masterAi)) {
+  failures.push('MASTER IA volvió a confiar en source.text controlado por el cliente.');
 }
 
 if (failures.length) {
