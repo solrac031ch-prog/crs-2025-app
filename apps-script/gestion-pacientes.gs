@@ -37,18 +37,7 @@ function doPost(e) {
     const body = parseBody_(e);
     const action = String(body.action || '').trim();
 
-    const isPublicSubmission =
-      action === 'savePublicPatientCase' ||
-      (
-        !body.accessToken &&
-        body.case &&
-        typeof body.case === 'object' &&
-        (
-          String(body.doctorRut || '').trim() ||
-          String(body.case.rut_medico || '').trim() ||
-          String(body.serviceCode || '').trim()
-        )
-      );
+    const isPublicSubmission = action === 'savePublicPatientCase';
 
     if (isPublicSubmission) {
       return json_(
@@ -96,20 +85,22 @@ function doPost(e) {
 
 function parseBody_(e) {
   const raw = e && e.postData && e.postData.contents ? e.postData.contents : '{}';
+  if (raw.length > 65536) throw new Error('Solicitud demasiado grande.');
   try {
     const body = JSON.parse(raw);
-    return body && typeof body === 'object' ? body : {};
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error();
+    return body;
   } catch (_) {
     throw new Error('Solicitud JSON inválida.');
   }
 }
 
 function savePublicPatientCase_(input, doctorRutInput, serviceCode) {
-  const target = getOrCreatePatientSheet_();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
 
   try {
+    const target = getOrCreatePatientSheet_();
     const now = new Date().toISOString();
     const doctorRut = normalizeRut_(doctorRutInput);
     validateRut_(doctorRut, 'RUT del médico');
@@ -141,7 +132,7 @@ function savePublicPatientCase_(input, doctorRutInput, serviceCode) {
     validatePublicCase_(item, true);
 
     item.numero_solicitud = nextCaseNumber_(target.sheet);
-    item.id = item.id || 'caso-' + Date.now() + '-' + Utilities.getUuid().slice(0, 8);
+    item.id = 'caso-' + Utilities.getUuid();
     item.fecha_registro = now;
     item.estado = 'Pendiente';
     item.resuelto = 'Pendiente';
@@ -239,8 +230,8 @@ function authorizeSupabase_(body) {
   const role = normalize_(profile && profile.role);
   if (
     !profile ||
-    profile.active === false ||
-    (!CRS_ALLOWED_ROLES.has(role) && email !== 'mdcarlosherrera@gmail.com')
+    profile.active !== true ||
+    !CRS_ALLOWED_ROLES.has(role)
   ) {
     throw new Error('Usuario sin permiso activo de Jefatura.');
   }
@@ -261,7 +252,7 @@ function getOrCreatePatientSheet_() {
     try {
       spreadsheet = SpreadsheetApp.openById(storedId);
     } catch (_) {
-      props.deleteProperty(CRS_PATIENT_SPREADSHEET_PROPERTY);
+      throw new Error('No se pudo abrir la planilla configurada. Revisa acceso e ID; no se creará una planilla alternativa.');
     }
   }
 
@@ -411,14 +402,24 @@ function listPatientCases_(auth) {
 }
 
 function savePatientCase_(input, auth) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    return savePatientCase_locked_(input, auth);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function savePatientCase_locked_(input, auth) {
   const target = getOrCreatePatientSheet_();
   const now = new Date().toISOString();
   const item = sanitizeCase_(input, auth, now);
   validatePublicCase_(item, false);
-  item.numero_solicitud = item.numero_solicitud || nextCaseNumber_(target.sheet);
-  item.id = item.id || 'caso-' + Date.now() + '-' + Utilities.getUuid().slice(0, 8);
-  item.fecha_registro = item.fecha_registro || now;
-  item.registrado_por = item.registrado_por || auth.email;
+  item.numero_solicitud = nextCaseNumber_(target.sheet);
+  item.id = 'caso-' + Utilities.getUuid();
+  item.fecha_registro = now;
+  item.registrado_por = auth.email;
   item.actualizado = now;
   appendCase_(target.sheet, item);
   appendHistory_(target.spreadsheet, item.id, 'Solicitud creada por Jefatura', auth.email, 'Registro protegido');
@@ -426,6 +427,16 @@ function savePatientCase_(input, auth) {
 }
 
 function updatePatientCase_(id, patch, auth) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    return updatePatientCase_locked_(id, patch, auth);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function updatePatientCase_locked_(id, patch, auth) {
   if (!id) throw new Error('Falta el identificador del caso.');
   const target = getOrCreatePatientSheet_();
   const sheet = target.sheet;
@@ -521,7 +532,7 @@ function appendHistory_(spreadsheet, caseId, action, actor, detail) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.setFrozenRows(1);
   }
-  sheet.appendRow([new Date().toISOString(), caseId, action, actor, detail]);
+  sheet.appendRow([new Date().toISOString(), caseId, action, actor, detail].map(sheetValue_));
 }
 
 function rowToCase_(row) {

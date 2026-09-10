@@ -59,7 +59,10 @@ Deno.serve(async (req) => {
     .eq("email", requester.email.toLowerCase())
     .maybeSingle();
   if (requesterError) return json({ ok: false, error: requesterError.message }, 500);
-  if (!requesterAdmin?.active) return json({ ok: false, error: "Tu cuenta no tiene permiso de jefatura." }, 403);
+  const managerRoles = new Set(["creador", "disenador", "diseñador", "admin"]);
+  if (requesterAdmin?.active !== true || !managerRoles.has(String(requesterAdmin.role || "").trim().toLowerCase())) {
+    return json({ ok: false, error: "Tu cuenta no tiene permiso para administrar usuarios." }, 403);
+  }
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action || "");
@@ -98,6 +101,9 @@ Deno.serve(async (req) => {
       const role = String(body.role || "jefatura").trim();
       const providedPassword = String(body.password || "").trim();
       if (!email) return json({ ok: false, error: "Falta correo." }, 400);
+      if (!new Set(["creador", "disenador", "diseñador", "admin", "jefe", "jefatura"]).has(role)) {
+        return json({ ok: false, error: "Rol no permitido." }, 400);
+      }
       if (providedPassword && providedPassword.length < 6) {
         return json({ ok: false, error: "La clave debe tener al menos 6 caracteres." }, 400);
       }

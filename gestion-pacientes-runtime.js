@@ -28,6 +28,7 @@
 
   let authState = { email: "", name: "Equipo Urgencia", role: "", active: false };
   let authCheckedAt = 0;
+  let authGeneration = 0;
   let authPromise = null;
   let visibleRows = [];
   let casesFetchedAt = 0;
@@ -54,14 +55,21 @@
 
   function resetAuth() {
     authState = { email: "", name: "Equipo Urgencia", role: "", active: false };
+    authGeneration += 1;
     authCheckedAt = 0;
     authPromise = null;
+    visibleRows = [];
+    lastFilteredRows = [];
+    casesSpreadsheetUrl = "";
+    casesFetchedAt = 0;
+    casesPromise = null;
   }
 
   async function refreshAuth(force = false) {
     if (!force && authCheckedAt && Date.now() - authCheckedAt < AUTH_TTL) return authState;
     if (authPromise) return authPromise;
 
+    const generation = authGeneration;
     authPromise = (async () => {
       const api = client();
       if (!api?.auth?.getUser) {
@@ -89,11 +97,12 @@
           if (!result.error) profile = result.data || null;
         }
 
+        if (generation !== authGeneration) return authState;
         authState = {
           email,
           name: profile?.display_name || user.user_metadata?.display_name || email || "Equipo Urgencia",
-          role: profile?.role || user.user_metadata?.role || "",
-          active: Boolean(profile && profile.active !== false)
+          role: profile?.role || "",
+          active: Boolean(profile && profile.active === true)
         };
         authCheckedAt = Date.now();
         return authState;
@@ -103,7 +112,7 @@
         authCheckedAt = Date.now();
         return authState;
       } finally {
-        authPromise = null;
+        if (generation === authGeneration) authPromise = null;
       }
     })();
 
@@ -122,7 +131,7 @@
     const email = clean(authState.email);
     return Boolean(
       authState.active &&
-      (CHIEF_ROLES.has(role) || email === "mdcarlosherrera@gmail.com")
+      CHIEF_ROLES.has(role)
     );
   }
 
@@ -309,8 +318,10 @@
     }
     if (casesPromise) return casesPromise;
 
+    const generation = authGeneration;
     casesPromise = (async () => {
       const result = await secureRequest("listPatientCases");
+      if (generation !== authGeneration) return { source: "unavailable", error: "La sesión cambió.", rows: [] };
       if (!result.ok) {
         return { source: "unavailable", error: result.error || "No se pudo conectar con Drive.", rows: [] };
       }
@@ -320,7 +331,7 @@
       casesSpreadsheetUrl = result.spreadsheetUrl || "";
       casesFetchedAt = Date.now();
       return { source: "drive", spreadsheetUrl: casesSpreadsheetUrl, rows: visibleRows };
-    })().finally(() => { casesPromise = null; });
+    })().finally(() => { if (generation === authGeneration) casesPromise = null; });
 
     return casesPromise;
   }

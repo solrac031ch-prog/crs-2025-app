@@ -38,6 +38,9 @@ jobs:
           cp apps-script/gestion-pacientes.gs /tmp/gestion-pacientes.js
           node --check /tmp/gestion-pacientes.js
 
+      - name: Probar límites de acceso y privacidad
+        run: node --test tests/security/*.test.mjs
+
       - name: Validar límites de arquitectura
         run: node scripts/check-architecture.mjs
 
