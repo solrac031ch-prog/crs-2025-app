@@ -44,7 +44,7 @@ test('Paper del mes prioriza la fecha del paper y no la fecha de carga', async (
   await page.goto('/index.html#/inicio', { waitUntil: 'domcontentloaded' });
 
   await page.evaluate(() => {
-    sessionStorage.setItem('crsPublicContentCacheV2:paper', JSON.stringify({
+    sessionStorage.setItem('crsPublicContentCacheV3:paper', JSON.stringify({
       savedAt: Date.now(),
       items: [
         {
