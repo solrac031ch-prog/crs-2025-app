@@ -238,6 +238,45 @@ html[data-ui-stabilizing="true"] #doctorsPage.active::after {
   }
 }
 
+/* Shell móvil: la navegación principal debe ocupar una sola fila. */
+@media (max-width: 560px) {
+  .topbar {
+    gap: 8px;
+    padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
+  }
+
+  .brand {
+    align-items: center;
+    gap: 9px;
+  }
+
+  .brand-logo {
+    width: 150px;
+    max-width: 48vw;
+  }
+
+  .brand-title {
+    max-width: none;
+    font-size: 0.95rem;
+    line-height: 1.05;
+  }
+
+  .topbar .eyebrow {
+    font-size: 0.62rem;
+  }
+
+  .topnav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .topnav a {
+    min-height: 42px;
+    padding: 0 6px;
+    font-size: 0.88rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #managementContent,
   #chiefContent,
