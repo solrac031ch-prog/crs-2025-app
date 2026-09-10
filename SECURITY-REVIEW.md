@@ -14,14 +14,14 @@ clínica de los protocolos. No se consultaron fichas de pacientes.
 | Capa | Componentes | Evaluación |
 |---|---|---|
 | Publicación | GitHub Pages, HTML/JS/CSS | Todo archivo publicado es accesible sin sesión. Los documentos requieren clasificación previa. |
-| Navegación | app-router, route-modules y módulos de pantalla | Existe carga bajo demanda y separación de datos; persisten listeners y compatibilidad global. Guardas estáticas pasan. |
+| Navegación | app-router, route-modules y módulos de pantalla | Existe carga bajo demanda y separación de datos. Llamados quedó bajo propiedad explícita de ruta: usa base estructurada sólo con cobertura completa y PDF como respaldo. Persisten responsabilidades globales en otros subsistemas. |
 | Contenido clínico | app-protocol-data, formularios, PDFs | Separado de UI. No se modificaron reglas clínicas. |
 | Autenticación | Supabase Auth y supabase-admin-users | Credenciales individuales; reglas visibles de roles antes no coincidían con el servidor. |
 | Contenido remoto | supabase-backend, tablas crs_* | RLS habilitada en tablas consultadas; lecturas públicas del contenido publicado. |
 | Pacientes | gestion-pacientes-runtime → Apps Script → Google Sheets | Lectura protegida, pero registro público por RUT; falta autenticar a los médicos. |
 | Archivos | bucket crs-public | Público. No apto para datos identificables ni documentos privados/borradores confidenciales. |
 | IA | master-ai, proveedores externos, cuota SQL | Filtrado de identificadores en pregunta; fuentes aportadas por cliente necesitan controles adicionales. |
-| Calidad | scripts/check-*, tests/e2e, nuevos tests/security | 16 guardas y 9 pruebas de seguridad aprobadas. Navegador pendiente. |
+| Calidad | scripts/check-*, tests/e2e, nuevos tests/security | Guardas estáticas y pruebas de seguridad aprobadas; workflow E2E completo aprobado en Chromium. |
 
 ## Cambios aplicados en producción
 
@@ -57,7 +57,20 @@ con dobles locales; no se modificaron contraseñas ni cuentas reales para probar
 - Frontend: elimina roles derivados de user_metadata y excepciones por correo.
 - Vacía caché clínica al cambiar sesión y descarta respuestas pendientes de la
   sesión anterior para impedir que repueblen esa caché.
+- Llamados: unifica el contrato del buscador y conserva fecha/consulta durante
+  transiciones entre motores para evitar pérdidas de estado por carreras.
+- La base estructurada de Llamados sólo sustituye al PDF si cubre todas las
+  especialidades del catálogo; una extracción parcial se rechaza antes de reemplazar filas.
+- La reconstrucción desde Jefatura tampoco considera vigente una base parcial y
+  valida cobertura completa antes de una sustitución.
+- Los módulos estructurado/backfill dejaron el arranque global: Jefatura y Llamados
+  los cargan bajo demanda, con una guarda de arquitectura que impide regresiones.
 - Añade 9 pruebas funcionales de seguridad e incorpora su ejecución a CI.
+
+La tabla estructurada de septiembre observada durante esta revisión contiene 177
+asignaciones pero sólo 8 de las 16 especialidades del catálogo. No se reescribió ni
+borró esa información durante la corrección: mientras permanezca incompleta, la
+rama utiliza el PDF vigente como fuente funcional de respaldo.
 
 Estos cambios no actualizan el despliegue de Apps Script ni GitHub Pages por sí
 solos. Debe cotejarse primero el Apps Script activo: el repositorio contiene una
@@ -78,22 +91,20 @@ repositorio sea idéntica a producción.
 | Media | `crs_is_admin()` real sólo comprueba usuario activo y difiere del setup, que además limita roles. | Versionar y conciliar funciones/políticas reales con una única secuencia reproducible. |
 | Media | Función `master-ai-cloudflare-check` activa no aparece en el repositorio. | Revisar su contenido, autorización y propósito; no se eliminó ni se presume vulnerable. |
 | Media | Escapar HTML no valida esquemas de enlaces; `documentButton` usa la URL remota. | Aplicar una política común de URLs permitidas en todos los renderizadores y probar casos maliciosos. |
-| Media | Scripts globales y loaders aún distribuyen responsabilidades. | Consolidar ciclo de rutas/autenticación con pruebas de transición; evitar una reescritura masiva sin navegador. |
+| Media | Fuera de Llamados aún existen scripts globales y listeners de compatibilidad que reparten responsabilidades. | Seguir consolidando por subsistema con pruebas de transición; evitar una reescritura masiva. |
 | Media | Creación inicial y migración de encabezados siguen ligadas a solicitudes; escrituras en Sheets e historial no son una transacción única. | Separar aprovisionamiento/migración, definir recuperación, idempotencia y control de versión de registros. |
 
 ## Validación y límites
 
-- 16 scripts `scripts/check-*.mjs`: aprobados.
+- Guardas `scripts/check-*.mjs`: aprobadas, incluida la nueva frontera de carga de Llamados.
 - 9 pruebas `node --test tests/security/access.test.mjs`: aprobadas.
+- Workflow E2E de navegación real: aprobado en Chromium tras corregir las carreras y
+  el fallback de Llamados. El diagnóstico pasó de 7 fallos iniciales a cero fallos.
 - Prueba SQL de roles sobre la base real: aprobada y revertida.
 - Política instalada, versión 9 de Edge y rechazo 401: comprobados.
 - Aviso search_path: resuelto. Quedan avisos de función SECURITY DEFINER pública
   utilizada por políticas y protección de contraseñas. La tabla de cuota sin
   políticas está cerrada a clientes por diseño; no se abrió para silenciar el aviso.
-- 5 pruebas de navegación intentadas: no arrancaron por ausencia de Chromium;
-  no son cinco fallos funcionales demostrados. La instalación npm no pudo
-  completarse por restricción de red; se utilizó el runner disponible del entorno,
-  sin modificar dependencias versionadas.
 - No se comprobaron permisos de Drive, copias/restauración, autenticación real de
   cada usuario, recorrido clínico completo, todas las rutas XSS ni contenido de
   todos los documentos binarios.
@@ -101,8 +112,9 @@ repositorio sea idéntica a producción.
 ## Orden de cierre
 
 1. Comparar Apps Script desplegado y migrar autenticación de médicos.
-2. Publicar los cambios probados del frontend/Apps Script con pruebas de navegador.
+2. Publicar sólo los cambios ya probados del frontend cuando se decida integrar;
+   mantener Apps Script bloqueado hasta cotejar su fuente activa.
 3. Clasificar archivos, endurecer IA y conciliar esquema real/versionado.
-4. Fijar dependencias, ejecutar E2E completo y ensayar recuperación de respaldo.
+4. Fijar dependencias y ensayar recuperación de respaldo.
 
 Referencia de permisos: https://supabase.com/docs/guides/database/postgres/row-level-security
