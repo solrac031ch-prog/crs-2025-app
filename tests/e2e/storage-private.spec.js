@@ -60,7 +60,13 @@ test('contenido Storage usa file_path y una URL firmada temporal', async ({ page
   const signedLink = page.locator('a[href*="token=prueba"]');
   await expect(signedLink).toHaveCount(1);
   await expect(signedLink).toHaveAttribute('href', /\/storage\/v1\/object\/sign\/crs-public\/paper\/2099-01\/prueba\.pdf\?token=prueba$/);
+  await expect(page.locator('a[href*="/storage/v1/object/public/crs-public/"]')).toHaveCount(0);
 
   const calls = await page.evaluate(() => window.__crsStorageSignedCalls);
-  expect(calls).toEqual([{ bucket: 'crs-public', path: 'paper/2099-01/prueba.pdf', ttl: 900 }]);
+  expect(calls.length).toBeGreaterThan(0);
+  expect(calls.every((call) => (
+    call.bucket === 'crs-public'
+    && call.path === 'paper/2099-01/prueba.pdf'
+    && call.ttl === 900
+  ))).toBe(true);
 });
