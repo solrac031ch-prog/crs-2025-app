@@ -8,7 +8,8 @@
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
   const route = () => location.hash.split("?")[0] || "#/inicio";
-  const CACHE_PREFIX = "crsPublicContentCacheV2:";
+  const safeUrl = (value) => window.CRS_URL_POLICY?.safe?.(value) || "";
+  const CACHE_PREFIX = "crsPublicContentCacheV3:";
   const CACHE_TTL = 5 * 60 * 1000;
   const remotePromises = new Map();
 
@@ -44,8 +45,10 @@
   }
 
   function favicon(url = "") {
+    const href = safeUrl(url);
+    if (!href) return "";
     try {
-      const host = new URL(url).hostname.replace(/^www\./, "");
+      const host = new URL(href).hostname.replace(/^www\./, "");
       return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`;
     } catch (_) {
       return "";
@@ -53,7 +56,7 @@
   }
 
   function visualImage(item, kind) {
-    const candidates = [item.imageUrl, item.image_url, item.url, item.eventUrl].filter(Boolean);
+    const candidates = [item.imageUrl, item.image_url, item.url, item.eventUrl].map(safeUrl).filter(Boolean);
     const direct = candidates.find(isImageUrl);
     if (direct) return direct;
     const linked = candidates.find((url) => /^https?:\/\//i.test(String(url)));
@@ -62,7 +65,7 @@
   }
 
   function action(item, label) {
-    const href = item.eventUrl || item.url || "";
+    const href = safeUrl(item.eventUrl || item.url || "");
     return href ? `<a class="document-button" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>` : "";
   }
 
@@ -158,11 +161,17 @@
     const procedures = sortProcedures(items).filter((item) => item.title);
     if (!procedures.length) return `<div class="gf-empty">Aún no hay procedimientos publicados.</div>`;
     return `<section class="gf-procedure-list" aria-label="Procedimientos de urgencias">${procedures.map((item) => {
-      const href = item.eventUrl || item.url || "";
+      const href = safeUrl(item.eventUrl || item.url || "");
       return href
         ? `<a class="gf-procedure-button" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(item.title)}</a>`
         : `<span class="gf-procedure-button disabled" aria-disabled="true">${esc(item.title)}</span>`;
     }).join("")}</section>`;
+  }
+
+  function paperRepoItem(paper) {
+    const href = safeUrl(paper.url);
+    if (!href) return `<span class="gf-repo-item"><strong>${esc(paper.title)}</strong><span>${esc(monthLabel(paper))}</span></span>`;
+    return `<a class="gf-repo-item" href="${esc(href)}" target="_blank" rel="noopener noreferrer"><strong>${esc(paper.title)}</strong><span>${esc(monthLabel(paper))}</span></a>`;
   }
 
   function paperBody(papers) {
@@ -172,7 +181,7 @@
       ? `<main class="gf-paper-main"><article class="gf-paper-featured"><span class="gf-tag">${esc(monthLabel(latest))}</span><h2>${esc(latest.title)}</h2><div class="gf-abstract"><strong>Abstract</strong><p>${esc(latest.description || "Al publicar el PDF desde Jefatura, la app intentará extraer el abstract automáticamente.")}</p></div><div class="gf-actions">${action(latest, "Abrir paper")}</div></article></main>`
       : `<main class="gf-paper-main"><div class="gf-empty">Aún no hay paper del mes publicado.</div></main>`;
     const repo = older.length
-      ? `<div class="gf-repo-list">${older.map((paper) => `<a class="gf-repo-item" href="${esc(paper.url || "#/paper")}" ${paper.url ? `target="_blank" rel="noopener noreferrer"` : ""}><strong>${esc(paper.title)}</strong><span>${esc(monthLabel(paper))}</span></a>`).join("")}</div>`
+      ? `<div class="gf-repo-list">${older.map(paperRepoItem).join("")}</div>`
       : `<div class="gf-empty">Sin papers previos.</div>`;
     return `<section class="gf-paper-layout">${featured}<aside class="gf-repo"><h2>Repositorio</h2>${repo}</aside></section>`;
   }

@@ -66,8 +66,9 @@
   }
 
   async function ensureSupabase() {
+    await loadScript("safe-url", "./safe-url.js", 1);
     await loadScript("supabase-config", "./supabase-config.js", 19);
-    await loadScript("supabase-backend", "./supabase-backend.js", 8);
+    await loadScript("supabase-backend", "./supabase-backend.js", 9);
   }
 
   function ensurePatientManagement() {
@@ -117,7 +118,7 @@
       loadScript("gestion-perfiles", "./gestion-perfiles.js", 5),
       loadScript("gestion-uhd", "./gestion-uhd-citados.js", 6)
     ]);
-    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
+    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 16);
   }
 
   async function ensureJefatura() {
@@ -149,7 +150,7 @@
       paperRoute ? loadStyle("paper-mensual", "./paper-mensual.css", 2) : Promise.resolve(),
       ensureSupabase()
     ]);
-    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
+    await loadScript("gestion-panel-final", "./gestion-panel-final.js", 16);
     if (educationRoute) await loadScript("educacion-uniforme", "./educacion-uniforme.js", 2);
     if (paperRoute) await loadScript("paper-mensual", "./paper-mensual-ui.js", 1);
   }
@@ -211,7 +212,7 @@
       if (["#/noticias", "#/educacion", "#/paper", "#/procedimientos"].includes(current)) return ensurePublicContent(current);
       if (["#/urgencia", "#/medicos", "#/equipo-urgencia"].includes(current)) {
         await loadStyle("gestion-panel-final", "./gestion-panel-final.css", 2);
-        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 15);
+        return loadScript("gestion-panel-final", "./gestion-panel-final.js", 16);
       }
       if (current === "#/llamados") return ensureCalls();
       return undefined;

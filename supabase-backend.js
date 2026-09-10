@@ -27,6 +27,13 @@
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "") || "item";
   const route = () => location.hash.split("?")[0] || "#/inicio";
+  const safeUrl = (value) => window.CRS_URL_POLICY?.safe?.(value) || "";
+
+  function requiredUrl(value, field = "URL") {
+    const policy = window.CRS_URL_POLICY;
+    if (!policy?.required) throw new Error("La política de URLs seguras no está disponible.");
+    return policy.required(value, field);
+  }
 
   function enabled() {
     return Boolean(cfg.enabled && cfg.url && cfg.anonKey && window.supabase?.createClient);
@@ -95,7 +102,7 @@
   function filePublicUrl(path) {
     const api = sb();
     if (!api || !path) return "";
-    return api.storage.from(bucket).getPublicUrl(path).data?.publicUrl || "";
+    return safeUrl(api.storage.from(bucket).getPublicUrl(path).data?.publicUrl || "");
   }
 
   async function removeStoredFile(path) {
@@ -147,9 +154,9 @@
       description: item.description,
       category: item.category,
       month: item.month,
-      eventUrl: item.event_url,
-      url: item.url || filePublicUrl(item.file_path),
-      imageUrl: item.image_url || "",
+      eventUrl: safeUrl(item.event_url),
+      url: safeUrl(item.url || filePublicUrl(item.file_path)),
+      imageUrl: safeUrl(item.image_url),
       createdAt: item.created_at
     }));
     const staticKey = kind === "paper" ? "papers" : kind === "procedure" ? "procedures" : kind;
@@ -168,7 +175,7 @@
     if (groupNames.length) query = query.in("group_name", groupNames);
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data || []).map((item) => ({ ...item, url: safeUrl(item.url || filePublicUrl(item.file_path)) }));
   }
 
   async function fetchFlows() {
@@ -180,11 +187,11 @@
       .eq("status", "published")
       .order("updated_at", { ascending: false });
     if (error) throw error;
-    return data || [];
+    return (data || []).map((item) => ({ ...item, url: safeUrl(item.url || filePublicUrl(item.file_path)) }));
   }
 
   function documentButton(row, label = "Abrir") {
-    const href = row.url || filePublicUrl(row.file_path);
+    const href = safeUrl(row.url || filePublicUrl(row.file_path));
     if (!href) return "";
     return `<a class="document-button" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
   }
@@ -286,6 +293,8 @@
     const user = await requireUser();
     const formData = new FormData(form);
     const kind = form.dataset.content === "paper" ? "paper" : form.dataset.content === "procedure" ? "procedure" : String(formData.get("kind") || "news");
+    const explicitEventUrl = requiredUrl(formData.get("eventUrl"), "URL de evento");
+    const explicitUrl = requiredUrl(formData.get("url"), "URL del contenido");
     const file = form.file?.files?.[0] || null;
     const extracted = kind === "paper" ? await extractPaperMeta(file) : {};
     const uploaded = await uploadFile(file, kind);
@@ -295,8 +304,8 @@
       description: formData.get("description") || formData.get("summary") || extracted.description || "",
       category: formData.get("category") || "",
       month: formData.get("month") || "",
-      event_url: formData.get("eventUrl") || "",
-      url: formData.get("url") || uploaded.url || "",
+      event_url: explicitEventUrl,
+      url: explicitUrl || safeUrl(uploaded.url),
       file_path: uploaded.file_path || null,
       file_name: uploaded.file_name || null,
       file_type: uploaded.file_type || null,
@@ -333,6 +342,7 @@
     const api = sb();
     const user = await requireUser();
     const formData = new FormData(form);
+    const explicitUrl = requiredUrl(formData.get("url"), "URL del documento");
     const file = form.file?.files?.[0] || null;
     const isBase = form.hasAttribute("data-form-base");
     const isCall = form.hasAttribute("data-upload-call");
@@ -342,13 +352,12 @@
     const groupName = isCall ? "llamados" : isBase ? "formulario-base" : "formulario-extra";
     const previous = await existingDocument(api, key);
     const uploaded = await uploadFile(file, groupName);
-    const explicitUrl = String(formData.get("url") || "").trim();
     const row = {
       key,
       group_name: groupName,
       title,
       description,
-      url: explicitUrl || uploaded.url || previous?.url || "",
+      url: explicitUrl || safeUrl(uploaded.url) || safeUrl(previous?.url),
       file_path: uploaded.file_path || previous?.file_path || null,
       file_name: uploaded.file_name || previous?.file_name || null,
       file_type: uploaded.file_type || previous?.file_type || null,
@@ -374,13 +383,14 @@
     const api = sb();
     const user = await requireUser();
     const formData = new FormData(form);
+    const explicitUrl = requiredUrl(formData.get("url"), "URL del flujo");
     const file = form.file?.files?.[0] || null;
     const uploaded = await uploadFile(file, "flujos");
     const row = {
       category: formData.get("category") || "Flujo",
       title: formData.get("title") || "Sin título",
       summary: formData.get("summary") || "",
-      url: formData.get("url") || uploaded.url || "",
+      url: explicitUrl || safeUrl(uploaded.url),
       file_path: uploaded.file_path || null,
       file_name: uploaded.file_name || null,
       file_type: uploaded.file_type || null,

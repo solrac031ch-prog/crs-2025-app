@@ -9,6 +9,9 @@ function read(file) {
 const setup = read('supabase-setup.sql');
 const hardening = read('supabase-security-hardening.sql');
 const masterAi = read('supabase/functions/master-ai/index.ts');
+const urlPolicy = read('safe-url.js');
+const supabaseBackend = read('supabase-backend.js');
+const publicRenderer = read('gestion-panel-final.js');
 const frontendFiles = fs.readdirSync('.')
   .filter((name) => name.endsWith('.js') || name.endsWith('.html'));
 
@@ -83,6 +86,41 @@ for (const [pattern, message] of masterAiRequirements) {
 
 if (/incoming\.map\([\s\S]{0,900}source\?\.text/.test(masterAi)) {
   failures.push('MASTER IA volvió a confiar en source.text controlado por el cliente.');
+}
+
+const urlPolicyRequirements = [
+  [/window\.CRS_URL_POLICY\s*=\s*Object\.freeze\(\{\s*safe,\s*required\s*\}\)/, 'Debe existir una política común e inmutable de URLs seguras.'],
+  [/url\.protocol\s*===\s*"https:"/, 'La política de URLs debe permitir HTTPS explícitamente.'],
+  [/url\.protocol\s*===\s*"http:"\s*&&\s*LOCAL_HTTP_HOSTS\.has\(url\.hostname\)/, 'HTTP solo debe permitirse en hosts locales de desarrollo.'],
+  [/CONTROL_CHARS\.test\(raw\)/, 'La política de URLs debe rechazar caracteres de control.']
+];
+
+for (const [pattern, message] of urlPolicyRequirements) {
+  if (!pattern.test(urlPolicy)) failures.push(message);
+}
+
+const backendUrlRequirements = [
+  [/eventUrl:\s*safeUrl\(item\.event_url\)/, 'Contenido Supabase debe sanear event_url al leer.'],
+  [/imageUrl:\s*safeUrl\(item\.image_url\)/, 'Contenido Supabase debe sanear image_url al leer.'],
+  [/const href = safeUrl\(row\.url \|\| filePublicUrl\(row\.file_path\)\)/, 'documentButton debe validar el esquema antes de renderizar href.'],
+  [/requiredUrl\(formData\.get\("eventUrl"\),\s*"URL de evento"\)/, 'Publicaciones deben validar event_url antes de persistir.'],
+  [/requiredUrl\(formData\.get\("url"\),\s*"URL del documento"\)/, 'Documentos deben validar URL antes de persistir.'],
+  [/requiredUrl\(formData\.get\("url"\),\s*"URL del flujo"\)/, 'Flujos deben validar URL antes de persistir.']
+];
+
+for (const [pattern, message] of backendUrlRequirements) {
+  if (!pattern.test(supabaseBackend)) failures.push(message);
+}
+
+const rendererUrlRequirements = [
+  [/const safeUrl = \(value\) => window\.CRS_URL_POLICY\?\.safe\?\.\(value\) \|\| ""/, 'El renderer público debe usar la política común de URLs.'],
+  [/\[item\.imageUrl, item\.image_url, item\.url, item\.eventUrl\]\.map\(safeUrl\)\.filter\(Boolean\)/, 'Las imágenes remotas deben validarse antes de insertarse en el DOM.'],
+  [/const href = safeUrl\(item\.eventUrl \|\| item\.url \|\| ""\)/, 'Los enlaces públicos deben validarse antes de insertarse en el DOM.'],
+  [/const href = safeUrl\(paper\.url\)/, 'El repositorio de papers debe validar cada URL antes de renderizarla.']
+];
+
+for (const [pattern, message] of rendererUrlRequirements) {
+  if (!pattern.test(publicRenderer)) failures.push(message);
 }
 
 if (failures.length) {
