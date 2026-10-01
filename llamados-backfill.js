@@ -4,6 +4,13 @@
   let observer = null;
   let running = false;
 
+  const clean = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const route = () => String(location.hash || '#/inicio').split('?')[0];
   const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
   const dateValue = (year, month, day) => `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -66,13 +73,7 @@
     rows.forEach((row) => {
       row.items.sort((a, b) => a.x - b.x);
       row.text = row.items.map((item) => item.text).join(' ').replace(/\s+/g, ' ').trim();
-      row.norm = String(row.text || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      row.norm = clean(row.text);
     });
     rows.sort((a, b) => b.y - a.y);
     return rows;
@@ -95,40 +96,39 @@
   }
 
   function inferMeta(doc, pages) {
-    const api = structuredApi();
-    const direct = api?.parseMonthYear?.(doc?.title || doc?.file_name || '');
+    const structured = structuredApi();
+    const direct = structured?.parseMonthYear?.(doc?.title || doc?.file_name || '');
     if (direct) return direct;
     const text = (pages || []).flatMap((page) => page.rows.map((row) => row.text)).join(' ');
-    return api?.parseMonthYear?.(text) || null;
-  }
-
-  function validateAssignments(rows, meta) {
-    const expected = daysInMonth(meta.year, meta.month);
-    const uniqueDays = new Set(rows.map((row) => row.schedule_date));
-    const specialties = new Set(rows.map((row) => String(row.specialty || '').toLowerCase()));
-    if (rows.length < expected * 3 || uniqueDays.size < Math.max(3, expected - 2) || specialties.size < 5) {
-      throw new Error('No fue seguro transformar el PDF vigente a filas. No se modificó la base estructurada.');
-    }
+    return structured?.parseMonthYear?.(text) || null;
   }
 
   async function currentRows(api, meta) {
     const first = dateValue(meta.year, meta.month, 1);
     const last = dateValue(meta.year, meta.month, daysInMonth(meta.year, meta.month));
     const { data, error } = await api.from(TABLE)
-      .select('id,source_updated_at')
+      .select('specialty,doctor,schedule_date,source_updated_at')
       .eq('type', 'especialistas')
+      .eq('status', 'published')
       .gte('schedule_date', first)
       .lte('schedule_date', last);
     if (error) throw error;
     return data || [];
   }
 
-  function alreadyCurrent(rows, meta, doc) {
-    const minimum = daysInMonth(meta.year, meta.month) * 3;
-    if (rows.length < minimum) return false;
+  function localFingerprint(rows) {
+    return [...new Set((rows || []).map((row) => `${row.schedule_date}|${clean(row.specialty)}|${clean(row.doctor)}`))]
+      .sort()
+      .join('\n');
+  }
+
+  function alreadyCurrent(existing, extracted, doc, structured) {
+    if (existing.length !== extracted.length) return false;
+    const fingerprint = structured?.assignmentFingerprint || localFingerprint;
+    if (fingerprint(existing) !== fingerprint(extracted)) return false;
     const sourceTime = Date.parse(doc?.updated_at || doc?.updatedAt || 0);
     if (!sourceTime) return true;
-    return rows.every((row) => Date.parse(row.source_updated_at || 0) >= sourceTime - 1000);
+    return existing.every((row) => Date.parse(row.source_updated_at || 0) >= sourceTime - 1000);
   }
 
   async function replaceMonth(api, rows, meta, doc, user) {
@@ -203,20 +203,26 @@
       const meta = inferMeta(doc, pages);
       if (!meta) throw new Error('No pude identificar mes y año dentro del PDF vigente.');
 
+      const extracted = structured.extractAssignments(pages, meta);
+      if (structured.validateAssignments) structured.validateAssignments(extracted, meta, pages);
+      else if (extracted.length < daysInMonth(meta.year, meta.month) * 3) {
+        throw new Error('No fue seguro transformar el PDF vigente a filas. No se modificó la base estructurada.');
+      }
+
       const existing = await currentRows(api, meta);
-      if (alreadyCurrent(existing, meta, doc)) {
-        setStatus(`La base estructurada de ${meta.label} ya está al día (${existing.length} asignaciones).`, false, true);
+      if (alreadyCurrent(existing, extracted, doc, structured)) {
+        setStatus(`La base estructurada de ${meta.label} ya está completa (${existing.length} asignaciones).`, false, true);
         return { status: 'current', count: existing.length, meta };
       }
 
-      const rows = structured.extractAssignments(pages, meta);
-      validateAssignments(rows, meta);
-      setStatus(`PDF validado. Guardando ${rows.length} asignaciones de ${meta.label}…`);
-      await replaceMonth(api, rows, meta, doc, user);
+      setStatus(`PDF validado. Reemplazando ${existing.length || 0} filas por ${extracted.length} asignaciones completas de ${meta.label}…`);
+      await replaceMonth(api, extracted, meta, doc, user);
       await structured.loadRows?.(true);
-      window.dispatchEvent(new CustomEvent('crs:calls-structured-updated', { detail: { month: meta.label, count: rows.length, backfill: true } }));
-      setStatus(`✓ Base estructurada lista: ${rows.length} asignaciones para ${meta.label}.`, false, true);
-      return { status: 'indexed', count: rows.length, meta };
+      window.dispatchEvent(new CustomEvent('crs:calls-structured-updated', {
+        detail: { month: meta.label, count: extracted.length, backfill: true }
+      }));
+      setStatus(`✓ Base estructurada lista: ${extracted.length} asignaciones para ${meta.label}.`, false, true);
+      return { status: 'indexed', count: extracted.length, meta };
     } catch (error) {
       console.error('No se pudo indexar la rotativa vigente', error);
       setStatus(`${error?.message || 'No se pudo construir la base estructurada.'} El PDF vigente sigue intacto como respaldo.`, true);
@@ -240,14 +246,14 @@
     button.type = 'button';
     button.className = 'document-button';
     button.dataset.callsStructuredBackfill = 'true';
-    button.textContent = 'Construir base estructurada desde PDF vigente';
+    button.textContent = 'Revisar / reconstruir base estructurada';
     button.addEventListener('click', () => indexCurrentPublished().catch(() => {}));
 
     const status = document.createElement('div');
     status.dataset.callsStructuredBackfillStatus = 'true';
     status.className = 'calls-structured-backfill-status';
     status.setAttribute('aria-live', 'polite');
-    status.textContent = 'Úsalo una vez para convertir la rotativa ya publicada a filas consultables. No reemplaza el PDF.';
+    status.textContent = 'Compara la base estructurada con el PDF vigente y solo la reconstruye si falta información. El PDF no se reemplaza.';
 
     wrap.append(button, status);
     form.insertAdjacentElement('afterend', wrap);
@@ -261,7 +267,7 @@
     }
   }
 
-  window.CRS_CALLS_BACKFILL = Object.freeze({ indexCurrentPublished, mount, version: 1 });
+  window.CRS_CALLS_BACKFILL = Object.freeze({ indexCurrentPublished, mount, version: 2 });
   window.addEventListener('hashchange', () => setTimeout(mount, 60));
   window.addEventListener('crs:ui-section-ready', () => setTimeout(mount, 100));
   window.addEventListener('crs:supabase-ready', () => setTimeout(mount, 100));

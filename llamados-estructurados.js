@@ -34,16 +34,17 @@
   const tokens = (value) => clean(value).split(' ').filter(Boolean);
   const catalog = () => window.CRS_APP_OPERATIONAL?.onCallSchedule?.rows || [];
   const route = () => String(location.hash || '#/inicio').split('?')[0];
+  const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
+  const dateValue = (year, month, day) => `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const localDateValue = (date = new Date()) => dateValue(date.getFullYear(), date.getMonth() + 1, date.getDate());
 
-  function daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
-  function dateValue(year, month, day) { return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
-  function localDateValue(date = new Date()) { return dateValue(date.getFullYear(), date.getMonth() + 1, date.getDate()); }
   function formatDate(value) {
     const [year, month, day] = String(value || '').split('-').map(Number);
     if (!year || !month || !day) return 'Fecha seleccionada';
     return new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
       .format(new Date(year, month - 1, day, 12));
   }
+
   function parseMonthYear(value) {
     const normalized = clean(value);
     const monthName = [...MONTHS.keys()].find((name) => normalized.includes(name));
@@ -79,13 +80,23 @@
     const rows = [];
     const items = (rawItems || [])
       .filter((item) => String(item.str || '').trim())
-      .map((item) => ({ text: String(item.str || '').trim(), x: Number(item.transform?.[4] || 0), y: Number(item.transform?.[5] || 0), width: Number(item.width || 0) }))
+      .map((item) => ({
+        text: String(item.str || '').trim(),
+        x: Number(item.transform?.[4] || 0),
+        y: Number(item.transform?.[5] || 0),
+        width: Number(item.width || 0)
+      }))
       .sort((a, b) => b.y - a.y || a.x - b.x);
+
     items.forEach((item) => {
       let row = rows.find((candidate) => Math.abs(candidate.y - item.y) <= 2.6);
-      if (!row) { row = { y: item.y, items: [] }; rows.push(row); }
+      if (!row) {
+        row = { y: item.y, items: [] };
+        rows.push(row);
+      }
       row.items.push(item);
     });
+
     rows.forEach((row) => {
       row.items.sort((a, b) => a.x - b.x);
       row.text = row.items.map((item) => item.text).join(' ').replace(/\s+/g, ' ').trim();
@@ -95,9 +106,9 @@
     return rows;
   }
 
-  async function extractPages(file) {
+  async function pagesFromBytes(bytes) {
     const lib = await pdfJs();
-    const pdf = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const pdf = await lib.getDocument({ data: bytes }).promise;
     const pages = [];
     for (let pageNo = 1; pageNo <= pdf.numPages; pageNo += 1) {
       const page = await pdf.getPage(pageNo);
@@ -107,8 +118,18 @@
     return pages;
   }
 
+  async function extractPages(file) {
+    return pagesFromBytes(new Uint8Array(await file.arrayBuffer()));
+  }
+
+  async function extractPagesFromUrl(url) {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`No pude descargar la rotativa vigente (${response.status}).`);
+    return pagesFromBytes(new Uint8Array(await response.arrayBuffer()));
+  }
+
   function dayBlocks(page) {
-    const headers = page.rows.map((row) => {
+    const headers = (page?.rows || []).map((row) => {
       const columns = new Map();
       row.items.forEach((item) => {
         if (!/^\d{1,2}$/.test(item.text)) return;
@@ -119,12 +140,22 @@
     }).filter(({ columns }) => columns.size >= 3).sort((a, b) => b.y - a.y);
     return headers.map((header, index) => ({ ...header, upperY: header.y, lowerY: headers[index + 1]?.y ?? -Infinity }));
   }
-  function blockForDay(page, day) { return dayBlocks(page).find((block) => block.columns.has(day)) || null; }
+
+  function blocksForDay(page, day) {
+    return dayBlocks(page).filter((block) => block.columns.has(day));
+  }
+
   function rowsInBlock(page, block) {
     if (!block) return [];
-    return page.rows.filter((row) => row.y < block.upperY - 1 && row.y > block.lowerY + 1).sort((a, b) => b.y - a.y);
+    return (page?.rows || [])
+      .filter((row) => row.y < block.upperY - 1 && row.y > block.lowerY + 1)
+      .sort((a, b) => b.y - a.y);
   }
-  function labelsFor(row) { return (LABELS.get(clean(row.specialty)) || [clean(row.specialty)]).map(clean); }
+
+  function labelsFor(row) {
+    return (LABELS.get(clean(row.specialty)) || [clean(row.specialty)]).map(clean);
+  }
+
   function rowMatchesLabel(row, label, catalogRow) {
     const norm = row.norm;
     const key = clean(catalogRow.specialty);
@@ -133,6 +164,7 @@
     if (key === 'reumatologia am') return norm === 'reumatologia' || (norm.startsWith('reumatologia ') && !norm.startsWith('reumatologia pm'));
     return norm === label || norm.startsWith(`${label} `);
   }
+
   function findRowForCatalog(blockRows, catalogRow) {
     for (const label of labelsFor(catalogRow)) {
       const match = blockRows.find((row) => rowMatchesLabel(row, label, catalogRow));
@@ -140,11 +172,13 @@
     }
     return null;
   }
+
   function typicalGap(columns) {
     const xs = [...columns.values()].sort((a, b) => a - b);
     const gaps = xs.slice(1).map((value, index) => value - xs[index]).filter((gap) => gap > 10).sort((a, b) => a - b);
     return gaps.length ? gaps[Math.floor(gaps.length / 2)] : 72;
   }
+
   function cellForDay(row, block, day) {
     const columns = block?.columns;
     if (!columns?.has(day)) return '';
@@ -154,11 +188,19 @@
     const gap = typicalGap(columns);
     const left = index > 0 ? (sorted[index - 1][1] + x) / 2 : x - gap / 2;
     const right = index < sorted.length - 1 ? (x + sorted[index + 1][1]) / 2 : x + gap / 2;
-    const text = row.items.filter((item) => {
-      const center = item.x + item.width / 2;
-      return center >= left && center < right;
-    }).sort((a, b) => a.x - b.x).map((item) => item.text).filter((text) => !/^\d{1,2}$/.test(text)).join(' ')
-      .replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').replace(/\s+/g, ' ').trim();
+    const text = row.items
+      .filter((item) => {
+        const center = item.x + item.width / 2;
+        return center >= left && center < right;
+      })
+      .sort((a, b) => a.x - b.x)
+      .map((item) => item.text)
+      .filter((text) => !/^\d{1,2}$/.test(text))
+      .join(' ')
+      .replace(/\(\s+/g, '(')
+      .replace(/\s+\)/g, ')')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (/^x$/i.test(text)) return 'Sin disponibilidad registrada';
     return text.length <= 140 ? text : '';
   }
@@ -166,52 +208,89 @@
   function metaFromPages(pages) {
     return parseMonthYear((pages || []).flatMap((page) => page.rows.map((row) => row.text)).join(' '));
   }
+
+  function observedSpecialties(pages) {
+    const found = new Set();
+    for (const page of pages || []) {
+      for (const block of dayBlocks(page)) {
+        const blockRows = rowsInBlock(page, block);
+        for (const catalogRow of catalog()) {
+          if (findRowForCatalog(blockRows, catalogRow)) found.add(clean(catalogRow.specialty));
+        }
+      }
+    }
+    return found;
+  }
+
   function extractAssignments(pages, meta) {
     const out = [];
     const seen = new Set();
     for (let day = 1; day <= daysInMonth(meta.year, meta.month); day += 1) {
       for (const page of pages || []) {
-        const block = blockForDay(page, day);
-        if (!block) continue;
-        const blockRows = rowsInBlock(page, block);
-        for (const catalogRow of catalog()) {
-          const sourceRow = findRowForCatalog(blockRows, catalogRow);
-          if (!sourceRow) continue;
-          const doctor = cellForDay(sourceRow, block, day);
-          if (!doctor) continue;
-          const scheduleDate = dateValue(meta.year, meta.month, day);
-          const key = `${scheduleDate}|${clean(catalogRow.specialty)}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          out.push({ specialty: catalogRow.specialty, doctor, schedule_date: scheduleDate, day_label: scheduleDate });
+        for (const block of blocksForDay(page, day)) {
+          const blockRows = rowsInBlock(page, block);
+          for (const catalogRow of catalog()) {
+            const sourceRow = findRowForCatalog(blockRows, catalogRow);
+            if (!sourceRow) continue;
+            const doctor = cellForDay(sourceRow, block, day);
+            if (!doctor) continue;
+            const scheduleDate = dateValue(meta.year, meta.month, day);
+            const key = `${scheduleDate}|${clean(catalogRow.specialty)}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({ specialty: catalogRow.specialty, doctor, schedule_date: scheduleDate, day_label: scheduleDate });
+          }
         }
       }
     }
     return out;
   }
-  function validateAssignments(rows, meta) {
+
+  function assignmentKey(row) {
+    return `${row.schedule_date}|${clean(row.specialty)}|${clean(row.doctor)}`;
+  }
+
+  function assignmentFingerprint(rows) {
+    return [...new Set((rows || []).map(assignmentKey))].sort().join('\n');
+  }
+
+  function validateAssignments(rows, meta, pages = null) {
+    const expectedDays = daysInMonth(meta.year, meta.month);
     const uniqueDays = new Set(rows.map((row) => row.schedule_date));
-    const specialties = new Set(rows.map((row) => clean(row.specialty)));
-    const expected = daysInMonth(meta.year, meta.month);
-    if (rows.length < expected * 3 || uniqueDays.size < Math.max(3, expected - 2) || specialties.size < 5) {
+    const extractedSpecialties = new Set(rows.map((row) => clean(row.specialty)));
+    if (rows.length < expectedDays * 3 || uniqueDays.size < Math.max(3, expectedDays - 2) || extractedSpecialties.size < 5) {
       throw new Error('No fue seguro transformar este PDF a filas. El buscador PDF seguirá siendo el respaldo.');
     }
+    if (pages) {
+      const observed = observedSpecialties(pages);
+      const missing = [...observed].filter((name) => !extractedSpecialties.has(name));
+      if (missing.length) {
+        throw new Error(`La indexación quedó incompleta (${missing.length} especialidad${missing.length === 1 ? '' : 'es'} sin filas). El PDF seguirá siendo el respaldo.`);
+      }
+    }
+    return { rows: rows.length, days: uniqueDays.size, specialties: extractedSpecialties.size };
   }
 
   function isSpecialistForm(form) {
     return Boolean(form?.matches?.('[data-upload-call]') && String(form.dataset.callType || '').toLowerCase() === 'especialistas');
   }
-  function statusBox(form) { return form?.querySelector?.('[data-calls-monthly-guard-status]') || null; }
+
+  function statusBox(form) {
+    return form?.querySelector?.('[data-calls-monthly-guard-status]') || null;
+  }
+
   function setStatus(form, message, error = false) {
     const box = statusBox(form);
     if (!box) return;
     box.className = error ? 'sb-error' : 'sb-ok';
     box.textContent = message;
   }
+
   async function latestDocument() {
     const docs = await window.CRS_SUPABASE?.fetchDocuments?.(['llamados']);
     return (docs || []).find((doc) => doc.key === 'especialistas' && doc.status === 'published') || null;
   }
+
   async function waitForPublished(meta, startedAt) {
     for (let attempt = 0; attempt < 28; attempt += 1) {
       const doc = await latestDocument();
@@ -222,10 +301,12 @@
     }
     throw new Error('No pude confirmar la publicación nueva; no se tocó la base estructurada.');
   }
+
   async function replaceMonth(rows, meta, doc) {
     const api = window.CRS_SUPABASE?.client?.();
     if (!api) throw new Error('Supabase no está disponible para indexar la rotativa.');
-    const { data: userData } = await api.auth.getUser();
+    const { data: userData, error: userError } = await api.auth.getUser();
+    if (userError) throw userError;
     const user = userData?.user;
     if (!user) throw new Error('Se necesita sesión de Jefatura para indexar la rotativa.');
     const first = dateValue(meta.year, meta.month, 1);
@@ -233,17 +314,30 @@
     const { error: deleteError } = await api.from(TABLE).delete().eq('type', 'especialistas').gte('schedule_date', first).lte('schedule_date', last);
     if (deleteError) throw deleteError;
     const payload = rows.map((row) => ({
-      type: 'especialistas', title: meta.label, specialty: row.specialty, day_label: row.day_label, doctor: row.doctor,
-      phone: null, url: doc.url || '', file_path: doc.file_path || null, file_name: doc.file_name || null,
-      file_type: doc.file_type || null, file_size: doc.file_size || null, status: 'published', created_by: user.id,
-      created_by_email: user.email || '', schedule_date: row.schedule_date, source_document_key: 'especialistas',
-      source_updated_at: doc.updated_at || new Date().toISOString()
+      type: 'especialistas',
+      title: meta.label,
+      specialty: row.specialty,
+      day_label: row.day_label,
+      doctor: row.doctor,
+      phone: null,
+      url: doc.url || '',
+      file_path: doc.file_path || null,
+      file_name: doc.file_name || null,
+      file_type: doc.file_type || null,
+      file_size: doc.file_size || null,
+      status: 'published',
+      created_by: user.id,
+      created_by_email: user.email || '',
+      schedule_date: row.schedule_date,
+      source_document_key: 'especialistas',
+      source_updated_at: doc.updated_at || doc.updatedAt || new Date().toISOString()
     }));
     for (let start = 0; start < payload.length; start += 250) {
       const { error } = await api.from(TABLE).insert(payload.slice(start, start + 250));
       if (error) throw error;
     }
   }
+
   async function indexPending(form, pending) {
     if (!pending || pending.running) return;
     pending.running = true;
@@ -253,7 +347,7 @@
       const meta = metaFromPages(pages);
       if (!meta) throw new Error('No pude identificar mes y año dentro del PDF para indexarlo.');
       const rows = extractAssignments(pages, meta);
-      validateAssignments(rows, meta);
+      validateAssignments(rows, meta, pages);
       const doc = await waitForPublished(meta, pending.startedAt);
       await replaceMonth(rows, meta, doc);
       currentDoc = doc;
@@ -270,8 +364,6 @@
     }
   }
 
-  // Se captura el archivo al elegirlo y se inicia la indexación al accionar el
-  // botón de publicación. Así el runtime no depende del orden de listeners del backend.
   document.addEventListener('change', (event) => {
     const input = event.target;
     const form = input?.form;
@@ -280,6 +372,7 @@
     if (file) pendingUploads.set(form, { file, startedAt: 0, running: false });
     else pendingUploads.delete(form);
   }, true);
+
   document.addEventListener('click', (event) => {
     const submit = event.target.closest?.('button[type="submit"],input[type="submit"]');
     const form = submit?.form;
@@ -294,19 +387,27 @@
     const blocked = BLOCKED_ALIASES.get(clean(row.specialty));
     return (row.aliases || []).filter((alias) => !blocked?.has(clean(alias)));
   }
-  function wholePhrase(text, phrase) { return Boolean(clean(phrase)) && ` ${clean(text)} `.includes(` ${clean(phrase)} `); }
+
+  function wholePhrase(text, phrase) {
+    return Boolean(clean(phrase)) && ` ${clean(text)} `.includes(` ${clean(phrase)} `);
+  }
+
   function tokenPrefixMatch(text, query) {
-    const haystack = tokens(text); const wanted = tokens(query);
+    const haystack = tokens(text);
+    const wanted = tokens(query);
     return wanted.length > 0 && wanted.every((needle) => needle.length >= 2 && haystack.some((word) => word.startsWith(needle)));
   }
+
   function termScore(query, term) {
-    const q = clean(query); const t = clean(term);
+    const q = clean(query);
+    const t = clean(term);
     if (!q || !t) return 0;
     if (q === t) return 1000;
     if (wholePhrase(t, q)) return 900;
     if (tokenPrefixMatch(t, q)) return 700;
     return 0;
   }
+
   function specialtiesForQuery(query) {
     const q = clean(query);
     if (!q) return [];
@@ -315,7 +416,18 @@
       if (score) score += 120;
       aliasesFor(row).forEach((alias) => { score = Math.max(score, termScore(q, alias)); });
       return { row, index, score };
-    }).filter(({ score }) => score > 0).sort((a, b) => b.score - a.score || a.index - b.index).map(({ row }) => row);
+    }).filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .map(({ row }) => row);
+  }
+
+  function minimumStructuredSpecialties() {
+    return Math.max(5, Math.ceil(catalog().length * 0.6));
+  }
+
+  function structuredRowsHealthy(rows) {
+    const specialties = new Set((rows || []).map((row) => clean(row.specialty)));
+    return rows.length >= 1 && specialties.size >= minimumStructuredSpecialties();
   }
 
   async function loadRows(force = false) {
@@ -331,37 +443,65 @@
       const last = dateValue(meta.year, meta.month, daysInMonth(meta.year, meta.month));
       const { data, error } = await api.from(TABLE)
         .select('specialty,doctor,schedule_date,day_label,title,url,source_updated_at')
-        .eq('type', 'especialistas').eq('status', 'published').gte('schedule_date', first).lte('schedule_date', last)
+        .eq('type', 'especialistas')
+        .eq('status', 'published')
+        .gte('schedule_date', first)
+        .lte('schedule_date', last)
         .order('schedule_date', { ascending: true });
       if (error) throw error;
-      currentDoc = doc; currentMeta = meta; cachedRows = data || [];
+      const rows = data || [];
+      if (!structuredRowsHealthy(rows)) {
+        console.warn('Base estructurada incompleta; se mantiene el lector PDF como respaldo.');
+        currentDoc = null;
+        currentMeta = null;
+        cachedRows = [];
+        return cachedRows;
+      }
+      currentDoc = doc;
+      currentMeta = meta;
+      cachedRows = rows;
       return cachedRows;
     })().finally(() => { loadPromise = null; });
     return loadPromise;
   }
+
   function resultsFor(query, selectedDate, rows = cachedRows || []) {
     const selected = specialtiesForQuery(query);
     const names = new Set(selected.map((row) => clean(row.specialty)));
     if (!names.size) return [];
-    const out = []; const seen = new Set();
+    const out = [];
+    const seen = new Set();
     rows.forEach((row) => {
       if (row.schedule_date !== selectedDate || !names.has(clean(row.specialty))) return;
       const key = `${clean(row.specialty)}|${clean(row.doctor)}`;
       if (seen.has(key)) return;
       seen.add(key);
-      out.push({ specialty: row.specialty, doctor: row.doctor || 'Sin disponibilidad registrada', date: selectedDate, dateLabel: formatDate(selectedDate) });
+      out.push({
+        specialty: row.specialty,
+        doctor: row.doctor || 'Sin disponibilidad registrada',
+        date: selectedDate,
+        dateLabel: formatDate(selectedDate)
+      });
     });
     return out.slice(0, 4);
   }
+
   function buildCard(result) {
     const unavailable = result.doctor === 'Sin disponibilidad registrada';
     const card = document.createElement('article');
     card.className = `on-call-result on-call-live-result calls-live-card calls-structured-card ${unavailable ? 'unavailable' : 'available'}`;
-    const head = document.createElement('div'); head.className = 'on-call-result-head';
-    const specialty = document.createElement('span'); specialty.className = 'on-call-specialty'; specialty.textContent = result.specialty; head.append(specialty);
-    const doctor = document.createElement('strong'); doctor.textContent = result.doctor;
-    const date = document.createElement('p'); date.textContent = result.dateLabel || formatDate(result.date);
-    card.append(head, doctor, date); return card;
+    const head = document.createElement('div');
+    head.className = 'on-call-result-head';
+    const specialty = document.createElement('span');
+    specialty.className = 'on-call-specialty';
+    specialty.textContent = result.specialty;
+    head.append(specialty);
+    const doctor = document.createElement('strong');
+    doctor.textContent = result.doctor;
+    const date = document.createElement('p');
+    date.textContent = result.dateLabel || formatDate(result.date);
+    card.append(head, doctor, date);
+    return card;
   }
 
   function mountStructuredSearch() {
@@ -371,32 +511,80 @@
     mounting = true;
     try {
       const now = new Date();
-      const defaultDate = now.getFullYear() === currentMeta.year && now.getMonth() + 1 === currentMeta.month ? localDateValue(now) : dateValue(currentMeta.year, currentMeta.month, 1);
+      const defaultDate = now.getFullYear() === currentMeta.year && now.getMonth() + 1 === currentMeta.month
+        ? localDateValue(now)
+        : dateValue(currentMeta.year, currentMeta.month, 1);
       panel.replaceChildren();
-      const shell = document.createElement('section'); shell.className = 'on-call-search on-call-live'; shell.dataset.callsStructuredSearch = 'true';
-      const source = document.createElement('div'); source.className = 'on-call-live-source';
-      const copy = document.createElement('div'); const strong = document.createElement('strong'); strong.textContent = currentMeta.label;
-      const span = document.createElement('span'); span.textContent = 'Rotativa vigente · Jefatura'; copy.append(strong, span);
-      const badge = document.createElement('span'); badge.className = 'calls-structured-badge'; badge.textContent = '✓ Base estructurada'; source.append(copy, badge);
-      const controls = document.createElement('div'); controls.className = 'on-call-controls';
-      const dateLabel = document.createElement('label'); dateLabel.className = 'on-call-field'; dateLabel.innerHTML = '<span>Fecha consultada</span>';
-      const dateInput = document.createElement('input'); dateInput.type = 'date'; dateInput.value = defaultDate; dateInput.min = dateValue(currentMeta.year, currentMeta.month, 1); dateInput.max = dateValue(currentMeta.year, currentMeta.month, daysInMonth(currentMeta.year, currentMeta.month)); dateLabel.append(dateInput);
-      const queryLabel = document.createElement('label'); queryLabel.className = 'on-call-field'; queryLabel.innerHTML = '<span>Buscar especialidad</span>';
-      const queryInput = document.createElement('input'); queryInput.type = 'search'; queryInput.placeholder = 'Ej: cardiología, infectología, uro...'; queryInput.autocomplete = 'off'; queryLabel.append(queryInput); controls.append(dateLabel, queryLabel);
-      const status = document.createElement('div'); status.className = 'on-call-live-status'; status.setAttribute('aria-live', 'polite');
-      const results = document.createElement('div'); results.className = 'on-call-results';
-      const note = document.createElement('p'); note.className = 'calls-structured-note'; note.textContent = 'Consulta filas confirmadas de la rotativa mensual. El Documento global queda disponible como respaldo visual.';
-      shell.append(source, controls, status, results, note); panel.append(shell);
+      const shell = document.createElement('section');
+      shell.className = 'on-call-search on-call-live';
+      shell.dataset.callsStructuredSearch = 'true';
+      const source = document.createElement('div');
+      source.className = 'on-call-live-source';
+      const copy = document.createElement('div');
+      const strong = document.createElement('strong');
+      strong.textContent = currentMeta.label;
+      const span = document.createElement('span');
+      span.textContent = 'Rotativa vigente · Jefatura';
+      copy.append(strong, span);
+      const badge = document.createElement('span');
+      badge.className = 'calls-structured-badge';
+      badge.textContent = '✓ Base estructurada';
+      source.append(copy, badge);
+
+      const controls = document.createElement('div');
+      controls.className = 'on-call-controls';
+      const dateLabel = document.createElement('label');
+      dateLabel.className = 'on-call-field';
+      dateLabel.innerHTML = '<span>Fecha consultada</span>';
+      const dateInput = document.createElement('input');
+      dateInput.type = 'date';
+      dateInput.value = defaultDate;
+      dateInput.min = dateValue(currentMeta.year, currentMeta.month, 1);
+      dateInput.max = dateValue(currentMeta.year, currentMeta.month, daysInMonth(currentMeta.year, currentMeta.month));
+      dateLabel.append(dateInput);
+      const queryLabel = document.createElement('label');
+      queryLabel.className = 'on-call-field';
+      queryLabel.innerHTML = '<span>Buscar especialidad</span>';
+      const queryInput = document.createElement('input');
+      queryInput.type = 'search';
+      queryInput.placeholder = 'Ej: cardiología, infectología, uro...';
+      queryInput.autocomplete = 'off';
+      queryLabel.append(queryInput);
+      controls.append(dateLabel, queryLabel);
+
+      const status = document.createElement('div');
+      status.className = 'on-call-live-status';
+      status.setAttribute('aria-live', 'polite');
+      const results = document.createElement('div');
+      results.className = 'on-call-results';
+      const note = document.createElement('p');
+      note.className = 'calls-structured-note';
+      note.textContent = 'Consulta filas confirmadas de la rotativa mensual. El Documento global queda disponible como respaldo visual.';
+      shell.append(source, controls, status, results, note);
+      panel.append(shell);
+
       const render = () => {
-        results.replaceChildren(); const query = queryInput.value.trim();
-        if (!query) { status.textContent = ''; return; }
+        results.replaceChildren();
+        const query = queryInput.value.trim();
+        if (!query) {
+          status.textContent = '';
+          return;
+        }
         const found = resultsFor(query, dateInput.value);
-        if (!found.length) { status.textContent = 'No encontré esa especialidad para la fecha seleccionada en la base estructurada vigente.'; return; }
-        status.textContent = ''; found.forEach((item) => results.append(buildCard(item)));
+        if (!found.length) {
+          status.textContent = 'No encontré esa especialidad para la fecha seleccionada en la base estructurada vigente.';
+          return;
+        }
+        status.textContent = '';
+        found.forEach((item) => results.append(buildCard(item)));
       };
-      queryInput.addEventListener('input', render); dateInput.addEventListener('change', render);
-    } finally { mounting = false; }
+      queryInput.addEventListener('input', render);
+      dateInput.addEventListener('change', render);
+    } finally {
+      mounting = false;
+    }
   }
+
   async function prepareRoute(force = false) {
     if (route() !== ROUTE) return;
     try {
@@ -406,12 +594,17 @@
       const panel = document.querySelector('#callsSearchPanel');
       if (panel && !panelObserver) {
         panelObserver = new MutationObserver(() => {
-          if (route() === ROUTE && cachedRows?.length && !panel.querySelector('[data-calls-structured-search]')) setTimeout(mountStructuredSearch, 0);
+          if (route() === ROUTE && cachedRows?.length && !panel.querySelector('[data-calls-structured-search]')) {
+            setTimeout(mountStructuredSearch, 0);
+          }
         });
         panelObserver.observe(panel, { childList: true, subtree: false });
       }
-    } catch (error) { console.warn('Rotativa estructurada no disponible; se mantiene el lector PDF.', error); }
+    } catch (error) {
+      console.warn('Rotativa estructurada no disponible; se mantiene el lector PDF.', error);
+    }
   }
+
   async function searchToday(query) {
     const rows = await loadRows();
     if (!rows.length || !currentMeta) return [];
@@ -421,10 +614,40 @@
     return resultsFor(query, today, rows);
   }
 
-  window.CRS_STRUCTURED_CALLS = Object.freeze({ parseMonthYear, extractAssignments, specialtiesForQuery, searchToday, loadRows, version: 2 });
+  async function extractPublished(url, title = '') {
+    const pages = await extractPagesFromUrl(url);
+    const meta = parseMonthYear(title) || metaFromPages(pages);
+    if (!meta) throw new Error('No pude identificar mes y año dentro del PDF.');
+    const rows = extractAssignments(pages, meta);
+    const health = validateAssignments(rows, meta, pages);
+    return {
+      meta,
+      rows,
+      health,
+      observedSpecialties: [...observedSpecialties(pages)].sort()
+    };
+  }
+
+  window.CRS_STRUCTURED_CALLS = Object.freeze({
+    parseMonthYear,
+    extractAssignments,
+    extractPublished,
+    validateAssignments,
+    assignmentFingerprint,
+    specialtiesForQuery,
+    searchToday,
+    loadRows,
+    version: 3
+  });
+
   window.addEventListener('hashchange', () => setTimeout(() => prepareRoute(), 80));
   window.addEventListener('crs:ui-section-ready', () => setTimeout(() => prepareRoute(), 120));
-  window.addEventListener('crs:calls-structured-updated', () => { cachedRows = null; currentDoc = null; currentMeta = null; prepareRoute(true); });
+  window.addEventListener('crs:calls-structured-updated', () => {
+    cachedRows = null;
+    currentDoc = null;
+    currentMeta = null;
+    prepareRoute(true);
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => prepareRoute(), { once: true });
   else prepareRoute();
 })();
