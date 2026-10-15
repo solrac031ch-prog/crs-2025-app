@@ -1,8 +1,15 @@
--- CRS HPH 2025 - Supabase setup
--- Ejecutar una vez en Supabase > SQL Editor.
--- Luego desplegar la funcion crs-admin-users para crear/eliminar usuarios desde la web.
+-- MASTER Urgencia Adulto HPH - Supabase setup
+-- Instalación idempotente de la capa de Jefatura / Administración.
+-- La creación y actualización de cuentas Auth se realiza únicamente mediante
+-- la Edge Function crs-admin-users; nunca desde el navegador.
+
+begin;
 
 create extension if not exists pgcrypto;
+
+create schema if not exists crs_private;
+revoke all on schema crs_private from public;
+grant usage on schema crs_private to anon, authenticated, service_role;
 
 create table if not exists public.crs_admins (
   email text primary key,
@@ -23,17 +30,21 @@ create unique index if not exists crs_admins_username_unique
 on public.crs_admins (lower(username))
 where username is not null and btrim(username) <> '';
 
-insert into public.crs_admins (email, username, display_name, role, active)
-values ('mdcarlosherrera@gmail.com', 'creador', 'Creador CRS HPH', 'creador', true)
+-- Administradores históricos del backend CRS HPH.
+insert into public.crs_admins (email, display_name, role, active)
+values
+  ('mdcarlosherrera@gmail.com', 'Dr Carlos Herrera', 'admin', true),
+  ('mariajose.marinc@gmail.com', 'Dr Maria-Jose Marin', 'admin', true)
 on conflict (email) do update set
-  username = coalesce(public.crs_admins.username, excluded.username),
-  display_name = coalesce(public.crs_admins.display_name, excluded.display_name),
-  role = 'creador',
-  active = true;
+  display_name = excluded.display_name,
+  role = excluded.role,
+  active = true,
+  updated_at = now();
 
 create or replace function public.crs_touch_updated_at()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.updated_at = now();
@@ -41,49 +52,52 @@ begin
 end;
 $$;
 
-create or replace function public.crs_allowed_admin_role(role_value text)
-returns boolean
-language sql
-stable
-as $$
-  select lower(coalesce(role_value, '')) in ('creador', 'jefe', 'jefatura', 'disenador', 'diseñador', 'admin');
-$$;
+revoke all on function public.crs_touch_updated_at() from public;
+revoke all on function public.crs_touch_updated_at() from anon;
+revoke all on function public.crs_touch_updated_at() from authenticated;
 
-create or replace function public.crs_is_admin()
+create or replace function crs_private.is_admin()
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
-  select exists (
-    select 1
-    from public.crs_admins a
-    where lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
-      and a.active = true
-      and public.crs_allowed_admin_role(a.role)
-  );
+  select auth.uid() is not null
+     and exists (
+       select 1
+       from public.crs_admins a
+       where lower(a.email) = lower(coalesce(auth.jwt()->>'email', ''))
+         and a.active = true
+     );
 $$;
 
-create or replace function public.crs_login_email(login_text text)
-returns text
+create or replace function crs_private.can_manage_users()
+returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
-  select a.email
-  from public.crs_admins a
-  where a.active = true
-    and public.crs_allowed_admin_role(a.role)
-    and (
-      lower(a.email) = lower(btrim(login_text))
-      or lower(coalesce(a.username, '')) = lower(btrim(login_text))
-    )
-  limit 1;
+  select auth.uid() is not null
+     and exists (
+       select 1
+       from public.crs_admins a
+       where lower(a.email) = lower(coalesce(auth.jwt()->>'email', ''))
+         and a.active = true
+         and lower(btrim(a.role)) in ('creador', 'disenador', 'diseñador', 'admin')
+     );
 $$;
 
-grant execute on function public.crs_login_email(text) to anon, authenticated;
+revoke all on function crs_private.is_admin() from public;
+revoke all on function crs_private.is_admin() from anon;
+revoke all on function crs_private.is_admin() from authenticated;
+grant execute on function crs_private.is_admin() to anon, authenticated, service_role;
+
+revoke all on function crs_private.can_manage_users() from public;
+revoke all on function crs_private.can_manage_users() from anon;
+revoke all on function crs_private.can_manage_users() from authenticated;
+grant execute on function crs_private.can_manage_users() to authenticated, service_role;
 
 create table if not exists public.crs_content_items (
   id uuid primary key default gen_random_uuid(),
@@ -160,6 +174,11 @@ create table if not exists public.crs_call_schedules (
   updated_at timestamptz not null default now()
 );
 
+create index if not exists crs_call_schedules_created_by_idx on public.crs_call_schedules(created_by);
+create index if not exists crs_content_items_created_by_idx on public.crs_content_items(created_by);
+create index if not exists crs_documents_created_by_idx on public.crs_documents(created_by);
+create index if not exists crs_flows_created_by_idx on public.crs_flows(created_by);
+
 drop trigger if exists crs_content_touch on public.crs_content_items;
 create trigger crs_content_touch before update on public.crs_content_items
 for each row execute function public.crs_touch_updated_at();
@@ -195,57 +214,88 @@ grant insert, update, delete on public.crs_call_schedules to authenticated;
 drop policy if exists "crs_admins_admin_select" on public.crs_admins;
 create policy "crs_admins_admin_select" on public.crs_admins
 for select to authenticated
-using (public.crs_is_admin());
+using ((select crs_private.is_admin()));
 
 drop policy if exists "crs_admins_admin_write" on public.crs_admins;
-create policy "crs_admins_admin_write" on public.crs_admins
-for all to authenticated
-using (public.crs_is_admin())
-with check (public.crs_is_admin());
+drop policy if exists "crs_admins_admin_insert" on public.crs_admins;
+drop policy if exists "crs_admins_admin_update" on public.crs_admins;
+drop policy if exists "crs_admins_admin_delete" on public.crs_admins;
+create policy "crs_admins_admin_insert" on public.crs_admins
+for insert to authenticated with check ((select crs_private.can_manage_users()));
+create policy "crs_admins_admin_update" on public.crs_admins
+for update to authenticated
+using ((select crs_private.can_manage_users()))
+with check ((select crs_private.can_manage_users()));
+create policy "crs_admins_admin_delete" on public.crs_admins
+for delete to authenticated using ((select crs_private.can_manage_users()));
 
 drop policy if exists "crs_content_public_read" on public.crs_content_items;
 create policy "crs_content_public_read" on public.crs_content_items
 for select to anon, authenticated
-using (status = 'published' or public.crs_is_admin());
-
+using (status = 'published' or (select crs_private.is_admin()));
 drop policy if exists "crs_content_admin_write" on public.crs_content_items;
-create policy "crs_content_admin_write" on public.crs_content_items
-for all to authenticated
-using (public.crs_is_admin())
-with check (public.crs_is_admin());
+drop policy if exists "crs_content_admin_insert" on public.crs_content_items;
+drop policy if exists "crs_content_admin_update" on public.crs_content_items;
+drop policy if exists "crs_content_admin_delete" on public.crs_content_items;
+create policy "crs_content_admin_insert" on public.crs_content_items
+for insert to authenticated with check ((select crs_private.is_admin()));
+create policy "crs_content_admin_update" on public.crs_content_items
+for update to authenticated
+using ((select crs_private.is_admin()))
+with check ((select crs_private.is_admin()));
+create policy "crs_content_admin_delete" on public.crs_content_items
+for delete to authenticated using ((select crs_private.is_admin()));
 
 drop policy if exists "crs_documents_public_read" on public.crs_documents;
 create policy "crs_documents_public_read" on public.crs_documents
 for select to anon, authenticated
-using (status = 'published' or public.crs_is_admin());
-
+using (status = 'published' or (select crs_private.is_admin()));
 drop policy if exists "crs_documents_admin_write" on public.crs_documents;
-create policy "crs_documents_admin_write" on public.crs_documents
-for all to authenticated
-using (public.crs_is_admin())
-with check (public.crs_is_admin());
+drop policy if exists "crs_documents_admin_insert" on public.crs_documents;
+drop policy if exists "crs_documents_admin_update" on public.crs_documents;
+drop policy if exists "crs_documents_admin_delete" on public.crs_documents;
+create policy "crs_documents_admin_insert" on public.crs_documents
+for insert to authenticated with check ((select crs_private.is_admin()));
+create policy "crs_documents_admin_update" on public.crs_documents
+for update to authenticated
+using ((select crs_private.is_admin()))
+with check ((select crs_private.is_admin()));
+create policy "crs_documents_admin_delete" on public.crs_documents
+for delete to authenticated using ((select crs_private.is_admin()));
 
 drop policy if exists "crs_flows_public_read" on public.crs_flows;
 create policy "crs_flows_public_read" on public.crs_flows
 for select to anon, authenticated
-using (status = 'published' or public.crs_is_admin());
-
+using (status = 'published' or (select crs_private.is_admin()));
 drop policy if exists "crs_flows_admin_write" on public.crs_flows;
-create policy "crs_flows_admin_write" on public.crs_flows
-for all to authenticated
-using (public.crs_is_admin())
-with check (public.crs_is_admin());
+drop policy if exists "crs_flows_admin_insert" on public.crs_flows;
+drop policy if exists "crs_flows_admin_update" on public.crs_flows;
+drop policy if exists "crs_flows_admin_delete" on public.crs_flows;
+create policy "crs_flows_admin_insert" on public.crs_flows
+for insert to authenticated with check ((select crs_private.is_admin()));
+create policy "crs_flows_admin_update" on public.crs_flows
+for update to authenticated
+using ((select crs_private.is_admin()))
+with check ((select crs_private.is_admin()));
+create policy "crs_flows_admin_delete" on public.crs_flows
+for delete to authenticated using ((select crs_private.is_admin()));
 
 drop policy if exists "crs_calls_public_read" on public.crs_call_schedules;
 create policy "crs_calls_public_read" on public.crs_call_schedules
 for select to anon, authenticated
-using (status = 'published' or public.crs_is_admin());
-
+using (status = 'published' or (select crs_private.is_admin()));
 drop policy if exists "crs_calls_admin_write" on public.crs_call_schedules;
-create policy "crs_calls_admin_write" on public.crs_call_schedules
-for all to authenticated
-using (public.crs_is_admin())
-with check (public.crs_is_admin());
+drop policy if exists "crs_calls_admin_insert" on public.crs_call_schedules;
+drop policy if exists "crs_calls_admin_update" on public.crs_call_schedules;
+drop policy if exists "crs_calls_admin_delete" on public.crs_call_schedules;
+create policy "crs_calls_admin_insert" on public.crs_call_schedules
+for insert to authenticated with check ((select crs_private.is_admin()));
+create policy "crs_calls_admin_update" on public.crs_call_schedules
+for update to authenticated
+using ((select crs_private.is_admin()))
+with check ((select crs_private.is_admin()));
+create policy "crs_calls_admin_delete" on public.crs_call_schedules
+for delete to authenticated using ((select crs_private.is_admin()));
 
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('crs-public', 'crs-public', true, 104857600)
@@ -253,21 +303,39 @@ on conflict (id) do update set public = true, file_size_limit = 104857600;
 
 drop policy if exists "crs_storage_public_read" on storage.objects;
 create policy "crs_storage_public_read" on storage.objects
-for select to anon, authenticated
-using (bucket_id = 'crs-public');
+for select to anon, authenticated using (bucket_id = 'crs-public');
 
 drop policy if exists "crs_storage_admin_insert" on storage.objects;
 create policy "crs_storage_admin_insert" on storage.objects
 for insert to authenticated
-with check (bucket_id = 'crs-public' and public.crs_is_admin());
+with check (bucket_id = 'crs-public' and (select crs_private.is_admin()));
 
 drop policy if exists "crs_storage_admin_update" on storage.objects;
 create policy "crs_storage_admin_update" on storage.objects
 for update to authenticated
-using (bucket_id = 'crs-public' and public.crs_is_admin())
-with check (bucket_id = 'crs-public' and public.crs_is_admin());
+using (bucket_id = 'crs-public' and (select crs_private.is_admin()))
+with check (bucket_id = 'crs-public' and (select crs_private.is_admin()));
 
 drop policy if exists "crs_storage_admin_delete" on storage.objects;
 create policy "crs_storage_admin_delete" on storage.objects
 for delete to authenticated
-using (bucket_id = 'crs-public' and public.crs_is_admin());
+using (bucket_id = 'crs-public' and (select crs_private.is_admin()));
+
+-- Compatibilidad: si existía el helper público antiguo, queda sin acceso directo.
+do $$
+begin
+  if to_regprocedure('public.crs_is_admin()') is not null then
+    execute 'revoke all on function public.crs_is_admin() from public';
+    execute 'revoke all on function public.crs_is_admin() from anon';
+    execute 'revoke all on function public.crs_is_admin() from authenticated';
+  end if;
+  if to_regprocedure('public.crs_login_email(text)') is not null then
+    execute 'revoke all on function public.crs_login_email(text) from public';
+    execute 'revoke all on function public.crs_login_email(text) from anon';
+    execute 'revoke all on function public.crs_login_email(text) from authenticated';
+  end if;
+end
+$$;
+
+commit;
+notify pgrst, 'reload schema';
