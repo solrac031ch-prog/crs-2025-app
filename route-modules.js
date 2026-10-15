@@ -131,7 +131,7 @@
       loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 18, {
         "data-supabase-jefatura-panel": true
       }),
-      loadScript("supabase-admin-users", "./supabase-admin-users.js", 8),
+      loadScript("supabase-admin-users", "./supabase-admin-users.js", 9),
       loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 5),
       loadScript("documentos-institucionales", "./documentos-institucionales.js", 3)
     ]);
