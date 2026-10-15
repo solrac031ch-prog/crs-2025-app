@@ -12,7 +12,6 @@
   const userAdminRoles = new Set(["creador", "disenador", "diseñador", "admin"]);
   let renderTimer = null;
   let rendering = false;
-  let authProvisionClient = null;
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const esc = (value) => String(value || "")
@@ -35,18 +34,30 @@
     return Boolean(window.CRS_SUPABASE?.enabled?.());
   }
 
-  function provisionClient() {
-    if (authProvisionClient) return authProvisionClient;
-    if (!window.supabase?.createClient || !cfg.url || !cfg.anonKey) return null;
-    authProvisionClient = window.supabase.createClient(cfg.url, cfg.anonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        storageKey: `crs-provision-${Date.now()}`
-      }
+  const adminUsersFunction = cfg.adminUsersFunction || "crs-admin-users";
+
+  async function adminRequest(action, payload = {}) {
+    const api = client();
+    if (!api || !cfg.url || !cfg.anonKey) throw new Error("Supabase no está conectado.");
+    const { data, error } = await api.auth.getSession();
+    const token = String(data?.session?.access_token || "").trim();
+    if (error || !token) throw new Error("Tu sesión venció. Vuelve a iniciar sesión.");
+
+    const response = await fetch(`${cfg.url}/functions/v1/${adminUsersFunction}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: cfg.anonKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ action, ...payload })
     });
-    return authProvisionClient;
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result?.ok === false) {
+      throw new Error(result?.error || `Error administrando usuarios (${response.status}).`);
+    }
+    return result;
   }
 
   async function currentUser() {
@@ -76,7 +87,7 @@
 
   function friendlyError(error) {
     const msg = errorMessage(error);
-    if (/crs_login_email|function.*does not exist|schema cache/i.test(msg)) return "Para entrar por nombre de usuario falta el alias de login en Supabase. Usa tu correo completo.";
+    if (/functions\/v1|administrando usuarios|edge function/i.test(msg)) return "No se pudo conectar con el servicio seguro de usuarios. Actualiza la página e inténtalo nuevamente.";
     if (/Invalid login credentials/i.test(msg)) return "Correo/usuario o clave incorrectos.";
     if (/row-level security|permission denied/i.test(msg)) return "Tu usuario no tiene permiso activo para este módulo.";
     if (/password/i.test(msg) && /short|weak|least/i.test(msg)) return "La clave debe tener al menos 6 caracteres.";
@@ -88,7 +99,7 @@
   }
 
   function loginHtml() {
-    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid"><article class="crs-access-card full"><h3>Iniciar sesión</h3><div class="crs-access-ok">El correo es la forma de ingreso recomendada. El nombre de usuario funciona cuando el alias está habilitado en Supabase.</div><form data-crs-login><label>Correo o usuario<input name="login" type="text" required autocomplete="username" placeholder="correo@hospital.cl"></label><label>Clave<input name="password" type="password" required autocomplete="current-password"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article></section></div>`;
+    return `<div class="crs-access-shell" data-crs-access-shell>${heroHtml()}<section class="crs-access-grid"><article class="crs-access-card full"><h3>Iniciar sesión</h3><div class="crs-access-ok">Ingresa con el correo autorizado en MASTER.</div><form data-crs-login><label>Correo<input name="login" type="email" required autocomplete="username" placeholder="correo@hospital.cl"></label><label>Clave<input name="password" type="password" required autocomplete="current-password"></label><button class="document-button" type="submit">Entrar a Jefatura global</button></form></article></section></div>`;
   }
 
   function deniedHtml(user, reason) {
@@ -126,7 +137,7 @@
 
   function usersCard(profile) {
     if (!userAdminRoles.has(roleKey(profile.role))) return "";
-    return `<article class="crs-access-card full"><h3>Crear usuarios</h3><p>Crea accesos para jefes y diseñadores. El correo siempre funciona; el nombre de usuario es opcional.</p><form data-chief-create-user><label>Correo<input name="email" type="email" required autocomplete="off"></label><label>Usuario opcional<input name="username" autocomplete="off" placeholder="ej: jefe_turno"></label><label>Nombre<input name="nombre" required autocomplete="off"></label><label>Rol<select name="rol"><option value="jefe">Jefe</option><option value="disenador">Diseñador</option><option value="creador">Creador</option></select></label><label>Clave temporal<input name="password" type="password" minlength="6" required autocomplete="new-password"></label><button class="document-button" type="submit">Crear / actualizar usuario</button></form></article>`;
+    return `<article class="crs-access-card full"><h3>Administrar usuarios</h3><p>Crea o actualiza accesos de Jefatura y Administración. El correo es el identificador único de ingreso.</p><form data-chief-create-user><label>Correo<input name="email" type="email" required autocomplete="off"></label><label>Nombre<input name="nombre" required autocomplete="off"></label><label>Rol<select name="rol"><option value="jefe">Jefe</option><option value="jefatura">Jefatura</option><option value="admin">Administrador</option><option value="disenador">Diseñador</option><option value="creador">Creador</option></select></label><label>Clave temporal<input name="password" type="password" minlength="6" required autocomplete="new-password"></label><button class="document-button" type="submit">Crear / actualizar usuario</button></form></article>`;
   }
 
   function panelHtml(user, profile) {
@@ -134,14 +145,9 @@
   }
 
   async function resolveLoginEmail(loginValue) {
-    const api = client();
-    const value = clean(loginValue);
-    if (!value) throw new Error("Escribe tu correo o usuario.");
-    if (value.includes("@")) return norm(value);
-    const { data, error } = await api.rpc("crs_login_email", { login_text: value });
-    if (error) throw error;
-    if (!data) throw new Error("Usuario no autorizado o inactivo.");
-    return norm(data);
+    const value = norm(loginValue);
+    if (!value || !value.includes("@")) throw new Error("Escribe el correo autorizado completo.");
+    return value;
   }
 
   async function signIn(form) {
@@ -198,14 +204,8 @@
   }
 
   async function fetchAdmins() {
-    const api = client();
-    let result = await api.from(tables.admins).select("email,username,display_name,role,active").order("email");
-    if (result.error && missingColumn(result.error, "username")) {
-      result = await api.from(tables.admins).select("email,display_name,role,active").order("email");
-      if (result.data) result.data = result.data.map((row) => ({ ...row, username: null }));
-    }
-    if (result.error) throw result.error;
-    return result.data || [];
+    const result = await adminRequest("listUsers");
+    return Array.isArray(result.users) ? result.users : [];
   }
 
   async function renderAdminList(profile, user) {
@@ -222,8 +222,10 @@
             const manage = userAdminRoles.has(roleKey(profile.role));
             const action = self ? `<span class="crs-access-mini">Tu usuario</span>` : manage ? `<button class="${active ? "delete-button" : "document-button"}" type="button" data-chief-admin-active="${active ? "false" : "true"}" data-chief-admin-email="${esc(email)}">${active ? "Desactivar" : "Reactivar"}</button>` : "";
             const reset = manage ? `<button class="document-button" type="button" data-chief-reset-password="${esc(email)}">Enviar cambio clave</button>` : "";
-            const alias = admin.username ? ` · usuario ${esc(admin.username)}` : "";
-            return `<div class="crs-access-row"><span><strong>${esc(admin.display_name || email)}</strong><br><span class="crs-access-mini">${esc(email)}${alias} · ${esc(admin.role || "jefe")} · ${active ? "activo" : "inactivo"}</span></span><span class="crs-access-actions">${reset}${action}</span></div>`;
+            const alias = admin.username ? ` · alias histórico ${esc(admin.username)}` : "";
+            const authState = String(admin.auth_state || (admin.auth_id ? "ok" : "missing"));
+            const authLabel = authState === "ok" ? "Auth OK" : authState === "unconfirmed" ? "Auth sin confirmar" : "sin cuenta Auth";
+            return `<div class="crs-access-row"><span><strong>${esc(admin.display_name || email)}</strong><br><span class="crs-access-mini">${esc(email)}${alias} · ${esc(admin.role || "jefe")} · ${active ? "activo" : "inactivo"} · ${esc(authLabel)}</span></span><span class="crs-access-actions">${reset}${action}</span></div>`;
           }).join("")}</div>`
         : `<div class="crs-access-warn">No hay usuarios registrados.</div>`;
     } catch (error) {
@@ -231,55 +233,23 @@
     }
   }
 
-  async function createAuthUser({ email, password, name, role, username }) {
-    const auth = provisionClient();
-    if (!auth) throw new Error("No se pudo cargar Supabase Auth.");
-    const metadata = { display_name: name, role };
-    if (username) metadata.username = username;
-    const { error } = await auth.auth.signUp({
-      email,
-      password,
-      options: { data: metadata, emailRedirectTo: appBaseUrl() }
-    });
-    if (error && !/already|registered|exists|duplicate/i.test(errorMessage(error))) throw error;
-  }
-
-  async function upsertAdmin(api, payload) {
-    let result = await api.from(tables.admins).upsert(payload, { onConflict: "email" });
-    if (result.error && payload.username && missingColumn(result.error, "username")) {
-      const { username: _username, ...legacyPayload } = payload;
-      result = await api.from(tables.admins).upsert(legacyPayload, { onConflict: "email" });
-    }
-    return result;
-  }
-
   async function createUser(form) {
-    const api = client();
     const data = new FormData(form);
     const email = norm(data.get("email"));
-    const username = norm(data.get("username")).replace(/\s+/g, "_");
     const name = clean(data.get("nombre"));
     const role = roleKey(data.get("rol") || "jefe");
     const password = String(data.get("password") || "");
-    if (!email || !name || !password) throw new Error("Completa correo, nombre, rol y clave.");
+    if (!email || !email.includes("@") || !name || !password) throw new Error("Completa correo, nombre, rol y clave.");
     if (password.length < 6) throw new Error("La clave debe tener al menos 6 caracteres.");
     if (!allowedRoles.has(role)) throw new Error("Rol no permitido para Jefatura global.");
-    await createAuthUser({ email, password, name, role, username });
-    const payload = { email, display_name: name, role, active: true };
-    if (username) payload.username = username;
-    const { error } = await upsertAdmin(api, payload);
-    if (error) throw error;
+    await adminRequest("upsertUser", { email, displayName: name, role, password });
     form.reset();
-    toast("Usuario listo. Puede entrar con su correo y clave.");
+    toast("Usuario creado o actualizado correctamente.");
     scheduleRender(80);
   }
 
   async function setAdminActive(email, active) {
-    const user = await currentUser();
-    if (!active && norm(user?.email) === norm(email)) throw new Error("No puedes desactivarte a ti mismo.");
-    const api = client();
-    const { error } = await api.from(tables.admins).update({ active }).eq("email", norm(email));
-    if (error) throw error;
+    await adminRequest("setActive", { email: norm(email), active: Boolean(active) });
     toast(active ? "Usuario reactivado." : "Usuario desactivado.");
     scheduleRender(80);
   }
