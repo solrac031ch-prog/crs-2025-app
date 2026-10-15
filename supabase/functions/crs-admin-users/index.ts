@@ -73,17 +73,38 @@ Deno.serve(async (req) => {
   const requesterEmail = cleanEmail(requester.email);
   const { data: requesterAdmin, error: requesterError } = await adminClient
     .from("crs_admins")
-    .select("email,role,active")
+    .select("email,username,display_name,role,active")
     .eq("email", requesterEmail)
     .maybeSingle();
 
   if (requesterError) return json({ ok: false, error: requesterError.message }, 500);
-  if (requesterAdmin?.active !== true || !MANAGER_ROLES.has(normalizeRole(requesterAdmin.role))) {
-    return json({ ok: false, error: "Tu cuenta no tiene permiso para administrar usuarios." }, 403);
+
+  const requesterRole = normalizeRole(requesterAdmin?.role);
+  if (requesterAdmin?.active !== true || !ALLOWED_ROLES.has(requesterRole)) {
+    return json({ ok: false, error: "Tu cuenta no tiene acceso activo a Jefatura." }, 403);
   }
 
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const action = cleanText(body.action);
+  const canManageUsers = MANAGER_ROLES.has(requesterRole);
+
+  if (action === "getMe") {
+    return json({
+      ok: true,
+      profile: {
+        email: requesterAdmin.email,
+        username: requesterAdmin.username || "",
+        display_name: requesterAdmin.display_name || requester.email || "",
+        role: requesterRole,
+        active: true,
+      },
+      canManageUsers,
+    });
+  }
+
+  if (!canManageUsers) {
+    return json({ ok: false, error: "Tu cuenta no tiene permiso para administrar usuarios." }, 403);
+  }
 
   async function listAuthUsers() {
     const { data, error } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -173,6 +194,7 @@ Deno.serve(async (req) => {
         display_name: displayName,
         role,
         active: true,
+        created_by_email: requesterEmail,
       };
       if (username) profile.username = username;
 
