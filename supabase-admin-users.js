@@ -71,11 +71,6 @@
     return String(error?.message || error || "Error desconocido");
   }
 
-  function missingColumn(error, column) {
-    const msg = errorMessage(error);
-    return new RegExp(`column\\s+[^\\s.]+\\.${column}\\s+does not exist|column\\s+${column}\\s+does not exist|Could not find.*${column}.*column`, "i").test(msg);
-  }
-
   function toast(message, isError = false) {
     document.querySelector(".sb-toast")?.remove();
     const box = document.createElement("div");
@@ -87,6 +82,7 @@
 
   function friendlyError(error) {
     const msg = errorMessage(error);
+    if (/no tiene permiso para administrar usuarios/i.test(msg)) return "Tu cuenta tiene acceso a Jefatura, pero no permiso para administrar usuarios.";
     if (/functions\/v1|administrando usuarios|edge function/i.test(msg)) return "No se pudo conectar con el servicio seguro de usuarios. Actualiza la página e inténtalo nuevamente.";
     if (/Invalid login credentials/i.test(msg)) return "Correo/usuario o clave incorrectos.";
     if (/row-level security|permission denied/i.test(msg)) return "Tu usuario no tiene permiso activo para este módulo.";
@@ -108,7 +104,11 @@
 
   function statusCard(user, profile) {
     const alias = profile.username ? ` · usuario ${esc(profile.username)}` : "";
-    return `<article class="crs-access-card full"><h3>Sesión activa</h3><div class="crs-access-ok">${esc(profile.display_name || user.email)} · rol ${esc(profile.role)}${alias}</div><div class="crs-access-actions"><button class="document-button" type="button" data-crs-refresh>Actualizar</button><button class="delete-button" type="button" data-crs-signout>Cerrar sesión</button></div><h3>Publicaciones globales recientes</h3><div data-crs-global-list><div class="crs-access-mini">Cargando...</div></div><h3>Usuarios con permiso</h3><div data-crs-admin-list><div class="crs-access-mini">Cargando...</div></div></article>`;
+    const canManageUsers = userAdminRoles.has(roleKey(profile.role));
+    const usersBlock = canManageUsers
+      ? `<h3>Usuarios con permiso</h3><div data-crs-admin-list><div class="crs-access-mini">Cargando...</div></div>`
+      : "";
+    return `<article class="crs-access-card full"><h3>Sesión activa</h3><div class="crs-access-ok">${esc(profile.display_name || user.email)} · rol ${esc(profile.role)}${alias}</div><div class="crs-access-actions"><button class="document-button" type="button" data-crs-refresh>Actualizar</button><button class="delete-button" type="button" data-crs-signout>Cerrar sesión</button></div><h3>Publicaciones globales recientes</h3><div data-crs-global-list><div class="crs-access-mini">Cargando...</div></div>${usersBlock}</article>`;
   }
 
   function paperCard() {
@@ -163,20 +163,10 @@
     scheduleRender(30);
   }
 
-  async function selectProfile(api, email) {
-    let result = await api.from(tables.admins).select("email,username,display_name,role,active").eq("email", norm(email)).maybeSingle();
-    if (result.error && missingColumn(result.error, "username")) {
-      result = await api.from(tables.admins).select("email,display_name,role,active").eq("email", norm(email)).maybeSingle();
-      if (result.data) result.data.username = null;
-    }
-    return result;
-  }
-
   async function getProfile(user) {
-    const api = client();
-    const { data, error } = await selectProfile(api, user.email);
-    if (error) throw error;
-    return data || null;
+    if (!user?.email) return null;
+    const result = await adminRequest("getMe");
+    return result?.profile || null;
   }
 
   async function renderGlobalList() {
@@ -209,6 +199,7 @@
   }
 
   async function renderAdminList(profile, user) {
+    if (!userAdminRoles.has(roleKey(profile?.role))) return;
     const box = $("[data-crs-admin-list]");
     if (!box) return;
     try {
@@ -284,7 +275,9 @@
         if (!profile || profile.active === false || !allowedRoles.has(role)) content.innerHTML = deniedHtml(user);
         else {
           content.innerHTML = panelHtml(user, profile);
-          await Promise.all([renderGlobalList(), renderAdminList(profile, user)]);
+          const jobs = [renderGlobalList()];
+          if (userAdminRoles.has(role)) jobs.push(renderAdminList(profile, user));
+          await Promise.all(jobs);
         }
       }
     } catch (error) {
