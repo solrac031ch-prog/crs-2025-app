@@ -478,11 +478,25 @@
     return bootPromise;
   }
 
+  async function preparePreferredSearch() {
+    if (currentRoute() !== ROUTE) return false;
+    const structured = window.CRS_STRUCTURED_CALLS;
+    if (structured?.prepareRoute) {
+      try {
+        const ready = await structured.prepareRoute();
+        if (ready) return true;
+      } catch (error) {
+        console.warn("La base estructurada de llamados no estuvo disponible; se usa el PDF como respaldo.", error);
+      }
+    }
+    await boot();
+    return Boolean(document.querySelector("[data-call-live-search]"));
+  }
+
   window.CRS_LEGACY_ONCALL_SEARCH = window.renderOnCallSearch;
   window.renderOnCallSearch = function renderOnCallSearchVigente() {
-    if (source) mountSearch();
-    else loadingShell();
-    boot().catch((error) => {
+    loadingShell();
+    preparePreferredSearch().catch((error) => {
       console.error("No se pudo preparar la rotativa vigente", error);
       loadingShell("No se pudo preparar el buscador de llamados. Usa Documento global para verificar la rotativa.");
     });
@@ -491,12 +505,13 @@
   window.CRS_CALLS_SEARCH_SAFE = Object.freeze({
     specialtiesForQuery,
     dayBlocks,
-    version: 4
+    version: 5
   });
 
   function routeChanged() {
     if (currentRoute() !== ROUTE) return;
-    boot().catch((error) => console.error("No se pudo preparar la rotativa vigente", error));
+    loadingShell();
+    preparePreferredSearch().catch((error) => console.error("No se pudo preparar la rotativa vigente", error));
   }
 
   window.addEventListener("hashchange", routeChanged);
