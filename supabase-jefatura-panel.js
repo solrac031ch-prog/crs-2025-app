@@ -21,7 +21,6 @@
 
   function friendlyError(error) {
     const msg = String(error?.message || error || "Error desconocido");
-    if (/crs_login_email|function|schema cache/i.test(msg)) return "Si usaste usuario, prueba con tu correo. La resolución por nombre de usuario aún no está desplegada en Supabase.";
     if (/expired|otp.*expired|token.*expired/i.test(msg)) return "El enlace de recuperación venció. Solicita uno nuevo desde Jefatura.";
     if (/same password|different from the old password/i.test(msg)) return "La nueva clave debe ser distinta de la anterior.";
     if (/password/i.test(msg) && /short|weak|least/i.test(msg)) return "La nueva clave debe tener al menos 6 caracteres.";
@@ -29,14 +28,9 @@
   }
 
   async function resolveLoginEmail(loginValue) {
-    const api = client();
-    const value = clean(loginValue);
-    if (!value) throw new Error("Escribe tu correo o usuario primero.");
-    if (value.includes("@")) return norm(value);
-    const { data, error } = await api.rpc("crs_login_email", { login_text: value });
-    if (error) throw error;
-    if (!data) throw new Error("No encontré ese usuario activo.");
-    return norm(data);
+    const value = norm(loginValue);
+    if (!value || !value.includes("@")) throw new Error("Escribe tu correo autorizado completo.");
+    return value;
   }
 
   async function sendForgotPassword(loginValue) {
