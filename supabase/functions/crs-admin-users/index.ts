@@ -37,6 +37,13 @@ function normalizeRole(value: unknown) {
   return role === "administrador" ? "admin" : role;
 }
 
+function missingColumn(error: unknown, column: string) {
+  const message = error instanceof Error
+    ? error.message
+    : String((error as { message?: unknown } | null)?.message || error || "");
+  return new RegExp(`column\\s+[^\\s.]+\\.${column}\\s+does not exist|column\\s+${column}\\s+does not exist|Could not find.*${column}.*column`, "i").test(message);
+}
+
 function temporaryPassword() {
   const bytes = crypto.getRandomValues(new Uint8Array(18));
   const raw = Array.from(bytes, (byte) => byte.toString(36).padStart(2, "0")).join("");
@@ -71,12 +78,25 @@ Deno.serve(async (req) => {
   if (authError || !requester?.email) return json({ ok: false, error: "Sesion invalida." }, 401);
 
   const requesterEmail = cleanEmail(requester.email);
-  const { data: requesterAdmin, error: requesterError } = await adminClient
+  let requesterResult = await adminClient
     .from("crs_admins")
     .select("email,username,display_name,role,active")
     .eq("email", requesterEmail)
     .maybeSingle();
 
+  if (requesterResult.error && missingColumn(requesterResult.error, "username")) {
+    requesterResult = await adminClient
+      .from("crs_admins")
+      .select("email,display_name,role,active")
+      .eq("email", requesterEmail)
+      .maybeSingle();
+    if (requesterResult.data) {
+      (requesterResult.data as Record<string, unknown>).username = null;
+    }
+  }
+
+  const requesterAdmin = requesterResult.data as AdminRow | null;
+  const requesterError = requesterResult.error;
   if (requesterError) return json({ ok: false, error: requesterError.message }, 500);
 
   const requesterRole = normalizeRole(requesterAdmin?.role);
@@ -114,11 +134,22 @@ Deno.serve(async (req) => {
 
   try {
     if (action === "listUsers") {
-      const [{ data: adminRows, error }, authUsers] = await Promise.all([
-        adminClient.from("crs_admins").select("email,username,display_name,role,active").order("email"),
-        listAuthUsers(),
-      ]);
-      if (error) throw error;
+      let adminResult = await adminClient
+        .from("crs_admins")
+        .select("email,username,display_name,role,active")
+        .order("email");
+      if (adminResult.error && missingColumn(adminResult.error, "username")) {
+        adminResult = await adminClient
+          .from("crs_admins")
+          .select("email,display_name,role,active")
+          .order("email");
+        if (adminResult.data) {
+          adminResult.data = adminResult.data.map((row) => ({ ...row, username: null }));
+        }
+      }
+      if (adminResult.error) throw adminResult.error;
+      const adminRows = adminResult.data;
+      const authUsers = await listAuthUsers();
       const byEmail = new Map(authUsers.map((user) => [cleanEmail(user.email), user]));
 
       const users = ((adminRows || []) as AdminRow[]).map((row) => {
@@ -198,9 +229,15 @@ Deno.serve(async (req) => {
       };
       if (username) profile.username = username;
 
-      const { error: upsertError } = await adminClient
+      let { error: upsertError } = await adminClient
         .from("crs_admins")
         .upsert(profile, { onConflict: "email" });
+      if (upsertError && username && missingColumn(upsertError, "username")) {
+        delete profile.username;
+        ({ error: upsertError } = await adminClient
+          .from("crs_admins")
+          .upsert(profile, { onConflict: "email" }));
+      }
       if (upsertError) throw upsertError;
 
       return json({ ok: true, temporaryPassword: generatedPassword });
