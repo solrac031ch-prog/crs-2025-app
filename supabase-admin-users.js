@@ -159,6 +159,7 @@
     if (!password) throw new Error("Escribe tu clave.");
     const { error } = await api.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    window.dispatchEvent(new CustomEvent("crs:auth-changed", { detail: { authenticated: true } }));
     toast("Sesión iniciada.");
     scheduleRender(30);
   }
@@ -255,6 +256,7 @@
   async function signOut() {
     const api = client();
     await api?.auth?.signOut?.();
+    window.dispatchEvent(new CustomEvent("crs:auth-changed", { detail: { authenticated: false } }));
     toast("Sesión cerrada.");
     scheduleRender(30);
   }
