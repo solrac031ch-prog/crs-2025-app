@@ -66,13 +66,13 @@
   }
 
   async function ensureSupabase() {
-    await loadScript("supabase-config", "./supabase-config.js", 19);
+    await loadScript("supabase-config", "./supabase-config.js", 20);
     await loadScript("supabase-backend", "./supabase-backend.js", 8);
   }
 
   function ensurePatientManagement() {
     if (window.CRS_PATIENT_CASES) return Promise.resolve();
-    return loadScript("gestion-pacientes-runtime", "./gestion-pacientes-runtime.js", 1);
+    return loadScript("gestion-pacientes-runtime", "./gestion-pacientes-runtime.js", 2);
   }
 
   function disableEmbeddedPriorityManagement() {
@@ -128,10 +128,10 @@
       ensureSupabase()
     ]);
     await Promise.all([
-      loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 17, {
+      loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 18, {
         "data-supabase-jefatura-panel": true
       }),
-      loadScript("supabase-admin-users", "./supabase-admin-users.js", 6),
+      loadScript("supabase-admin-users", "./supabase-admin-users.js", 7),
       loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 4),
       loadScript("documentos-institucionales", "./documentos-institucionales.js", 3)
     ]);
