@@ -375,6 +375,7 @@
   }
 
   #homePage .home-actions {
+    grid-template-columns: minmax(0, 1fr);
     border-bottom: 0;
   }
 
@@ -384,7 +385,7 @@
   #homePage .action-card:nth-child(10),
   #homePage .action-card.action-primary,
   #homePage .action-card[href="#/especialidades"] {
-    grid-column: span 12;
+    grid-column: 1 / -1;
     min-height: 0;
     padding: 20px 18px 21px;
     border-right: 0 !important;
