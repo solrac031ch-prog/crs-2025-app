@@ -14,8 +14,8 @@ window.CRS_SUPABASE_CONFIG = {
 };
 
 (() => {
-  const PRIMARY_SDK = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-  const FALLBACK_SDK = "https://unpkg.com/@supabase/supabase-js@2";
+  const PRIMARY_SDK = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3";
+  const FALLBACK_SDK = "https://unpkg.com/@supabase/supabase-js@2.117.3";
   const REMOTE_ROUTES = new Set([
     "#/noticias", "#/educacion", "#/paper", "#/procedimientos",
     "#/jefatura", "#/gestion", "#/llamados", "#/visita", "#/especialidades",
