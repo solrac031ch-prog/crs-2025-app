@@ -117,7 +117,7 @@
     const publicationCards = takeCards(cards, ["Paper del mes", "Noticias / Educación", "Procedimiento médico"]);
     const operationCards = takeCards(cards, ["Especialistas de llamado", "UHD", "Nuevo flujo / protocolo"]);
     const documentCards = takeCards(cards, ["Medicamentos de uso ocasional", "Ley de Urgencias", "Notificación obligatoria"]);
-    const userCards = takeCards(cards, ["Crear usuarios"]);
+    const userCards = takeCards(cards, ["Administrar usuarios", "Crear usuarios"]);
 
     const dashboard = document.createElement("section");
     dashboard.className = "jefatura-dashboard";
@@ -154,12 +154,19 @@
     userCards.forEach((card) => usersContent.append(card));
     if (usersListCard) usersContent.append(usersListCard);
 
+    const claimedCards = new Set([statusCard, ...publicationCards, ...operationCards, ...documentCards, ...userCards].filter(Boolean));
+    const otherCards = cards.filter((card) => !claimedCards.has(card));
+    const usersSection = usersContent.childElementCount
+      ? createSection("Usuarios y permisos", "Creación, activación y recuperación de accesos.", [], { content: usersContent, count: usersContent.childElementCount })
+      : null;
+
     [
       createSection("Publicaciones y docencia", "Noticias, educación, paper del mes y procedimientos.", publicationCards),
       createSection("Operación clínica", "Especialistas, UHD y nuevos flujos o protocolos.", operationCards),
       createSection("Documentos institucionales", "Actualización de formularios y documentos de uso frecuente.", documentCards),
-      createSection("Usuarios y permisos", "Creación, activación y recuperación de accesos.", [], { content: usersContent, count: userCards.length + (usersListCard ? 1 : 0) }),
-      createSection("Actividad reciente", "Revisa u oculta las publicaciones globales más recientes.", activityCard ? [activityCard] : [])
+      usersSection,
+      createSection("Actividad reciente", "Revisa u oculta las publicaciones globales más recientes.", activityCard ? [activityCard] : []),
+      createSection("Otras herramientas", "Funciones de Jefatura que no deben perderse aunque cambie su título.", otherCards)
     ].filter(Boolean).forEach((section) => sections.append(section));
 
     dashboard.append(top, quick, sections);
