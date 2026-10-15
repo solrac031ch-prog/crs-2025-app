@@ -10,6 +10,7 @@ const index = read('index.html');
 const config = read('supabase-config.js');
 const chiefHelper = read('supabase-jefatura-panel.js');
 const chiefController = read('supabase-admin-users.js');
+const adminEdge = read('supabase/functions/crs-admin-users/index.ts');
 const backend = read('supabase-backend.js');
 const gestion = read('gestion-panel-final.js');
 const routeModules = read('route-modules.js');
@@ -48,7 +49,8 @@ if (/auth\.signUp\s*\(/.test(chiefController)) {
   errors.push('supabase-admin-users.js no debe crear usuarios Auth desde el navegador.');
 }
 
-if (!/missingColumn\([^)]*,\s*["']username["']\)/.test(chiefController)) {
+if (!/missingColumn\([^)]*,\s*["']username["']\)/.test(chiefController)
+    && !/missingColumn\([^)]*,\s*["']username["']\)/.test(adminEdge)) {
   errors.push('Jefatura debe tolerar instalaciones antiguas sin columna username.');
 }
 
