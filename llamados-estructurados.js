@@ -408,20 +408,41 @@
       });
     } finally { mounting = false; }
   }
-  async function prepareRoute(force = false) {
+  function mountStructuredLoading() {
     if (route() !== ROUTE) return;
+    const panel = document.querySelector('#callsSearchPanel');
+    if (!panel || panel.querySelector('[data-calls-structured-search]') || panel.querySelector('[data-calls-structured-loading]')) return;
+    const shell = document.createElement('section');
+    shell.className = 'on-call-search on-call-live';
+    shell.dataset.callsStructuredLoading = 'true';
+    const status = document.createElement('div');
+    status.className = 'on-call-live-status';
+    status.setAttribute('aria-live', 'polite');
+    status.textContent = 'Cargando rotativa vigente…';
+    shell.append(status);
+    panel.replaceChildren(shell);
+  }
+
+  async function prepareRoute(force = false) {
+    if (route() !== ROUTE) return false;
+    mountStructuredLoading();
     try {
       const rows = await loadRows(force);
-      if (!rows.length) return;
-      mountStructuredSearch();
+      if (!rows.length) return false;
       const panel = document.querySelector('#callsSearchPanel');
+      panel?.querySelector('[data-calls-structured-loading]')?.remove();
+      mountStructuredSearch();
       if (panel && !panelObserver) {
         panelObserver = new MutationObserver(() => {
           if (route() === ROUTE && cachedRows?.length && !panel.querySelector('[data-calls-structured-search]')) setTimeout(mountStructuredSearch, 0);
         });
         panelObserver.observe(panel, { childList: true, subtree: false });
       }
-    } catch (error) { console.warn('Rotativa estructurada no disponible; se mantiene el lector PDF.', error); }
+      return Boolean(panel?.querySelector('[data-calls-structured-search]'));
+    } catch (error) {
+      console.warn('Rotativa estructurada no disponible; se mantiene el lector PDF.', error);
+      return false;
+    }
   }
   async function searchToday(query) {
     const rows = await loadRows();
@@ -432,7 +453,7 @@
     return resultsFor(query, today, rows);
   }
 
-  window.CRS_STRUCTURED_CALLS = Object.freeze({ parseMonthYear, extractAssignments, specialtiesForQuery, searchToday, loadRows, version: 3 });
+  window.CRS_STRUCTURED_CALLS = Object.freeze({ parseMonthYear, extractAssignments, specialtiesForQuery, searchToday, loadRows, prepareRoute, version: 4 });
   window.addEventListener('hashchange', () => setTimeout(() => prepareRoute(), 80));
   window.addEventListener('crs:ui-section-ready', () => setTimeout(() => prepareRoute(), 120));
   window.addEventListener('crs:calls-structured-updated', () => { cachedRows = null; currentDoc = null; currentMeta = null; prepareRoute(true); });
