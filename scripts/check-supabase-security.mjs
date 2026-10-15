@@ -10,6 +10,9 @@ const setup = read('supabase-setup.sql');
 const hardening = read('supabase-security-hardening.sql');
 const frontendFiles = fs.readdirSync('.')
   .filter((name) => name.endsWith('.js') || name.endsWith('.html'));
+const adminEdge = read('supabase/functions/crs-admin-users/index.ts');
+const adminFrontend = read('supabase-admin-users.js');
+const jefaturaCenter = read('jefatura-centro-gestion.js');
 
 for (const file of frontendFiles) {
   const source = read(file);
@@ -59,6 +62,28 @@ if (/grant\s+execute\s+on\s+function\s+public\.crs_(?:is_admin|login_email)/i.te
 
 if (/auth\.signUp\s*\(/.test(read('supabase-admin-users.js'))) {
   failures.push('supabase-admin-users.js no debe crear usuarios Auth desde el navegador.');
+}
+
+const adminAccessContract = [
+  /revoke\s+all\s+privileges\s+on(?:\s+table)?\s+public\.crs_admins\s+from\s+anon/i,
+  /revoke\s+insert\s*,\s*update\s*,\s*delete[\s\S]{0,120}public\.crs_admins[\s\S]{0,80}authenticated/i,
+  /create\s+policy\s+"crs_admins_self_select"[\s\S]{0,240}auth\.jwt\(\)\s*->>\s*'email'/i,
+  /create\s+policy\s+"crs_admins_manager_select"[\s\S]{0,220}crs_private\.can_manage_users\(\)/i
+];
+for (const pattern of adminAccessContract) {
+  if (!pattern.test(setup)) failures.push(`supabase-setup.sql: falta contrato mínimo de acceso a crs_admins (${pattern}).`);
+}
+if (/grant\s+select\s*,\s*insert\s*,\s*update\s*,\s*delete\s+on\s+public\.crs_admins\s+to\s+authenticated/i.test(setup)) {
+  failures.push('supabase-setup.sql: authenticated no debe escribir crs_admins directamente.');
+}
+if (!/action\s*===\s*"getMe"/.test(adminEdge)) {
+  failures.push('crs-admin-users debe exponer getMe para validar el perfil propio sin abrir la administración.');
+}
+if (!/adminRequest\("getMe"\)/.test(adminFrontend)) {
+  failures.push('supabase-admin-users.js debe resolver el perfil con getMe.');
+}
+if (!/\["Administrar usuarios",\s*"Crear usuarios"\]/.test(jefaturaCenter)) {
+  failures.push('jefatura-centro-gestion.js debe preservar la tarjeta Administrar usuarios.');
 }
 
 if (failures.length) {
