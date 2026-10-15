@@ -92,7 +92,7 @@
         authState = {
           email,
           name: profile?.display_name || user.user_metadata?.display_name || email || "Equipo Urgencia",
-          role: profile?.role || user.user_metadata?.role || "",
+          role: profile?.role || "",
           active: Boolean(profile && profile.active !== false)
         };
         authCheckedAt = Date.now();
