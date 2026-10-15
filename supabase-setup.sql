@@ -205,29 +205,30 @@ grant select on public.crs_content_items to anon, authenticated;
 grant select on public.crs_documents to anon, authenticated;
 grant select on public.crs_flows to anon, authenticated;
 grant select on public.crs_call_schedules to anon, authenticated;
-grant select, insert, update, delete on public.crs_admins to authenticated;
+revoke all privileges on public.crs_admins from anon;
+revoke insert, update, delete, truncate, references, trigger on public.crs_admins from authenticated;
+grant select on public.crs_admins to authenticated;
+grant select, insert, update, delete on public.crs_admins to service_role;
 grant insert, update, delete on public.crs_content_items to authenticated;
 grant insert, update, delete on public.crs_documents to authenticated;
 grant insert, update, delete on public.crs_flows to authenticated;
 grant insert, update, delete on public.crs_call_schedules to authenticated;
 
 drop policy if exists "crs_admins_admin_select" on public.crs_admins;
-create policy "crs_admins_admin_select" on public.crs_admins
-for select to authenticated
-using ((select crs_private.is_admin()));
-
+drop policy if exists "crs_admins_self_select" on public.crs_admins;
+drop policy if exists "crs_admins_manager_select" on public.crs_admins;
 drop policy if exists "crs_admins_admin_write" on public.crs_admins;
 drop policy if exists "crs_admins_admin_insert" on public.crs_admins;
 drop policy if exists "crs_admins_admin_update" on public.crs_admins;
 drop policy if exists "crs_admins_admin_delete" on public.crs_admins;
-create policy "crs_admins_admin_insert" on public.crs_admins
-for insert to authenticated with check ((select crs_private.can_manage_users()));
-create policy "crs_admins_admin_update" on public.crs_admins
-for update to authenticated
-using ((select crs_private.can_manage_users()))
-with check ((select crs_private.can_manage_users()));
-create policy "crs_admins_admin_delete" on public.crs_admins
-for delete to authenticated using ((select crs_private.can_manage_users()));
+
+create policy "crs_admins_self_select" on public.crs_admins
+for select to authenticated
+using (lower(email) = lower(coalesce(auth.jwt()->>'email', '')));
+
+create policy "crs_admins_manager_select" on public.crs_admins
+for select to authenticated
+using ((select crs_private.can_manage_users()));
 
 drop policy if exists "crs_content_public_read" on public.crs_content_items;
 create policy "crs_content_public_read" on public.crs_content_items
