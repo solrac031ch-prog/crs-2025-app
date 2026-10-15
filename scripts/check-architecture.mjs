@@ -32,12 +32,20 @@ if (index.includes('./supabase-login-compat.js')) {
   errors.push('index.html no debe volver a cargar el parche temporal supabase-login-compat.js.');
 }
 
-if (!/value\.includes\(["']@["']\)\)\s*return\s+norm\(value\)/.test(chiefController)) {
-  errors.push('supabase-admin-users.js debe aceptar correos directamente sin depender de crs_login_email.');
+if (!/value\s*=\s*norm\(loginValue\)[\s\S]{0,160}!value\.includes\(["']@["']\)/.test(chiefController)) {
+  errors.push('supabase-admin-users.js debe exigir correo completo para el ingreso administrativo.');
 }
 
-if (!/api\.rpc\(["']crs_login_email["']/.test(chiefController)) {
-  errors.push('supabase-admin-users.js debe conservar resolución opcional por nombre de usuario mediante crs_login_email.');
+if (/api\.rpc\(["']crs_login_email["']/.test(chiefController)) {
+  errors.push('supabase-admin-users.js no debe resolver alias mediante un RPC público de correo.');
+}
+
+if (!/functions\/v1\/\$\{adminUsersFunction\}/.test(chiefController) || !/adminRequest\(["'](?:listUsers|upsertUser|setActive)["']/.test(chiefController)) {
+  errors.push('supabase-admin-users.js debe delegar administración de usuarios a la Edge Function segura.');
+}
+
+if (/auth\.signUp\s*\(/.test(chiefController)) {
+  errors.push('supabase-admin-users.js no debe crear usuarios Auth desde el navegador.');
 }
 
 if (!/missingColumn\([^)]*,\s*["']username["']\)/.test(chiefController)) {
