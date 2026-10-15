@@ -167,8 +167,18 @@ begin
     execute 'revoke all on function public.crs_login_email(text) from anon';
     execute 'revoke all on function public.crs_login_email(text) from authenticated';
   end if;
+  if to_regprocedure('public.crs_allowed_admin_role(text)') is not null then
+    execute 'revoke all on function public.crs_allowed_admin_role(text) from public';
+    execute 'revoke all on function public.crs_allowed_admin_role(text) from anon';
+    execute 'revoke all on function public.crs_allowed_admin_role(text) from authenticated';
+  end if;
+  if to_regprocedure('public.crs_touch_updated_at()') is not null then
+    execute 'revoke all on function public.crs_touch_updated_at() from public';
+    execute 'revoke all on function public.crs_touch_updated_at() from anon';
+    execute 'revoke all on function public.crs_touch_updated_at() from authenticated';
+  end if;
 end
-$$;
+$;
 
 commit;
 notify pgrst, 'reload schema';
