@@ -67,8 +67,7 @@ if (/auth\.signUp\s*\(/.test(read('supabase-admin-users.js'))) {
 const adminAccessContract = [
   /revoke\s+all\s+privileges\s+on(?:\s+table)?\s+public\.crs_admins\s+from\s+anon/i,
   /revoke\s+insert\s*,\s*update\s*,\s*delete[\s\S]{0,120}public\.crs_admins[\s\S]{0,80}authenticated/i,
-  /create\s+policy\s+"crs_admins_self_select"[\s\S]{0,240}auth\.jwt\(\)\s*->>\s*'email'/i,
-  /create\s+policy\s+"crs_admins_manager_select"[\s\S]{0,220}crs_private\.can_manage_users\(\)/i
+  /create\s+policy\s+"crs_admins_select"[\s\S]{0,360}\(\(select\s+auth\.jwt\(\)\)\s*->>\s*'email'\)[\s\S]{0,240}crs_private\.can_manage_users\(\)/i
 ];
 for (const pattern of adminAccessContract) {
   if (!pattern.test(setup)) failures.push(`supabase-setup.sql: falta contrato mínimo de acceso a crs_admins (${pattern}).`);
