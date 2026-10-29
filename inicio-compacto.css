@@ -199,10 +199,6 @@
     line-height: 1.25;
   }
 
-  #homePage .home-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   #homePage .action-card,
   #homePage .action-card[href="#/llamados"],
   #homePage .action-card:nth-child(9),
