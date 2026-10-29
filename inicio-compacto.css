@@ -175,7 +175,7 @@
 /* En teléfono priorizamos toque seguro y lectura: una sola columna, sin texto redundante. */
 @media (max-width: 620px) {
   #homePage .home-actions {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   #homePage.active {
