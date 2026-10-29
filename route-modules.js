@@ -177,7 +177,7 @@
   async function ensurePhoneDirectory() {
     await Promise.all([
       loadStyle("directorio-telefonico", "./directorio-telefonico.css", 1),
-      loadScript("directorio-telefonico", "./directorio-telefonico.js", 3)
+      loadScript("directorio-telefonico", "./directorio-telefonico.js", 4)
     ]);
   }
 
@@ -188,7 +188,7 @@
     ]);
     await loadScript("llamados-compacto", "./llamados-compacto.js", 4);
     await loadScript("llamados-estructurados", "./llamados-estructurados.js", 4);
-    await loadScript("llamados-vigente", "./llamados-vigente.js", 5);
+    await loadScript("llamados-vigente", "./llamados-vigente.js", 6);
   }
 
   async function ensureForRoute(value = route()) {
