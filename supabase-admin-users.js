@@ -8,8 +8,8 @@
     ...(cfg.tables || {})
   };
 
-  const allowedRoles = new Set(["creador", "jefe", "jefatura", "disenador", "diseñador", "admin"]);
-  const userAdminRoles = new Set(["creador", "disenador", "diseñador", "admin"]);
+  const allowedRoles = new Set(["creador", "owner", "desarrollador", "jefe", "jefatura", "jefe_turno", "disenador", "diseñador", "admin"]);
+  const userAdminRoles = new Set(["creador", "owner", "desarrollador", "disenador", "diseñador", "admin"]);
   let renderTimer = null;
   let rendering = false;
 
