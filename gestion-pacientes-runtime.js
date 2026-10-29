@@ -52,6 +52,34 @@
     return window.CRS_SUPABASE?.client?.() || null;
   }
 
+  async function fetchChiefProfile() {
+    const api = client();
+    const cfg = window.CRS_SUPABASE_CONFIG || {};
+    const functionName = String(cfg.adminUsersFunction || "crs-admin-users").trim();
+    if (!api?.auth?.getSession || !cfg.url || !cfg.anonKey || !functionName) {
+      throw new Error("No se pudo validar el perfil de Jefatura.");
+    }
+
+    const { data, error } = await api.auth.getSession();
+    const token = String(data?.session?.access_token || "").trim();
+    if (error || !token) throw new Error("La sesión de Jefatura venció. Vuelve a iniciar sesión.");
+
+    const response = await fetch(`${cfg.url}/functions/v1/${functionName}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: cfg.anonKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ action: "getMe" })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result?.ok === false) {
+      throw new Error(result?.error || `No se pudo validar el perfil de Jefatura (${response.status}).`);
+    }
+    return result?.profile || null;
+  }
+
   function resetAuth() {
     authState = { email: "", name: "Equipo Urgencia", role: "", active: false };
     authCheckedAt = 0;
@@ -79,18 +107,10 @@
 
         const user = data.user;
         const email = String(user.email || "").trim().toLowerCase();
-        let profile = null;
-        if (email) {
-          const result = await api
-            .from("crs_admins")
-            .select("email,display_name,role,active")
-            .eq("email", email)
-            .maybeSingle();
-          if (!result.error) profile = result.data || null;
-        }
+        const profile = email ? await fetchChiefProfile() : null;
 
         authState = {
-          email,
+          email: String(profile?.email || email).trim().toLowerCase(),
           name: profile?.display_name || user.user_metadata?.display_name || email || "Equipo Urgencia",
           role: profile?.role || "",
           active: Boolean(profile && profile.active !== false)
