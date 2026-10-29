@@ -150,7 +150,7 @@
   }
 
   #homePage .home-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   #homePage .action-card,
@@ -172,7 +172,7 @@
   }
 }
 
-/* En teléfono el inicio funciona como lanzador: dos columnas, sin texto redundante. */
+/* En teléfono priorizamos toque seguro y lectura: una sola columna, sin texto redundante. */
 @media (max-width: 620px) {
   #homePage.active {
     gap: 10px;
@@ -205,14 +205,10 @@
   #homePage .action-card:nth-child(10),
   #homePage .action-card.action-primary,
   #homePage .action-card[href="#/especialidades"] {
-    grid-column: span 1;
-    min-height: 104px;
+    grid-column: 1 / -1;
+    min-height: 92px;
     gap: 5px;
     padding: 11px 12px 12px;
-    border-right: 1px solid var(--home-rule) !important;
-  }
-
-  #homePage .action-card:nth-child(even) {
     border-right: 0 !important;
   }
 
