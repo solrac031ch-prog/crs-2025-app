@@ -72,7 +72,7 @@
 
   function ensurePatientManagement() {
     if (window.CRS_PATIENT_CASES) return Promise.resolve();
-    return loadScript("gestion-pacientes-runtime", "./gestion-pacientes-runtime.js", 2);
+    return loadScript("gestion-pacientes-runtime", "./gestion-pacientes-runtime.js", 3);
   }
 
   function disableEmbeddedPriorityManagement() {
@@ -131,7 +131,7 @@
       loadScript("supabase-jefatura-panel", "./supabase-jefatura-panel.js", 18, {
         "data-supabase-jefatura-panel": true
       }),
-      loadScript("supabase-admin-users", "./supabase-admin-users.js", 9),
+      loadScript("supabase-admin-users", "./supabase-admin-users.js", 10),
       loadScript("jefatura-centro", "./jefatura-centro-gestion.js", 5),
       loadScript("documentos-institucionales", "./documentos-institucionales.js", 3)
     ]);
@@ -177,7 +177,7 @@
   async function ensurePhoneDirectory() {
     await Promise.all([
       loadStyle("directorio-telefonico", "./directorio-telefonico.css", 1),
-      loadScript("directorio-telefonico", "./directorio-telefonico.js", 3)
+      loadScript("directorio-telefonico", "./directorio-telefonico.js", 5)
     ]);
   }
 
@@ -187,8 +187,8 @@
       ensureSupabase()
     ]);
     await loadScript("llamados-compacto", "./llamados-compacto.js", 4);
-    await loadScript("llamados-estructurados", "./llamados-estructurados.js", 4);
-    await loadScript("llamados-vigente", "./llamados-vigente.js", 5);
+    await loadScript("llamados-estructurados", "./llamados-estructurados.js", 5);
+    await loadScript("llamados-vigente", "./llamados-vigente.js", 6);
   }
 
   async function ensureForRoute(value = route()) {

@@ -334,6 +334,36 @@
       }
     }
 
+    const selectedDate = String(dateValue || "");
+    const [year, month] = selectedDate.split("-").map(Number);
+    const catalogMeta = parseMonthYear(window.CRS_APP_OPERATIONAL?.onCallSchedule?.label || "");
+    const sourceMeta = source?.meta || null;
+    const canUseCatalogFallback = Boolean(
+      catalogMeta &&
+      sourceMeta &&
+      catalogMeta.year === sourceMeta.year &&
+      catalogMeta.month === sourceMeta.month &&
+      year === catalogMeta.year &&
+      month === catalogMeta.month
+    );
+
+    if (canUseCatalogFallback) {
+      const foundSpecialties = new Set(results.map((item) => clean(item.specialty)));
+      for (const catalogRow of selected) {
+        const specialtyKey = clean(catalogRow.specialty);
+        if (foundSpecialties.has(specialtyKey)) continue;
+        const rawDoctor = catalogRow.days?.[day] ?? catalogRow.days?.[String(day)];
+        const doctorText = String(rawDoctor || "").trim();
+        if (!doctorText) continue;
+        results.push({
+          specialty: catalogRow.specialty,
+          doctor: /^x$/i.test(doctorText) ? "Sin disponibilidad registrada" : doctorText,
+          date: formatDate(dateValue)
+        });
+        foundSpecialties.add(specialtyKey);
+      }
+    }
+
     return results.slice(0, 4);
   }
 

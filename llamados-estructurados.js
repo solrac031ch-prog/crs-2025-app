@@ -351,6 +351,26 @@
       seen.add(key);
       out.push({ specialty: row.specialty, doctor: row.doctor || 'Sin disponibilidad registrada', date: selectedDate, dateLabel: formatDate(selectedDate) });
     });
+
+    const [year, month, day] = String(selectedDate || '').split('-').map(Number);
+    if (currentMeta?.year === year && currentMeta?.month === month && Number.isInteger(day)) {
+      const foundSpecialties = new Set(out.map((row) => clean(row.specialty)));
+      selected.forEach((catalogRow) => {
+        const specialtyKey = clean(catalogRow.specialty);
+        if (foundSpecialties.has(specialtyKey)) return;
+        const rawDoctor = catalogRow.days?.[day] ?? catalogRow.days?.[String(day)];
+        const doctor = String(rawDoctor || '').trim();
+        if (!doctor) return;
+        out.push({
+          specialty: catalogRow.specialty,
+          doctor: /^x$/i.test(doctor) ? 'Sin disponibilidad registrada' : doctor,
+          date: selectedDate,
+          dateLabel: formatDate(selectedDate)
+        });
+        foundSpecialties.add(specialtyKey);
+      });
+    }
+
     return out.slice(0, 4);
   }
   function buildCard(result) {

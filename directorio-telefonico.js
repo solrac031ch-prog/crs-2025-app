@@ -130,7 +130,7 @@
   function build(root) {
     if (root.dataset.directoryReady === "true" && hasDirectoryMarkup(root)) { renderResults(root); return; }
     root.dataset.directoryReady = "true";
-    root.innerHTML = `<section class="dt-shell"><section class="dt-sos"><div><span>S.O.S.</span><h2>Emergencias, claves rojas y amarilla</h2></div><a href="tel:260745"><small>Anexo directo</small><strong>260745</strong></a></section><section class="dt-quick" aria-label="Accesos rapidos">${quickSearches.map(([label, query]) => `<button type="button" data-dt-quick="${escapeHtml(query)}"><span class="dt-kicker">Acceso rapido</span><strong>${escapeHtml(label)}</strong><small>Ver contactos</small></button>`).join("")}</section><section class="dt-tools"><label class="dt-search"><span>Buscar</span><input data-dt-search type="search" placeholder="Buscar por nombre, area o numero" autocomplete="off" /></label><div class="dt-count"><strong data-dt-count>0</strong><span data-dt-total>de ${totalContacts}</span></div></section><nav class="dt-filters" aria-label="Filtros de directorio">${filters.map(([value, label]) => `<button class="dt-chip" type="button" data-dt-filter="${value}">${escapeHtml(label)}</button>`).join("")}</nav><section class="dt-results" data-dt-results aria-live="polite"></section></section><div class="dt-toast" data-dt-toast role="status" aria-live="polite"></div>`;
+    root.innerHTML = `<section class="dt-shell"><section class="dt-sos"><div><span>S.O.S.</span><h2>Emergencias, claves rojas y amarilla</h2></div><a href="tel:260745"><small>Anexo directo</small><strong>260745</strong></a></section><section class="dt-quick" aria-label="Accesos rapidos">${quickSearches.map(([label, query]) => `<button type="button" data-dt-quick="${escapeHtml(query)}"><span class="dt-kicker">Acceso rapido</span><strong>${escapeHtml(label)}</strong><small>Ver contactos</small></button>`).join("")}</section><section class="dt-tools"><label class="dt-search"><span>Buscar</span><input id="phoneSearchInput" data-dt-search type="search" placeholder="Buscar por nombre, area o numero" autocomplete="off" /></label><div class="dt-count"><strong data-dt-count>0</strong><span data-dt-total>de ${totalContacts}</span></div></section><nav class="dt-filters" aria-label="Filtros de directorio">${filters.map(([value, label]) => `<button class="dt-chip" type="button" data-dt-filter="${value}">${escapeHtml(label)}</button>`).join("")}</nav><section class="dt-results" data-dt-results aria-live="polite"></section></section><div class="dt-toast" data-dt-toast role="status" aria-live="polite"></div>`;
     root.addEventListener("input", (event) => { const input = event.target.closest("[data-dt-search]"); if (!input) return; state.query = input.value; renderResults(root); });
     root.addEventListener("click", (event) => {
       const quick = event.target.closest("[data-dt-quick]");
@@ -143,14 +143,26 @@
     renderResults(root);
   }
 
+  function routeQuery() {
+    const hash = String(location.hash || "");
+    const index = hash.indexOf("?");
+    if (index < 0) return "";
+    return new URLSearchParams(hash.slice(index + 1)).get("q") || "";
+  }
+
   function render() {
     setLabels();
     if (!location.hash.startsWith("#/telefonos")) return;
     const root = document.querySelector("#phonesContent");
     if (!root) return;
+    const query = routeQuery();
+    if (query && query !== state.query) state.query = query;
     addStyles();
     watchRoot(root);
     build(root);
+    const input = root.querySelector("[data-dt-search]");
+    if (input && input.value !== state.query) input.value = state.query;
+    renderResults(root);
   }
   function scheduleRender() { setTimeout(render, 0); setTimeout(render, 120); setTimeout(render, 500); setTimeout(render, 1200); }
   window.addEventListener("hashchange", scheduleRender);

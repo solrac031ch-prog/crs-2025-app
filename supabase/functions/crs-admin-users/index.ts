@@ -14,8 +14,12 @@ type AdminRow = {
   active: boolean;
 };
 
-const MANAGER_ROLES = new Set(["creador", "disenador", "diseñador", "admin"]);
-const ALLOWED_ROLES = new Set(["creador", "disenador", "diseñador", "admin", "jefe", "jefatura"]);
+const MANAGER_ROLES = new Set(["creador", "owner", "desarrollador", "disenador", "diseñador", "admin"]);
+const ALLOWED_ROLES = new Set(["creador", "owner", "desarrollador", "disenador", "diseñador", "admin", "jefe", "jefatura", "jefe_turno"]);
+const LEGACY_ADMINS = new Map([
+  ["mdcarlosherrera@gmail.com", { display_name: "Dr Carlos Herrera", role: "admin" }],
+  ["mariajose.marinc@gmail.com", { display_name: "Dr Maria-Jose Marin", role: "admin" }],
+]);
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -50,6 +54,52 @@ function temporaryPassword() {
   return `M!${raw.slice(0, 18)}9a`;
 }
 
+function fallbackProfileFromAuth(user: Record<string, any> | null | undefined) {
+  const email = cleanEmail(user?.email);
+  if (!email) return null;
+  const metadataRole = normalizeRole(user?.app_metadata?.crs_role);
+  const legacy = LEGACY_ADMINS.get(email);
+  const role = ALLOWED_ROLES.has(metadataRole) ? metadataRole : normalizeRole(legacy?.role);
+  if (!ALLOWED_ROLES.has(role)) return null;
+  const displayName = cleanText(
+    user?.user_metadata?.display_name ||
+    user?.user_metadata?.full_name ||
+    legacy?.display_name ||
+    email
+  );
+  return { email, display_name: displayName || email, role, active: true };
+}
+
+async function readAdminProfile(adminClient: any, email: string): Promise<AdminRow | null> {
+  let result = await adminClient
+    .from("crs_admins")
+    .select("email,username,display_name,role,active")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (result.error && missingColumn(result.error, "username")) {
+    result = await adminClient
+      .from("crs_admins")
+      .select("email,display_name,role,active")
+      .eq("email", email)
+      .maybeSingle();
+    if (result.data) (result.data as Record<string, unknown>).username = null;
+  }
+
+  if (result.error) throw result.error;
+  return (result.data as AdminRow | null) || null;
+}
+
+async function restoreAdminProfile(adminClient: any, user: Record<string, any>, createdBy: string) {
+  const fallback = fallbackProfileFromAuth(user);
+  if (!fallback) return null;
+  const { error } = await adminClient
+    .from("crs_admins")
+    .upsert({ ...fallback, created_by_email: createdBy || fallback.email }, { onConflict: "email" });
+  if (error) throw error;
+  return readAdminProfile(adminClient, fallback.email);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ ok: false, error: "Metodo no permitido." }, 405);
@@ -78,26 +128,15 @@ Deno.serve(async (req) => {
   if (authError || !requester?.email) return json({ ok: false, error: "Sesion invalida." }, 401);
 
   const requesterEmail = cleanEmail(requester.email);
-  let requesterResult = await adminClient
-    .from("crs_admins")
-    .select("email,username,display_name,role,active")
-    .eq("email", requesterEmail)
-    .maybeSingle();
-
-  if (requesterResult.error && missingColumn(requesterResult.error, "username")) {
-    requesterResult = await adminClient
-      .from("crs_admins")
-      .select("email,display_name,role,active")
-      .eq("email", requesterEmail)
-      .maybeSingle();
-    if (requesterResult.data) {
-      (requesterResult.data as Record<string, unknown>).username = null;
+  let requesterAdmin: AdminRow | null = null;
+  try {
+    requesterAdmin = await readAdminProfile(adminClient, requesterEmail);
+    if (!requesterAdmin) {
+      requesterAdmin = await restoreAdminProfile(adminClient, requester as unknown as Record<string, any>, requesterEmail);
     }
+  } catch (error) {
+    return json({ ok: false, error: error instanceof Error ? error.message : String(error) }, 500);
   }
-
-  const requesterAdmin = requesterResult.data as AdminRow | null;
-  const requesterError = requesterResult.error;
-  if (requesterError) return json({ ok: false, error: requesterError.message }, 500);
 
   const requesterRole = normalizeRole(requesterAdmin?.role);
   if (requesterAdmin?.active !== true || !ALLOWED_ROLES.has(requesterRole)) {
@@ -134,6 +173,9 @@ Deno.serve(async (req) => {
 
   try {
     if (action === "listUsers") {
+      const authUsers = await listAuthUsers();
+      const byEmail = new Map(authUsers.map((user) => [cleanEmail(user.email), user]));
+
       let adminResult = await adminClient
         .from("crs_admins")
         .select("email,username,display_name,role,active")
@@ -143,16 +185,51 @@ Deno.serve(async (req) => {
           .from("crs_admins")
           .select("email,display_name,role,active")
           .order("email");
-        if (adminResult.data) {
-          adminResult.data = adminResult.data.map((row) => ({ ...row, username: null }));
-        }
+        if (adminResult.data) adminResult.data = adminResult.data.map((row) => ({ ...row, username: null }));
       }
       if (adminResult.error) throw adminResult.error;
-      const adminRows = adminResult.data;
-      const authUsers = await listAuthUsers();
-      const byEmail = new Map(authUsers.map((user) => [cleanEmail(user.email), user]));
 
-      const users = ((adminRows || []) as AdminRow[]).map((row) => {
+      let adminRows = (adminResult.data || []) as AdminRow[];
+      const profileEmails = new Set(adminRows.map((row) => cleanEmail(row.email)));
+      const recoveredProfiles = authUsers
+        .map((user) => fallbackProfileFromAuth(user as unknown as Record<string, any>))
+        .filter((profile): profile is NonNullable<typeof profile> => Boolean(profile && !profileEmails.has(profile.email)));
+
+      if (recoveredProfiles.length) {
+        const { error } = await adminClient
+          .from("crs_admins")
+          .upsert(
+            recoveredProfiles.map((profile) => ({ ...profile, created_by_email: requesterEmail })),
+            { onConflict: "email" }
+          );
+        if (error) throw error;
+
+        let refreshed = await adminClient
+          .from("crs_admins")
+          .select("email,username,display_name,role,active")
+          .order("email");
+        if (refreshed.error && missingColumn(refreshed.error, "username")) {
+          refreshed = await adminClient
+            .from("crs_admins")
+            .select("email,display_name,role,active")
+            .order("email");
+          if (refreshed.data) refreshed.data = refreshed.data.map((row) => ({ ...row, username: null }));
+        }
+        if (refreshed.error) throw refreshed.error;
+        adminRows = (refreshed.data || []) as AdminRow[];
+      }
+
+      for (const row of adminRows) {
+        const authUser = byEmail.get(cleanEmail(row.email));
+        const rowRole = normalizeRole(row.role);
+        if (!authUser || !ALLOWED_ROLES.has(rowRole) || normalizeRole(authUser.app_metadata?.crs_role) === rowRole) continue;
+        const { error } = await adminClient.auth.admin.updateUserById(authUser.id, {
+          app_metadata: { ...(authUser.app_metadata || {}), crs_role: rowRole },
+        });
+        if (error) throw error;
+      }
+
+      const users = adminRows.map((row) => {
         const authUser = byEmail.get(cleanEmail(row.email));
         const confirmed = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at);
         return {
@@ -167,7 +244,7 @@ Deno.serve(async (req) => {
           last_sign_in_at: authUser?.last_sign_in_at || "",
         };
       });
-      return json({ ok: true, users });
+      return json({ ok: true, users, recovered_profiles: recoveredProfiles.length });
     }
 
     if (action === "upsertUser") {
