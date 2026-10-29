@@ -143,14 +143,26 @@
     renderResults(root);
   }
 
+  function routeQuery() {
+    const hash = String(location.hash || "");
+    const index = hash.indexOf("?");
+    if (index < 0) return "";
+    return new URLSearchParams(hash.slice(index + 1)).get("q") || "";
+  }
+
   function render() {
     setLabels();
     if (!location.hash.startsWith("#/telefonos")) return;
     const root = document.querySelector("#phonesContent");
     if (!root) return;
+    const query = routeQuery();
+    if (query && query !== state.query) state.query = query;
     addStyles();
     watchRoot(root);
     build(root);
+    const input = root.querySelector("[data-dt-search]");
+    if (input && input.value !== state.query) input.value = state.query;
+    renderResults(root);
   }
   function scheduleRender() { setTimeout(render, 0); setTimeout(render, 120); setTimeout(render, 500); setTimeout(render, 1200); }
   window.addEventListener("hashchange", scheduleRender);
