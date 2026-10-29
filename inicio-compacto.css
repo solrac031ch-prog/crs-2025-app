@@ -174,6 +174,10 @@
 
 /* En teléfono priorizamos toque seguro y lectura: una sola columna, sin texto redundante. */
 @media (max-width: 620px) {
+  #homePage .home-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   #homePage.active {
     gap: 10px;
   }
